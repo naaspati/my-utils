@@ -1,0 +1,38 @@
+package sam.collection;
+
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.function.Function;
+
+public class Iterables {
+    public static Iterable<Character> of(char[] values) {
+        Objects.requireNonNull(values);
+        return of(Iterators.of(values));
+    }
+    public static Iterable<Integer> of(int[] values) {
+        Objects.requireNonNull(values);
+        return of(Iterators.of(values));
+    }
+    public static <E> Iterable<E> of(Iterator<E> itr) {
+        return new Iterable<E>() {
+            @Override public Iterator<E> iterator() { return itr; }
+        };
+    }
+    public static Iterable<Double> of(double[] values) {
+        Objects.requireNonNull(values);
+        return of(Iterators.of(values));
+    }
+
+    public static <E> Iterable<E> of(E[] values) {
+        Objects.requireNonNull(values);
+        return of(Iterators.of(values));
+    }
+    public static <E, F> Iterable<F> map(Iterable<E> itr, Function<E, F> mapper) {
+        Objects.requireNonNull(itr);
+        Objects.requireNonNull(mapper);
+        return of(Iterators.map(itr.iterator(), mapper));
+    }
+    public static <E> Iterable<E> empty(){
+        return of(Iterators.empty());
+    }
+}
