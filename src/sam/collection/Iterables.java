@@ -3,8 +3,9 @@ package sam.collection;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
-public class Iterables {
+public interface Iterables {
     public static Iterable<Character> of(char[] values) {
         Objects.requireNonNull(values);
         return of(Iterators.of(values));
@@ -34,5 +35,8 @@ public class Iterables {
     }
     public static <E> Iterable<E> empty(){
         return of(Iterators.empty());
+    }
+    public static <E>  Stream<E> stream(Iterable<E> itr) {
+    	return Iterators.stream(itr.iterator());
     }
 }

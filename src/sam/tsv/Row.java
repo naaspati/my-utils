@@ -81,7 +81,7 @@ public final class Row {
         set(indexOf(columnName), value);
     }
     private int indexOf(String columnName) {
-        return parent.indexOf(columnName);
+        return parent.indexOfColumn(columnName);
     }
     public int size() {
         return values.length;

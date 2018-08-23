@@ -18,7 +18,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import sam.manga.newsamrock.SamrockDB;
-import sam.manga.newsamrock.urls.MangaUrlsUtils.MangaUrl;
 import sam.sql.querymaker.QueryMaker;
 import sam.string.StringUtils;
 

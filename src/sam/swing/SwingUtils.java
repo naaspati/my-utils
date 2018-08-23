@@ -117,7 +117,7 @@ public final class SwingUtils {
 			return str;
 
 		if(option == JOptionPane.NO_OPTION){
-			JFileChooser chooser = new JFileChooser("D:\\Downloads");
+			JFileChooser chooser = new JFileChooser();
 			int returnValue = chooser.showSaveDialog(parent);
 
 			if(returnValue == JFileChooser.APPROVE_OPTION){

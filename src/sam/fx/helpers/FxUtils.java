@@ -27,4 +27,27 @@ public interface FxUtils {
 	    for (N n : ns) consumer.accept(n);
 	}
 	
+	/**
+	 * find object of class E in Object(a Node) parent
+	 * @param node
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> E find(Object node, Class<E> cls) {
+		if(node == null || cls.isInstance(node))
+			return (E) node;
+		
+		if(!(node instanceof Node))
+			throw new IllegalArgumentException("node is not an Node instance. found class: "+node.getClass());
+		
+		Node n = ((Node)node).getParent();
+		
+		while(n != null && !cls.isInstance(n)) 
+			n = n.getParent();	
+		
+		return (E) n;
+		
+	}
+	
+	
 }

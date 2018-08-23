@@ -31,7 +31,7 @@ public final class InternetUtils {
     public static final double VERSION = 1.22;
     public static final String REQUIRED = "1509532146836-internet-utils.properties";
 
-    private final Logger logger = Logger.getLogger(InternetUtils.class.getSimpleName());
+    final Logger logger = Logger.getLogger(InternetUtils.class.getSimpleName());
     public  final int DEFAULT_CONNECT_TIMEOUT;
     public  final int DEFAULT_READ_TIMEOUT;
     public  final String DEFAULT_USER_AGENT;
@@ -83,29 +83,7 @@ public final class InternetUtils {
         SHOW_DOWNLOAD_WARNINGS = map.getOrDefault("SHOW_DOWNLOAD_WARNINGS", "true").equalsIgnoreCase("true");
         SKIP_DOWNLOAD_IF_EXISTS = map.getOrDefault("SKIP_DOWNLOAD_IF_EXISTS","false").equalsIgnoreCase("true");
     }
-    public class SimpleDownloadListener implements DownloadListener {
-        @Override public String getUserAgent() { return USER_AGENT; }
-        @Override public int getConnectTimeout() { return CONNECT_TIMEOUT; }
-        @Override public int getReadTimeOut() { return READ_TIMEOUT; }
-        @Override public boolean extractNameFromWeb(URL url, Path savePath) { 
-            return Files.isDirectory(savePath); 
-        }
-        @Override public Path nameExtracted(URL url, Path savePath, String name) {
-            return savePath = savePath.resolve(name);
-        }
-        @Override public boolean skipDownload(URL url, Path savePath) {
-            return SKIP_DOWNLOAD_IF_EXISTS && Files.exists(savePath);
-        }
-        @Override
-        public void contentLength(long contentLength, URL url, Path savePath) {
-            if(SHOW_DOWNLOAD_WARNINGS)
-                logger.warning(() -> "Content Length = "+contentLength+"\t"+url);
-        }
-        @Override public void downloaded(int bytesRead, long totalBytes) {}
-        @Override public void compleated(URL url, Path savePath) {}
-    }
-
-    public final SimpleDownloadListener DEFAULT_LISTENER = new SimpleDownloadListener();
+    public final SimpleDownloadListener DEFAULT_LISTENER = new SimpleDownloadListener(this);
 
     /**
      * {@link InternetUtils#download(URL, Path, DownloadListener)}
@@ -179,25 +157,26 @@ public final class InternetUtils {
         Path temp = savePath.resolveSibling(savePath.getFileName()+".tmp");
         byte[] bytes = getBuffer();
         long conFileSize = con.getContentLengthLong();
-        listener.downloaded(0, conFileSize);
+        listener.progress(0, conFileSize);
+        
+        int totalRead = 0;
 
         try(InputStream is = con.getInputStream();
                 OutputStream os = Files.newOutputStream(temp, CREATE, WRITE, TRUNCATE_EXISTING);
                 ) {
             int n = 0;
-            int totalRead = 0;
 
             while((n = is.read(bytes)) != -1) {
                 os.write(bytes, 0, n);
                 totalRead += n;
-                listener.downloaded(totalRead, conFileSize);
+                listener.progress(totalRead, conFileSize);
             }
         } finally {
             setBuffer();
         }
 
         Files.move(temp, savePath, StandardCopyOption.REPLACE_EXISTING);
-        listener.compleated(url, savePath);
+        listener.compleated(url, savePath, totalRead);
         return savePath;
     }
     public  InputStream openUrlInputStream(URL url) throws IOException {

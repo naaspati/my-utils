@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 import java.util.stream.Stream.Builder;
 
 import sam.config.MyConfig;
-import sam.fileutils.RemoveInValidCharFromString;
+import sam.fileutils.FileNameSanitizer;
 import sam.manga.newsamrock.SamrockDB;
 import sam.manga.newsamrock.mangas.MangasMeta;
 import sam.sql.SqlConsumer;
@@ -47,7 +47,7 @@ import sam.string.StringUtils;
 
 public class ChapterUtils {
     private final SamrockDB db;
-    private static RemoveInValidCharFromString remover;
+    private static FileNameSanitizer remover;
 
     public ChapterUtils(SamrockDB db) {
         this.db = db;
@@ -87,8 +87,9 @@ public class ChapterUtils {
             chars[6] = '\0';
         }
         if(remover == null)
-            remover = new RemoveInValidCharFromString();
+            remover = new FileNameSanitizer();
 
+        remover.removeUnmappableChars(chars);
         remover.replaceWindowReservedChars(chars);
         remover.removeInvalidSpaceChars(chars);
         remover.arrangeChars(chars);

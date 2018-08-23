@@ -8,6 +8,7 @@ import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import sam.myutils.MyUtilsSystem;
 import sam.sql.JDBCHelper;
 
 public class SQLiteManeger extends JDBCHelper {
@@ -41,7 +42,7 @@ public class SQLiteManeger extends JDBCHelper {
     private static Connection connection(Path dbPath, Properties prop) throws SQLException, InstantiationException, IllegalAccessException, ClassNotFoundException {
         Driver driver = (Driver) Class.forName("org.sqlite.JDBC").newInstance();
         Connection connection = driver.connect("jdbc:sqlite:"+dbPath, prop);
-        connection.setAutoCommit(false);
+        connection.setAutoCommit(Boolean.valueOf(MyUtilsSystem.lookup("sql.autocommit")));
         return connection;
     }
     public Object getPath() {

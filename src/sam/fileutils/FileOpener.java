@@ -4,6 +4,18 @@ import java.io.File;
 import java.io.IOException;
 
 public class FileOpener {
+	private static volatile FileOpener instance;
+
+	public static FileOpener getInstance() {
+		if (instance == null) {
+			synchronized (FileOpener.class) {
+				if (instance == null)
+					instance = new FileOpener();
+			}
+		}
+		return instance;
+	}
+	
     public void openFile(File file) throws IOException{
         Runtime.getRuntime().exec("explorer \""+file.getName()+"\"", null, file.getParentFile());
     }

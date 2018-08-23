@@ -15,7 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import sam.fileutils.FilesUtils;
-import sam.myutils.MyUtils;
+import sam.myutils.MyUtilsThread;
 
 public interface FxDeveloperUtils {
 	public static final double VERSION = 1.2;
@@ -44,6 +44,6 @@ public interface FxDeveloperUtils {
 
 		setCss.accept(null);
 		
-		MyUtils.runOnDeamonThread(() -> FilesUtils.watchDir(cssPath.getParent(), setCss, e -> {e.printStackTrace(); return false;}, StandardWatchEventKinds.ENTRY_MODIFY));
+		MyUtilsThread.runOnDeamonThread(() -> FilesUtils.watchDir(cssPath.getParent(), setCss, e -> {e.printStackTrace(); return false;}, StandardWatchEventKinds.ENTRY_MODIFY));
 	}
 }

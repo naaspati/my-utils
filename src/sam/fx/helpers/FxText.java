@@ -9,7 +9,9 @@ public interface FxText {
     public static Text ofClass(String clss) {
         return FxClassHelper.addClass(new Text(), clss);
     }
-    public static Text of(String string, String clss) {
-        return FxClassHelper.addClass(new Text(string), clss);
+    public static Text text(String string, String clss) {
+    	Text t = new Text(string);
+    	t.getStyleClass().add(clss);
+        return t;
     }
 }

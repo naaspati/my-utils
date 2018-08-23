@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -13,7 +12,6 @@ import sam.string.StringUtils;
 
 
 abstract class Parser extends Escaper {
-    private final ArrayList<String> sink = new ArrayList<>();
     private String nullReplacement;
     private int lineNumber = 0;
     private String line;
@@ -50,9 +48,7 @@ abstract class Parser extends Escaper {
         line = l;
         lineNumber++;
         lineArray = null;
-        sink.clear();
-        StringUtils.split(l, '\t', sink);
-        lineArray = sink.toArray(new String[sink.size()]); 
+        lineArray = StringUtils.split(l, '\t'); 
         unescape(lineArray);
         
         if(nullReplacement != null) {

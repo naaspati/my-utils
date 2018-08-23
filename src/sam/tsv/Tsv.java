@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Objects;
 
 public class Tsv  implements Iterable<Row>, Rows, Columns {
@@ -89,7 +90,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
     Charset charset;
     Path path;
     String nullReplacement;
-    HashMap<String, Integer> columnNames;
+    Map<String, Integer> columnNames;
     final Collection<Row> rows;
 
     public Tsv(String...columnNames) {
@@ -103,8 +104,10 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
         this.rows = collection;
         this.charset = charset;
 
-        if(columnNames != null && columnNames.length != 0)
-            setColumns(columnNames);
+        if(columnNames != null && columnNames.length != 0) {
+            Tsv.this.columnNames = new HashMap<>();
+            addColumns(columnNames);
+        }
     }
     /**
      * read a file and replace any existing data 
@@ -122,12 +125,13 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 
             @Override
             public void setColumnsNames(String[] values) {
-                setColumns(values);
+                Tsv.this.columnNames = new HashMap<>();
+                Tsv.this.addColumns(values);
             }
 
             @Override
             public void addRow(String[] row) {
-                add(new Row(row, Tsv.this));
+                Tsv.this.addRow(new Row(row, Tsv.this));
             }
         }.parse(is, firstRowIsColumnNames, charset, nullReplacement);
         return this;

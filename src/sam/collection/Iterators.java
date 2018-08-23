@@ -2,9 +2,13 @@ package sam.collection;
 
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-public class Iterators {
+public interface Iterators {
 
     public static Iterator<Double> of(double[] values) {
         Objects.requireNonNull(values);
@@ -97,5 +101,7 @@ public class Iterators {
             }
         };
     }
-    
+	public static <E> Stream<E> stream(Iterator<E> iterator) {
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.IMMUTABLE), false);
+	}
 }

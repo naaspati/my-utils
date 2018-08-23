@@ -17,7 +17,6 @@ import java.util.function.Function;
 
 import sam.fileutils.FilesWalker.FileWalkResult;
 
-
 public final class FilesUtils {
     public static final double VERSION = 1.21;
    private final static int BUFFER_SIZE;

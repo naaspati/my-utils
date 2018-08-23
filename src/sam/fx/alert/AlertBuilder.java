@@ -131,7 +131,7 @@ public final class AlertBuilder {
         alert.getButtonTypes().setAll(buttonTypes);
         return this;
     }
-    public AlertBuilder exception(Exception e) {
+    public AlertBuilder exception(Throwable e) {
         if(e == null) {
             alert.getDialogPane().setExpandableContent(null);
             return this;

@@ -51,6 +51,13 @@ public class Where extends Appender {
         closeBracket(); 
         return this;
     }
+    public Where inPlaceholder(String columnName, int count) {
+        startIn(columnName);
+        for (int i = 0; i < count; i++) 
+            sb.append('?').append(i == count - 1 ? ' ':',');
+        closeBracket(); 
+        return this;
+    }
     public Where in(String columnName, boolean quoted, char...values) {
         startIn(columnName);
         append(values,quoted);

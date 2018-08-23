@@ -25,11 +25,11 @@ public class ConvertChapter  {
         if(tsv.isEmpty())
             throw new TsvException("tsv is empty");
         
-        int manga_id_n = tsv.indexOf("manga_id");
-        int number_n = tsv.indexOf("number");
-        int name_n = tsv.indexOf("name");
-        int source_n = tsv.indexOf("source");
-        int target_n = tsv.indexOf("target");
+        int manga_id_n = tsv.indexOfColumn("manga_id");
+        int number_n = tsv.indexOfColumn("number");
+        int name_n = tsv.indexOfColumn("name");
+        int source_n = tsv.indexOfColumn("source");
+        int target_n = tsv.indexOfColumn("target");
 
         return tsv.stream().map(r -> new ConvertChapter(
                 r.getInt(manga_id_n),
@@ -47,7 +47,7 @@ public class ConvertChapter  {
         
         Tsv tsv = new Tsv("manga_id", "number", "name", "source", "target");
         
-        list.forEach(c -> tsv.add(valueOf(c.manga_id), valueOf(c.number), valueOf(c.name), valueOf(c.source), valueOf(c.target)));
+        list.forEach(c -> tsv.addRow(valueOf(c.manga_id), valueOf(c.number), valueOf(c.name), valueOf(c.source), valueOf(c.target)));
         return tsv;
     }
     public ConvertChapter(Row row) {

@@ -31,12 +31,6 @@ public class ChapterNumbers {
     public Map<Integer, double[]> byMangaIds(Iterable<Integer> mangaIds) throws SQLException{
         return byMangaIds(mangaIds.iterator());
     }
-    public <E> Map<Integer, double[]> byMangaIds(Iterator<E> mangaIds, Function<E, Integer> mapper) throws SQLException{
-        return result(QueryMaker.getInstance().select(MANGA_ID, NUMBER).from(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds, mapper, false)).build());
-    }
-    public <E> Map<Integer, double[]> byMangaIds(Iterable<E> mangaIds, Function<E, Integer> mapper) throws SQLException{
-        return result(QueryMaker.getInstance().select(MANGA_ID, NUMBER).from(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds, mapper, false)).build());
-    }
     private Map<Integer, double[]> result(String sql) throws SQLException{
         Map<Integer, DoubleStream.Builder> map = new HashMap<>();
         Function<Integer, DoubleStream.Builder> func = id -> DoubleStream.builder();

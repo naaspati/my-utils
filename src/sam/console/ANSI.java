@@ -2,15 +2,20 @@ package sam.console;
 
 import java.util.Arrays;
 
+import sam.myutils.MyUtilsSystem;
+
 public final class ANSI {
     public static final double VERSION = 1.2;
 
-    private static boolean NO_COLOR = false;
-    public static void disable(boolean disable) {
-    	NO_COLOR = disable;
+    private static boolean no_color = Boolean.valueOf(MyUtilsSystem.lookup("sam.console.ANSI.no_color", "false"));
+    public static void disable() {
+    	no_color = true;
+    }
+    public static void enable() {
+    	no_color = false;
     }
     public static boolean isDisabled(boolean disable) {
-    	return NO_COLOR;
+    	return no_color;
     }
     /**Reset / Normal all attributes off*/
     public static  final byte  RESET = 0;
@@ -223,7 +228,7 @@ public final class ANSI {
      * @param ansiCodes
      */
     public static  String wrap(Object string, byte... ansiColorCodes){
-        if(NO_COLOR) return String.valueOf(string);
+        if(no_color) return String.valueOf(string);
 
         StringBuilder b = new StringBuilder(ANSI_START);
         for (byte b1 : ansiColorCodes) b.append(b1).append(';');
@@ -235,11 +240,11 @@ public final class ANSI {
     }
 
     private static String wrap(String prefix, Object value) {
-        if(NO_COLOR) return String.valueOf(value);
+        if(no_color) return String.valueOf(value);
         return prefix + value +  "\u001b[0m";
     }
     private static StringBuilder wrap(String prefix, Object value, StringBuilder sb) {
-        if(NO_COLOR) return sb.append(value);
+        if(no_color) return sb.append(value);
         return sb.append(prefix).append(value).append( "\u001b[0m");
     }
 

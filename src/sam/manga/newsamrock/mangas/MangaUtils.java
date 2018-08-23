@@ -7,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 
-import sam.fileutils.RemoveInValidCharFromString;
+import sam.fileutils.FileNameSanitizer;
 import sam.manga.newsamrock.SamrockDB;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
@@ -22,7 +22,7 @@ public class MangaUtils {
         return QueryMaker.getInstance();
     }
     
-    private static RemoveInValidCharFromString remover;
+    private static FileNameSanitizer remover;
     /*
      * why manual work instead of regex? because i have time :]
      */
@@ -49,7 +49,7 @@ public class MangaUtils {
         }
         
         if(remover == null)
-            remover = new RemoveInValidCharFromString();
+            remover = new FileNameSanitizer();
 
         remover.replaceWindowReservedChars(chars);
         remover.removeInvalidSpaceChars(chars);

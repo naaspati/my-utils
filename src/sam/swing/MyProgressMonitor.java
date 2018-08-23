@@ -5,7 +5,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.function.Consumer;
 
 import javax.swing.JFrame;
 import javax.swing.JProgressBar;
@@ -62,11 +65,16 @@ public class MyProgressMonitor {
 	 * this will close the program if set true, and dialog is closed manually by user, (disposing dialog does not close the program)
 	 * @param b
 	 */
-	public void setExitOnClose(int operation){
+	public void setDefaultCloseOperation(int operation){
 			dialog.setDefaultCloseOperation(operation);
 	}
-	public void setOnClosing(WindowListener event) {
-	    dialog.addWindowListener(event);
+	public void setOnClosing(Consumer<WindowEvent> c) {
+	    dialog.addWindowListener(new WindowAdapter() {
+	        @Override
+	        public void windowClosing(WindowEvent e) {
+	            c.accept(e);
+	        }
+        });
 	}
 	public void setMaximum(int max) {
 		this.max = max;

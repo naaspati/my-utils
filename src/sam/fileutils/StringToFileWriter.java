@@ -16,7 +16,18 @@ import java.nio.file.StandardOpenOption;
 import java.util.EnumSet;
 
 public class StringToFileWriter {
+	
+	private static volatile StringToFileWriter instance;
 
+	public static StringToFileWriter getInstance() {
+		if (instance == null) {
+			synchronized (StringToFileWriter.class) {
+				if (instance == null)
+					instance = new StringToFileWriter(8124);
+			}
+		}
+		return instance;
+	}
     private final int BUFFER_SIZE;
 
     public StringToFileWriter(int buffer_size) {

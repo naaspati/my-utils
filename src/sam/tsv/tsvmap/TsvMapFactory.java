@@ -58,6 +58,9 @@ public interface TsvMapFactory {
             return parse(is, isFirstRowColumnNames);   
         }
     }
+    public static <T> TsvMapBuilder<T, T> builder(Converter<T> converter){
+        return new TsvMapBuilder<>(converter, converter);
+    }
     public static <K, V> TsvMapBuilder<K, V> builder(Converter<K> keyConverter, Converter<V> valueConverter){
         return new TsvMapBuilder<>(keyConverter, valueConverter);
     }

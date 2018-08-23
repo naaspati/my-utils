@@ -1,8 +1,8 @@
 package sam.string;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class StringUtils {
     public static final double VERSION = 0.004;
@@ -16,12 +16,14 @@ public class StringUtils {
         if(s.isEmpty())
             return new String[0];
         
-        return split(s, c, new ArrayList<>()).toArray(new String[0]);
+        return splitStream(s, c).toArray(String[]::new);
     }
-    public static ArrayList<String> split(String s, char c, ArrayList<String> sink) {
+    public static Stream<String> splitStream(String s, char c) {
         Objects.requireNonNull(s);
         if(s.isEmpty())
-            return sink; 
+            return Stream.empty();
+        
+        Stream.Builder<String> sink = Stream.builder(); 
 
         int start = 0;
         for (int end = 0; end < s.length(); end++) {
@@ -32,7 +34,8 @@ public class StringUtils {
         }
         if(start != s.length())
             sink.add(s.substring(start, s.length()));
-        return sink;
+        
+        return sink.build();
     }
     /**
      * joinIfNotEndsWithSeparator("anime", "sanam", "/") -> anime/sanam

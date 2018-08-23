@@ -18,10 +18,10 @@ public final class BookUtils {
     public static final Path DB;
 
     static {
-        ROOT = Paths.get(MyConfig.BOOKLIST_ROOT);
-        APP_FOLDER = Paths.get(MyConfig.BOOKLIST_APP_DIR);
-        DB = Paths.get(MyConfig.BOOKLIST_DB);
-        BACKUP_FOLDER = APP_FOLDER.resolve("backups");
+        ROOT = Paths.get(MyConfig.BOOKLIST_ROOT).normalize();
+        APP_FOLDER = Paths.get(MyConfig.BOOKLIST_APP_DIR).normalize();
+        DB = Paths.get(MyConfig.BOOKLIST_DB).normalize();
+        BACKUP_FOLDER = APP_FOLDER.resolve("backups").normalize();
     }
     
     public static Path findBook(Path expectedPath) {

@@ -1,14 +1,10 @@
 package _sam.random.codes;
 
 import java.lang.reflect.Field;
-import java.util.stream.Stream;
 
 import javax.swing.JCheckBox;
 import javax.swing.JOptionPane;
 
-import org.junit.runner.manipulation.Filterable;
-
-import sam.console.ANSI;
 import sam.console.ANSI.FOREGROUND;
 
 public class ColorMethods {
