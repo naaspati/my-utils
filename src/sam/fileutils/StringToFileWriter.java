@@ -2,6 +2,7 @@ package sam.fileutils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
@@ -16,18 +17,16 @@ import java.nio.file.StandardOpenOption;
 import java.util.EnumSet;
 
 public class StringToFileWriter {
-	
-	private static volatile StringToFileWriter instance;
+	private static WeakReference<StringToFileWriter> instance = new WeakReference<StringToFileWriter>(null);
 
-	public static StringToFileWriter getInstance() {
-		if (instance == null) {
-			synchronized (StringToFileWriter.class) {
-				if (instance == null)
-					instance = new StringToFileWriter(8124);
-			}
-		}
-		return instance;
+	public static StringToFileWriter getWeakInstance() {
+		StringToFileWriter w = instance.get();
+		if (w == null)
+			instance = new WeakReference<StringToFileWriter>(w = new StringToFileWriter(8*1024));
+
+		return w;
 	}
+
     private final int BUFFER_SIZE;
 
     public StringToFileWriter(int buffer_size) {
@@ -68,7 +67,7 @@ public class StringToFileWriter {
         }
     }
     public void write(Path path, CharSequence data, boolean append) throws IOException {
-        write(path, data, Charset.defaultCharset(), append, CodingErrorAction.REPORT, CodingErrorAction.REPORT);
+        write(path, data, DefaultCharset.get(), append, CodingErrorAction.REPORT, CodingErrorAction.REPORT);
     }
     public void write(Path path, CharSequence data, Charset charset, boolean append) throws IOException {
         write(path, data, charset, append, CodingErrorAction.REPORT, CodingErrorAction.REPORT);
@@ -116,7 +115,7 @@ public class StringToFileWriter {
         return  textOf(path, charset, CodingErrorAction.REPORT, CodingErrorAction.REPORT);
     }
     public StringBuilder textOf(Path path) throws IOException {
-        return textOf(path, Charset.defaultCharset());
+        return textOf(path, DefaultCharset.get());
     }
 
     public void appendFileAtTop(byte[] data, Path target) throws IOException {

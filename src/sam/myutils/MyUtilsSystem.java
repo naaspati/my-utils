@@ -1,10 +1,12 @@
 package sam.myutils;
 
+import static java.lang.System.getProperty;
+import static java.lang.System.getenv;
+
 import java.util.logging.Logger;
-import static java.lang.System.*;
 
 public interface MyUtilsSystem {
-	static final boolean print = Boolean.valueOf(lookup("sam.myutils.MyUtilsSystem.print", "false", false));
+	static final boolean print = Boolean.valueOf(lookup("sam.lookup.print", "false", false));
 
 	public static String lookup(String key, String defaultValue) {
 		return lookup(key, defaultValue, print);

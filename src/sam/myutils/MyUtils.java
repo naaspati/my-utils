@@ -1,7 +1,9 @@
 package sam.myutils;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -60,6 +62,16 @@ public final class MyUtils {
 	public static <E> E nullSafe(E value, E orElse) { return MyUtilsExtra.nullSafe(value,orElse); }
 	/** {@link MyUtilsExtra#cast(Object,Class)} */
 	public static <E> E cast(Object o, Class<E> to) { return MyUtilsExtra.cast(o,to); }
+
+	@SafeVarargs
+	public static <E> void forEach(Consumer<E> consumer, E...data ) { MyUtilsExtra.forEach(data, consumer);}
+	/** {@link MyUtilsExtra#forEach(E[],Consumer)} */
+	 public static <E> void forEach(E[] data, Consumer<E> consumer) {  MyUtilsExtra.forEach(data,consumer); }
+	/** {@link MyUtilsExtra#forEach(Iterable)} */
+	 public static <E> void forEach(Iterable<E> data, Consumer<E> consumer) {  MyUtilsExtra.forEach(data,consumer); }
+	/** {@link MyUtilsExtra#forEach(Iterator)} */
+	 public static <E> void forEach(Iterator<E> data, Consumer<E> consumer) {  MyUtilsExtra.forEach(data,consumer); }
+
 
 
 

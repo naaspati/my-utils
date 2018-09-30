@@ -22,5 +22,19 @@ public interface MyUtilsException {
 
 	        return sb.toString();
 	    }
+	 
+	 /**
+	  * throws RuntimeException when supplier throws an Exception  
+	  * @param supplier
+	  * @return
+	  */
+	 public static <E> E noError(ErrorSupplier<E> supplier){
+		 try {
+			return supplier.get();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	 }
+	 
 
 }

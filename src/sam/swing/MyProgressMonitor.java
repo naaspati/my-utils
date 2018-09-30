@@ -180,4 +180,7 @@ public class MyProgressMonitor {
 	public void addWindowListener(WindowListener action){
 	    dialog.addWindowListener(action);
 	}
+	public void removeWindowListener(WindowListener action){
+	    dialog.removeWindowListener(action);
+	}
 }

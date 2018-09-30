@@ -10,6 +10,7 @@ public interface BooksMeta {
     String PAGE_COUNT = "page_count";
     String YEAR = "year";
     String DESCRIPTION = "description";
+    String STATUS = "status";
     
     String TABLE_NAME = "Books";
 }

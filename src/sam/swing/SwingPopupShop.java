@@ -6,6 +6,9 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Toolkit;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.Optional;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -13,14 +16,16 @@ import javax.swing.JLabel;
 import javax.swing.Popup;
 import javax.swing.PopupFactory;
 import javax.swing.Timer;
+import javax.swing.border.Border;
 
 public final class SwingPopupShop {
     public static final double VERSION = 1.2;
     
 	private static PopupFactory POPUP_FACTORY;
 	private static Dimension SCREEN_SIZE;
-	private static Popup[] popups; 
-	private static int currentIndex = 0;
+	@SuppressWarnings("rawtypes")
+	private static WeakReference[] popups; 
+	private static int currentIndex = -1;
 	private static Component parentComponent;
 
 	public static void setPopupsRelativeTo(Component c){
@@ -30,19 +35,24 @@ public final class SwingPopupShop {
 	private static void init() {
 	    POPUP_FACTORY = PopupFactory.getSharedInstance();
 	    SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
-	    popups = new Popup[10];
+	    popups = new WeakReference[1];
 	}
+	
+	public static Font popupFont = new Font("Comic Sans MS", 1, 30);
+	public static Color popupForeground = Color.white;
+	public static Color popupBackground = Color.black;
+	public static int popupLabelPadding = 10;
+	public static Border popupborder = BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.white, 1, true), BorderFactory.createEmptyBorder(popupLabelPadding,popupLabelPadding,popupLabelPadding,popupLabelPadding));
 
 	private static JLabel getPopupLabel(String msg){
-		JLabel label = new JLabel(msg, JLabel.CENTER);
-		label.setFont(new Font("Comic Sans MS", 1, 30));
-		int popupLabelPadding = 10;
-		label.setBackground(Color.black);
-		label.setForeground(Color.white);
-		label.setOpaque(true);
-		label.setDoubleBuffered(false);
-		label.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.white, 1, true), BorderFactory.createEmptyBorder(popupLabelPadding,popupLabelPadding,popupLabelPadding,popupLabelPadding)));
-		return  label;
+		JLabel popupLabel = new JLabel(msg, JLabel.CENTER);
+        popupLabel.setFont(popupFont);
+        popupLabel.setBackground(popupBackground);
+        popupLabel.setForeground(popupForeground);
+        popupLabel.setOpaque(true);
+        popupLabel.setDoubleBuffered(false);
+        popupLabel.setBorder(popupborder);
+        return popupLabel;
 	}
 
 	public static int showPopup(Component owner, String msg){
@@ -69,15 +79,23 @@ public final class SwingPopupShop {
 	    init();
 
 		currentIndex++;
-		if(currentIndex >= popups.length)
+		if(currentIndex >= 10)
 			currentIndex = 0;
 
-		if(popups[currentIndex] != null)
-			hidePopup(currentIndex, 0);
-
-		(popups[currentIndex] = POPUP_FACTORY.getPopup(owner, child, x, y)).show();
-
+		Optional.ofNullable(popups[currentIndex])
+		.map(WeakReference::get)
+		.ifPresent(p -> hidePopup(currentIndex, 0));
+		
+		set(currentIndex, POPUP_FACTORY.getPopup(owner, child, x, y)).show();
 		return currentIndex;
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private static Popup set(int index, Popup popup) {
+		if(index >= popups.length)
+			popups = Arrays.copyOf(popups, index+1);
+		popups[index] = new WeakReference(popup);
+		return popup;
 	}
 
 	public static int showPopup(Component owner, JComponent child) {
@@ -88,20 +106,21 @@ public final class SwingPopupShop {
 
 	}
 
+	@SuppressWarnings("rawtypes")
 	public static void hidePopup(int popupId, int delay){
-		if(popups[popupId] == null)
+		WeakReference wp = popups[popupId];
+		Popup p = wp == null ? null : (Popup)wp.get();
+		
+		if(p == null)
 			return;
 		if(delay == 0)
-			popups[popupId].hide();
+			p.hide();
 		else{
-			final Popup p = popups[popupId];
-
 			Timer t = new Timer(delay, e -> EventQueue.invokeLater(() -> p.hide()));
 			t.start();
 			t.setRepeats(false);
 			t = null;
 		}
-
 		popups[popupId] = null;
 	}
 
@@ -128,10 +147,7 @@ public final class SwingPopupShop {
 	public static void showHidePopup(Component owner, String msg, int x, int y, int delay) { 
 		hidePopup(showPopup(owner, msg, x, y), delay);
 	}
-
 	public static void showHidePopup(Component owner, String msg, int delay) { 
 		hidePopup(showPopup(owner, msg), delay);
 	}
-
-
 }

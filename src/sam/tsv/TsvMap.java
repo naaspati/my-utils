@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import sam.fileutils.DefaultCharset;
 import sam.tsv.tsvmap.Converter;
 import sam.tsv.tsvmap.TsvMapConfig;
 
@@ -54,7 +55,7 @@ public class TsvMap<K, V> implements Map<K, V> {
         this.keyConverter = Converter.defaultConverter();
         this.valueConverter = Converter.defaultConverter();
         
-        this.config = new TsvMapConfig<>(map, false, Charset.defaultCharset());
+        this.config = new TsvMapConfig<>(map, false, DefaultCharset.get());
         
         this.keyColumnName = null;
         this.valueColumnName = null;
@@ -65,7 +66,7 @@ public class TsvMap<K, V> implements Map<K, V> {
         this(new LinkedHashMap<>());
     }
     public TsvMap(String keyColumnName, String valueColumnName) {
-        this(new TsvMapConfig<>(new LinkedHashMap<>(), true, Charset.defaultCharset()), keyColumnName, valueColumnName, Converter.defaultConverter(), Converter.defaultConverter());
+        this(new TsvMapConfig<>(new LinkedHashMap<>(), true, DefaultCharset.get()), keyColumnName, valueColumnName, Converter.defaultConverter(), Converter.defaultConverter());
     }
     public TsvMap(TsvMapConfig<K, V> config, String keyColumnName, String valueColumnName, Converter<K> keyConverter, Converter<V> valueConverter) {
         this.config = Objects.requireNonNull(config);

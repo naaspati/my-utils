@@ -17,6 +17,9 @@ public class QueryMaker {
     }
     
     private QueryMaker() {}
+    public static QueryMaker qm() {
+    	return getInstance();
+    }
     
   //TODO select
     public Select selectAll() {

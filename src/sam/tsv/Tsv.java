@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 
+import sam.fileutils.DefaultCharset;
+
 public class Tsv  implements Iterable<Row>, Rows, Columns {
     public static Builder builder() {
         return new Builder();
@@ -22,7 +24,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
     public static class Builder {
         private Collection<Row> collection = new LinkedList<>();
         private String[] columnNames;
-        private Charset charset = Charset.defaultCharset();
+        private Charset charset = DefaultCharset.get();
         private String nullReplaceMent;
 
         private Builder() {}
@@ -94,7 +96,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
     final Collection<Row> rows;
 
     public Tsv(String...columnNames) {
-        this(new ArrayList<>(), columnNames, Charset.defaultCharset(), null);
+        this(new ArrayList<>(), columnNames, DefaultCharset.get(), null);
     }
     private Tsv(Collection<Row> collection, String[] columnNames, Charset charset, String nullReplacement) {
         Objects.requireNonNull(collection);

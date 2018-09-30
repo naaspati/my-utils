@@ -4,7 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import javafx.scene.control.Hyperlink;
-import sam.fileutils.FileOpener;
+import sam.fileutils.FileOpenerNE;
 import sam.fx.popup.FxPopupShop;
 
 public interface FxHyperlink {
@@ -24,9 +24,9 @@ public interface FxHyperlink {
 			if(Files.notExists(path))
 				FxPopupShop.showHidePopup("file not found: \n"+path, 2000);
 			else if(Files.isDirectory(path))
-				FileOpener.getInstance().openFileNoError(path.toFile());
+				FileOpenerNE.openFile(path.toFile());
 			else
-				FileOpener.getInstance().openFileLocationInExplorerNoError(path.toFile());
+				FileOpenerNE.openFileLocationInExplorer(path.toFile());
 		});
 		return link;
 	}

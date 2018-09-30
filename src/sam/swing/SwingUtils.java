@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.Window;
@@ -29,15 +30,16 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
 
 public final class SwingUtils {
-    public static final double VERSION = 1.2;
-    
-    
+	public static final double VERSION = 1.2;
+
+
 	/**
 	 * calls {@link #showErrorDialog(null, CharSequence, Exception)}
 	 * @param msg
@@ -148,34 +150,40 @@ public final class SwingUtils {
 
 		return str;
 	}
-	
+
 	public static  void copyToClipBoard(String string){
 		EventQueue.invokeLater(() -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null));
 	}
-	
-	public static  String inputDialog(String title) {
+
+	public static boolean showDialog(String title, Component content) {
 		JDialog fm = new JDialog(null, title, ModalityType.APPLICATION_MODAL);
 		fm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-		JButton button = new JButton("OK");
+		JButton ok = new JButton("OK");
+		JButton cancel = new JButton("CANCEL");
 
-		JTextArea a = new JTextArea();
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5), false);
 
-		String[] store = {null};
+		boolean b[] = {false};
 
-		button.addActionListener(e -> {
-			store[0] = a.getText();
+		cancel.addActionListener(e -> fm.dispose());
+		ok.addActionListener(e -> {
+			b[0] = true;
 			fm.dispose();
 		});
 
-		fm.add(button, BorderLayout.SOUTH);
-		fm.add(new JScrollPane(a));
+		fm.add(content, BorderLayout.CENTER);
+		fm.add(buttons, BorderLayout.SOUTH);
 
 		fm.setSize(500, 500);
 		fm.setLocationRelativeTo(null);
 		fm.setVisible(true);
+		return b[0];
+	} 
 
-		return store[0];
+	public static  String inputDialog(String title) {
+		JTextArea a = new JTextArea();
+		return  showDialog(title, a) ? a.getText() : null;
 	}
 
 	public static  File filePathInputOptionPane(String msg, String initialValue){
@@ -186,8 +194,8 @@ public final class SwingUtils {
 		File file = getFile(msg, initialValue);
 		return file == null || !file.isDirectory() ? null : file;
 	}
-	
-	
+
+
 	public static  File filePathInputOptionPane(String msg){
 		return filePathInputOptionPane(msg, null);
 	}
@@ -198,19 +206,19 @@ public final class SwingUtils {
 
 	private  static File getFile(String msg, String initialValue) {
 		String str = JOptionPane.showInputDialog(mainWindow, msg, initialValue);
-		
+
 		if(str == null || (str = str.replace('"', ' ').trim()).isEmpty())
 			return null;
-		
+
 		File file = new File(str);
 		return file.exists() ? file : null;
 	}
-	
+
 	public static  void addCloseActionToDialog(JDialog dialog) {
 		dialog.getRootPane().getActionMap().put("close_dialoag", new AbstractAction() {
-            private static final long serialVersionUID = 77650767569011187L;
+			private static final long serialVersionUID = 77650767569011187L;
 
-            @Override
+			@Override
 			public void actionPerformed(ActionEvent e) { dialog.dispose(); }
 		});
 		dialog.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, true), "close_dialoag");

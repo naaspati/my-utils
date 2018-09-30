@@ -9,7 +9,7 @@ public final class FileNameSanitizer {
     private Charset charset;
     
     public FileNameSanitizer() {
-    	this(Charset.forName("utf-8"));
+    	this(DefaultCharset.get());
 	}
     public FileNameSanitizer(Charset charset) {
 		this.charset = charset;
@@ -44,7 +44,7 @@ public final class FileNameSanitizer {
      * 
      * @param chars
      */
-    public void removeInvalidSpaceChars(char[] chars) {
+    public void remove_non_space_white_spaces(char[] chars) {
         for (int i = 0; i < chars.length; i++)
             if (chars[i] != ' ' && Character.isWhitespace(chars[i]))
                 chars[i] = '\0';
@@ -56,7 +56,7 @@ public final class FileNameSanitizer {
      * before {' ', '1',' ', ' ', ' ', '2'} <br>
      * after {' ', '1',' ', '2', ' ', ' '} <br>
      */
-    public void arrangeChars(char[] chars) {
+    public void removeNullChars(char[] chars) {
         char[] chars2 = new char[chars.length];
 
         int i = 0;
@@ -109,7 +109,7 @@ public final class FileNameSanitizer {
 
     
     public static String removeInvalidCharsFromFileName(String name) {
-    	return removeInvalidCharsFromFileName(name, Charset.forName("utf-8"));
+    	return removeInvalidCharsFromFileName(name, DefaultCharset.get());
     }
     
     private static FileNameSanitizer remover;
@@ -124,8 +124,8 @@ public final class FileNameSanitizer {
 
         remover.removeUnmappableChars(chars);
         remover.replaceWindowReservedChars(chars);
-        remover.removeInvalidSpaceChars(chars);
-        remover.arrangeChars(chars);
+        remover.remove_non_space_white_spaces(chars);
+        remover.removeNullChars(chars);
         String str = remover.trimAndCreate(chars);
 
         if (str.isEmpty())
@@ -140,7 +140,7 @@ public final class FileNameSanitizer {
 		
 		for (int i = 0; i < chars.length; i++) {
 			if(!encoder.canEncode(chars[i]))
-				chars[i] = ' ';
+				chars[i] = '\0';
 		}
 	}
 }

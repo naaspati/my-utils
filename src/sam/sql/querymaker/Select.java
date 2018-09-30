@@ -34,4 +34,8 @@ public class Select extends QueryMakerBase {
         consumer.apply(where());
         return this;
     }
+    public Select  append(String sql) {
+    	sb.append(' ').append(sql);
+    	return this;
+    }
 }

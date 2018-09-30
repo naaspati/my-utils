@@ -36,4 +36,22 @@ public interface MyUtilsCheck {
 	public static boolean isEmpty(Map<?, ?> s) {
 		return s == null || s.isEmpty();
 	}
+	public static <E> boolean isEmpty(E[] es) {
+		return es == null || es.length == 0;
+	}
+	public static boolean isNull(Object o) {
+		return o == null;
+	}
+	public static boolean isNotNull(Object o) {
+		return o != null;
+	}
+	/**
+	 * 
+	 * @param value
+	 * @param cls
+	 * @return value != null && value.getClass() == cls
+	 */
+	public static boolean isOfType(Object value, @SuppressWarnings("rawtypes") Class cls) {
+		return value != null && value.getClass() == cls;
+	}
 }

@@ -48,6 +48,7 @@ public class Update extends QueryMakerBase {
         return this;
     }
     
+    
     public Update where(Consumer<Where> consumer) {
         space();
         consumer.accept(where());
@@ -56,10 +57,13 @@ public class Update extends QueryMakerBase {
     public Update placeholders(String...columnNames) {
         checkArray(columnNames);
         
-        for (String s : columnNames)
-            sb.append(s).append("=?,");
-        
-        setLastCharSpace();
+        if(columnNames.length == 1)
+        	sb.append(columnNames[0]).append("=?");
+        else {
+        	for (String s : columnNames)
+                sb.append(s).append("=?,");
+        	setLastCharSpace();
+        }
         return this;
     }
 }

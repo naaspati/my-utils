@@ -18,13 +18,22 @@ public final class FxPopupShop {
 		style = String.format("-fx-background-color:%s;-fx-background-radius:10;-fx-padding:10 20 10 20;-fx-text-fill:%s", background == null ? "#1B1B1B" : background, textFill == null ? "white" : textFill);
 	}
 	
+	public static class PopupWrap {
+		private final Popup p;
+
+		public PopupWrap(Popup p) {
+			this.p = p;
+		}
+	}
+	
 	public static void setParent(Window parent) {
 		FxPopupShop.parent = parent;
 	}
 	public static Window getParent() {
 		return parent;
 	}
-	public static void showHidePopup(String msg, int delayInMills) {
+	
+	public static PopupWrap show(String msg) {
 		if(parent == null)
 			throw new IllegalStateException("parent is not set");
 		
@@ -44,18 +53,33 @@ public final class FxPopupShop {
             popup.setX(parent.getX() + parent.getWidth()/2 - popup.getWidth()/2);
             popup.setY(parent.getY() + parent.getHeight()/2 - popup.getHeight()/2);
         }
-        
-        PauseTransition pause = new PauseTransition(Duration.millis(delayInMills/2));
+        return new PopupWrap(popup);
+	} 
+	
+	public static void hide(PopupWrap popup, int delayInMills) {
+		if(popup == null || !popup.p.isShowing())
+			return;
+		
+		if(delayInMills < 100) {
+			popup.p.hide();
+			return;
+		}
+		
+		PauseTransition pause = new PauseTransition(Duration.millis(delayInMills/2));
         FadeTransition transition = new FadeTransition(Duration.millis(delayInMills/2));
         transition.setToValue(0.1);
         
-        SequentialTransition st = new SequentialTransition(text, pause, transition);
+        SequentialTransition st = new SequentialTransition(popup.p.getContent().get(0), pause, transition);
         st.setOnFinished(e -> {
-            popup.hide();
+        	popup.p.hide();
             st.stop();  
         });
         
-        popup.setOnAutoHide(e -> st.stop());
+        popup.p.setOnAutoHide(e -> st.stop());
         st.play();
+	}
+	public static void showHidePopup(String msg, int delayInMills) {
+		PopupWrap p = show(msg);
+		hide(p, delayInMills);
 	}
 }

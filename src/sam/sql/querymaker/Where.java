@@ -112,7 +112,15 @@ public class Where extends Appender {
         return this;
     }
     public Where or() {
-        appendAndSpace( "OR");
+        appendAndSpace("OR");
+        return this;
+    }
+    public Where and() {
+        appendAndSpace("AND");
+        return this;
+    }
+    public Where not() {
+        appendAndSpace("NOT");
         return this;
     }
 }

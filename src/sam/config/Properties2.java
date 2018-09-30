@@ -6,9 +6,12 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.InvalidPropertiesFormatException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Properties2 {
@@ -27,7 +30,6 @@ public class Properties2 {
 	public Properties2(InputStream inStream) throws IOException {
 		properties.load(inStream);
 	}
-
 	public void load(Reader reader) throws IOException {
 		properties.load(reader);
 	}
@@ -37,7 +39,25 @@ public class Properties2 {
 	public void loadFromXML(InputStream in) throws IOException, InvalidPropertiesFormatException {
 		properties.loadFromXML(in);
 	}
-
+	public void put(String key, String value) {
+		properties.put(key, value);
+	}
+	public void putAll(Map<? extends Object, ? extends Object> t) {
+		properties.putAll(t);
+	}
+	public Object putIfAbsent(Object key, Object value) {
+		return properties.putIfAbsent(key, value);
+	}
+	public Object computeIfAbsent(Object key, Function<? super Object, ? extends Object> mappingFunction) {
+		return properties.computeIfAbsent(key, mappingFunction);
+	}
+	public Object computeIfPresent(Object key,
+			BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+		return properties.computeIfPresent(key, remappingFunction);
+	}
+	public Object compute(Object key, BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+		return properties.compute(key, remappingFunction);
+	}
 	public String getRaw(String key) {
 		return properties.getProperty(key);
 	}
@@ -56,12 +76,14 @@ public class Properties2 {
 		if(value == null && systemEnvLooup)
 			value = System.getenv(key);
 		
-		if(value == null)
+		if(value == null) 
 			value = properties.getProperty(key);
 		
 		int start = 0;
-		if(value == null || (start = value.indexOf('%')) < 0)
+		if(value == null || (start = value.indexOf('%')) < 0) {
+			parsed.put(key, value);
 			return value;
+		}
 
 		StringBuilder sb = new StringBuilder();
 		sb.append(value, 0, start);
@@ -89,10 +111,19 @@ public class Properties2 {
 		parsed.put(key, value);
 		return value;
 	}
+	public int getInt(String key) {
+		return get(key, Integer::parseInt);
+	}
+	public double getDouble(String key) {
+		return get(key, Double::parseDouble);
+	}
+	public <E> E get(String key, Function<String, E> mapper) {
+		return mapper.apply(get(key));
+	}
+	
 	public Set<String> keys() {
 		return properties.keySet().stream().map(String::valueOf).collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
 	}
-
 	public void forEach(BiConsumer<String, String> consumer) {
 		properties.keySet().forEach(key -> consumer.accept((String)key, get((String)key)));
 	}

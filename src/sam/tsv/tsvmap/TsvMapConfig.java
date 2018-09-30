@@ -4,6 +4,8 @@ import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import sam.fileutils.DefaultCharset;
+
 public class TsvMapConfig<K, V> {
     Map<K, V> map;
     boolean isFirstRowColumnNames;
@@ -18,7 +20,7 @@ public class TsvMapConfig<K, V> {
         this(new LinkedHashMap<>(), isFirstRowColumnNames, charset);
     }
     public TsvMapConfig(boolean isFirstRowColumnNames) {
-        this(isFirstRowColumnNames, Charset.defaultCharset());
+        this(isFirstRowColumnNames, DefaultCharset.get());
     }
     public Map<K, V> getMap() { return map; }
     public boolean isFirstRowColumnNames() { return isFirstRowColumnNames; }
@@ -27,7 +29,7 @@ public class TsvMapConfig<K, V> {
     /**
      *   c.firstRowColumnNames(false);
      *   c.map(new LinkedHashMap<>());
-     *   c.charset(Charset.defaultCharset());
+     *   c.charset(DefaultCharset.get());
      * @return
      */
     public static <K, V> TsvMapConfig<K, V> firstRowColumnNames() {

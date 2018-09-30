@@ -1,5 +1,7 @@
 package sam.myutils;
 
+import java.util.Iterator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -46,5 +48,26 @@ public interface MyUtilsExtra {
 			return null;
 
 		return to.cast(o);
+	}
+	
+	public static <E> void forEach(Consumer<E> consumer, E...data ) {
+		for (E e : data) 
+			consumer.accept(e);
+	}
+	public static <E> void forEach(E[] data, Consumer<E> consumer) {
+		for (E e : data) 
+			consumer.accept(e);
+	}
+	public static <E> void forEach(Iterable<E> data, Consumer<E> consumer) {
+		for (E e : data) 
+			consumer.accept(e);
+	}
+	public static <E> void forEach(Iterator<E> data, Consumer<E> consumer) {
+		forEach(new Iterable<E>() {
+			@Override
+			public Iterator<E> iterator() {
+				return data;
+			}
+		}, consumer);
 	}
 }
