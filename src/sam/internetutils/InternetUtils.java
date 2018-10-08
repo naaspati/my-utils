@@ -21,7 +21,7 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 import sam.config.Properties2;
-import sam.weak.WeakStore;
+import sam.reference.ReferenceList;
 
 public final class InternetUtils {
 	public static final double VERSION = 1.24;
@@ -40,7 +40,7 @@ public final class InternetUtils {
 	public  boolean SHOW_WARNINGS;
 	public  int BUFFER_SIZE;
 
-	private final WeakStore<byte[]> buffers0;
+	private final ReferenceList<byte[]> buffers0;
 	
 	private static Properties2 config0() {
 		try {
@@ -87,7 +87,7 @@ public final class InternetUtils {
 		return s != null ? Integer.parseInt(s) : defaultValue; 
 	}
 	public  InternetUtils(boolean threadSafe) {
-		buffers0 = !threadSafe ? null : new WeakStore<>(() -> new byte[BUFFER_SIZE], true);
+		buffers0 = !threadSafe ? null : new ReferenceList<>(true, () -> new byte[BUFFER_SIZE]);
 		
 		Properties2 config = config();
 

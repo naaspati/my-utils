@@ -4,12 +4,9 @@ package sam.swing;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
-import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -151,10 +148,6 @@ public final class SwingUtils {
 		return str;
 	}
 
-	public static  void copyToClipBoard(String string){
-		EventQueue.invokeLater(() -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null));
-	}
-
 	public static boolean showDialog(String title, Component content) {
 		JDialog fm = new JDialog(null, title, ModalityType.APPLICATION_MODAL);
 		fm.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -194,7 +187,6 @@ public final class SwingUtils {
 		File file = getFile(msg, initialValue);
 		return file == null || !file.isDirectory() ? null : file;
 	}
-
 
 	public static  File filePathInputOptionPane(String msg){
 		return filePathInputOptionPane(msg, null);

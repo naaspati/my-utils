@@ -6,6 +6,11 @@ import static sam.manga.samrock.chapters.ChaptersMeta.NAME;
 import static sam.manga.samrock.chapters.ChaptersMeta.NUMBER;
 import static sam.manga.samrock.chapters.ChaptersMeta.READ;
 import static sam.manga.samrock.chapters.ChaptersMeta.TABLE_NAME;
+import static sam.manga.samrock.chapters.Modification.DELETE;
+import static sam.manga.samrock.chapters.Modification.MODIFIED;
+import static sam.manga.samrock.chapters.Modification.NEW;
+import static sam.manga.samrock.chapters.Modification.NO_CHANGE;
+import static sam.manga.samrock.chapters.Modification.READ_MODIFIED;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -43,7 +48,6 @@ import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
 import sam.sql.querymaker.QueryMaker;
 import sam.string.StringUtils;
-import static sam.manga.samrock.chapters.Modification.*;
 
 public class ChapterUtils {
 	private final SamrockDB db;

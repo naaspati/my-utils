@@ -9,12 +9,11 @@ import static sam.anime.meta.AnimesMeta.TITLE;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 
 import sam.anime.db.AnimeDB;
-import sam.anime.meta.TitleSynonymsMeta;
 import sam.anime.meta.AnimeDirsMeta;
 import sam.anime.meta.AnimeToshoMeta;
+import sam.anime.meta.TitleSynonymsMeta;
 
 public class Anime {
 	private final int mal_id;
@@ -50,46 +49,36 @@ public class Anime {
 		this.db = db;
 
 		this.title_synonyms = new AnimeList<>(mal_id, TitleSynonymsMeta.TITLE_SYNONYMS, TitleSynonymsMeta.TABLE_NAME, rs -> rs.getString(TitleSynonymsMeta.TITLE_SYNONYMS));
-		this.dirs = new AnimeList<>(mal_id, new String[] {AnimeDirsMeta.PATH, AnimeDirsMeta.LAST_MODIFIED}, AnimeDirsMeta.TABLE_NAME, AnimeDir::new);
+		this.dirs = new AnimeList<>(mal_id, new String[] {AnimeDirsMeta.SUBPATH, AnimeDirsMeta.LAST_MODIFIED}, AnimeDirsMeta.TABLE_NAME, AnimeDir::new);
 		this.links = new AnimeList<>(mal_id, AnimeToshoMeta.LINK, AnimeToshoMeta.TABLE_NAME, rs -> rs.getString(AnimeToshoMeta.LINK));
 	}
-
-	public String getTitle() { return title; }
-	public void setTitle(String title) { this.title = title; }
-
-	public String getEpisodes() { return episodes; }
-	public void setEpisodes(String episodes) { this.episodes = episodes; }
-
-	public String getAired() { return aired; }
-	public void setAired(String aired) { this.aired = aired; }
-
-	public String getGenre() { return genre; }
-	public void setGenre(String genre) { this.genre = genre; }
 	
-	public int getMalId() {
-		return mal_id;
-	}
-	public AnimeList<String> getTitleSynonyms() {
-		return title_synonyms;
-	}
-	public AnimeList<AnimeDir> getDirs() {
-		return dirs;
-	}
-	public AnimeList<String> getLinks() {
-		return links;
-	}
-	public String getSynopsis() {
-		return synopsis;
-	}
-	public void setSynopsis(String synopsis) {
-		this.synopsis = synopsis;
-	}
-	public String getJikanJson() {
-		return jikanJson;
-	}
-	public void setJikanJson(String jikanJson) {
-		this.jikanJson = jikanJson;
-	}
+	public AnimeList<String> getTitleSynonyms(){ return this.title_synonyms; }
+
+	public AnimeList<AnimeDir> getDirs(){ return this.dirs; }
+
+	public AnimeList<String> getLinks(){ return this.links; }
+
+	public int getMalId(){ return this.mal_id; }
+
+	public String getTitle(){ return this.title; }
+	public void setTitle(String title){ this.title=title; }
+
+	public String getEpisodes(){ return this.episodes; }
+	public void setEpisodes(String episodes){ this.episodes=episodes; }
+
+	public String getAired(){ return this.aired; }
+	public void setAired(String aired){ this.aired=aired; }
+
+	public String getGenre(){ return this.genre; }
+	public void setGenre(String genre){ this.genre=genre; }
+
+	public String getSynopsis(){ return this.synopsis; }
+	public void setSynopsis(String synopsis){ this.synopsis=synopsis; }
+
+	public String getJikanJson(){ return this.jikanJson; }
+	public void setJikanJson(String jikanJson){ this.jikanJson=jikanJson; }
+
 	@Override
 	public String toString() {
 		return "Anime [mal_id=" + mal_id + ", title=" + title + ", episodes=" + episodes + ", aired=" + aired

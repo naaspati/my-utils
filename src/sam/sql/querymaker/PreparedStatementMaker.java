@@ -32,296 +32,345 @@ public abstract class PreparedStatementMaker {
 	protected  PreparedStatementMaker(String tableName) {
 		this.tableName = tableName;
 	}
-	public void setNull(String columnName, int sqlType)  {
+	public PreparedStatementMaker setNull(String columnName, int sqlType)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNull(n, sqlType));
+		return this;
 	}
 
-	public void setBoolean(String columnName, boolean x)  {
+	public PreparedStatementMaker setBoolean(String columnName, boolean x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBoolean(n, x));
+		return this;
 	}
 
-	public void setByte(String columnName, byte x)  {
+	public PreparedStatementMaker setByte(String columnName, byte x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setByte(n, x));
+		return this;
 	}
-	public void setShort(String columnName, short x)  {
+	public PreparedStatementMaker setShort(String columnName, short x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setShort(n, x));
+		return this;
 	}
 
-	public void setInt(String columnName, int x)  {
+	public PreparedStatementMaker setInt(String columnName, int x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setInt(n, x));
+		return this;
 	}
 
-	public void setLong(String columnName, long x)  {
+	public PreparedStatementMaker setLong(String columnName, long x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setLong(n, x));
+		return this;
 	}
 
-	public void setFloat(String columnName, float x)  {
+	public PreparedStatementMaker setFloat(String columnName, float x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setFloat(n, x));
+		return this;
 	}
 
-	public void setDouble(String columnName, double x)  {
+	public PreparedStatementMaker setDouble(String columnName, double x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setDouble(n, x));
+		return this;
 	}
 
-	public void setBigDecimal(String columnName, BigDecimal x)  {
+	public PreparedStatementMaker setBigDecimal(String columnName, BigDecimal x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBigDecimal(n, x));
+		return this;
 	}
 
-	public void setString(String columnName, String x)  {
+	public PreparedStatementMaker setString(String columnName, String x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setString(n, x));
+		return this;
 	}
 
-	public void setBytes(String columnName, byte[] x)  {
+	public PreparedStatementMaker setBytes(String columnName, byte[] x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBytes(n, x));
+		return this;
 	}
 
-	public void setDate(String columnName, Date x)  {
+	public PreparedStatementMaker setDate(String columnName, Date x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setDate(n, x));
+		return this;
 	}
 
-	public void setTime(String columnName, Time x)  {
+	public PreparedStatementMaker setTime(String columnName, Time x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setTime(n, x));
+		return this;
 	}
 
-	public void setTimestamp(String columnName, Timestamp x)  {
+	public PreparedStatementMaker setTimestamp(String columnName, Timestamp x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setTimestamp(n, x));
+		return this;
 	}
 
-	public void setAsciiStream(String columnName, InputStream x, int length)  {
+	public PreparedStatementMaker setAsciiStream(String columnName, InputStream x, int length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setAsciiStream(n, x, length));
+		return this;
 	}
 
-	public void setBinaryStream(String columnName, InputStream x, int length)  {
+	public PreparedStatementMaker setBinaryStream(String columnName, InputStream x, int length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBinaryStream(n, x, length));
+		return this;
 	}
 
-	public void setObject(String columnName, Object x, int targetSqlType)  {
+	public PreparedStatementMaker setObject(String columnName, Object x, int targetSqlType)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setObject(n, x, targetSqlType));
+		return this;
 	}
 
-	public void setObject(String columnName, Object x)  {
+	public PreparedStatementMaker setObject(String columnName, Object x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setObject(n, x));
+		return this;
 	}
 
-	public void setCharacterStream(String columnName, Reader reader, int length)  {
+	public PreparedStatementMaker setCharacterStream(String columnName, Reader reader, int length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setCharacterStream(n, reader, length));
+		return this;
 	}
 
-	public void setRef(String columnName, Ref x)  {
+	public PreparedStatementMaker setRef(String columnName, Ref x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setRef(n, x));
+		return this;
 	}
 
-	public void setBlob(String columnName, Blob x)  {
+	public PreparedStatementMaker setBlob(String columnName, Blob x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBlob(n, x));
+		return this;
 	}
 
-	public void setClob(String columnName, Clob x)  {
+	public PreparedStatementMaker setClob(String columnName, Clob x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setClob(n, x));
+		return this;
 	}
 
-	public void setArray(String columnName, Array x)  {
+	public PreparedStatementMaker setArray(String columnName, Array x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setArray(n, x));
+		return this;
 	}
 
-	public void setDate(String columnName, Date x, Calendar cal)  {
+	public PreparedStatementMaker setDate(String columnName, Date x, Calendar cal)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setDate(n, x, cal));
+		return this;
 	}
 
-	public void setTime(String columnName, Time x, Calendar cal)  {
+	public PreparedStatementMaker setTime(String columnName, Time x, Calendar cal)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setTime(n, x, cal));
+		return this;
 	}
 
-	public void setTimestamp(String columnName, Timestamp x, Calendar cal)  {
+	public PreparedStatementMaker setTimestamp(String columnName, Timestamp x, Calendar cal)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setTimestamp(n, x, cal));
+		return this;
 	}
 
-	public void setNull(String columnName, int sqlType, String typeName)  {
+	public PreparedStatementMaker setNull(String columnName, int sqlType, String typeName)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNull(n, sqlType, typeName));
+		return this;
 	}
 
-	public void setURL(String columnName, URL x)  {
+	public PreparedStatementMaker setURL(String columnName, URL x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setURL(n, x));
+		return this;
 	}
 
-	public void setRowId(String columnName, RowId x)  {
+	public PreparedStatementMaker setRowId(String columnName, RowId x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setRowId(n, x));
+		return this;
 	}
 
-	public void setNString(String columnName, String value)  {
+	public PreparedStatementMaker setNString(String columnName, String value)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNString(n, value));
+		return this;
 	}
 
-	public void setNCharacterStream(String columnName, Reader value, long length)  {
+	public PreparedStatementMaker setNCharacterStream(String columnName, Reader value, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNCharacterStream(n, value, length));
+		return this;
 	}
 
-	public void setNClob(String columnName, NClob value)  {
+	public PreparedStatementMaker setNClob(String columnName, NClob value)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNClob(n, value));
+		return this;
 	}
 
-	public void setClob(String columnName, Reader reader, long length)  {
+	public PreparedStatementMaker setClob(String columnName, Reader reader, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setClob(n, reader, length));
+		return this;
 	}
 
-	public void setBlob(String columnName, InputStream inputStream, long length)  {
+	public PreparedStatementMaker setBlob(String columnName, InputStream inputStream, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBlob(n, inputStream, length));
+		return this;
 	}
 
-	public void setNClob(String columnName, Reader reader, long length)  {
+	public PreparedStatementMaker setNClob(String columnName, Reader reader, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNClob(n, reader, length));
+		return this;
 	}
 
-	public void setSQLXML(String columnName, SQLXML xmlObject)  {
+	public PreparedStatementMaker setSQLXML(String columnName, SQLXML xmlObject)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setSQLXML(n, xmlObject));
+		return this;
 	}
 
-	public void setObject(String columnName, Object x, int targetSqlType, int scaleOrLength)  {
+	public PreparedStatementMaker setObject(String columnName, Object x, int targetSqlType, int scaleOrLength)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setObject(n, x, targetSqlType, scaleOrLength));
+		return this;
 	}
 
-	public void setAsciiStream(String columnName, InputStream x, long length)  {
+	public PreparedStatementMaker setAsciiStream(String columnName, InputStream x, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setAsciiStream(n, x, length));
+		return this;
 	}
 
-	public void setBinaryStream(String columnName, InputStream x, long length)  {
+	public PreparedStatementMaker setBinaryStream(String columnName, InputStream x, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBinaryStream(n, x, length));
+		return this;
 	}
 
-	public void setCharacterStream(String columnName, Reader reader, long length)  {
+	public PreparedStatementMaker setCharacterStream(String columnName, Reader reader, long length)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setCharacterStream(n, reader, length));
+		return this;
 	}
-	public void setAsciiStream(String columnName, InputStream x)  {
+	public PreparedStatementMaker setAsciiStream(String columnName, InputStream x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setAsciiStream(n, x));
+		return this;
 	}
 
-	public void setBinaryStream(String columnName, InputStream x)  {
+	public PreparedStatementMaker setBinaryStream(String columnName, InputStream x)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBinaryStream(n, x));
+		return this;
 	}
 
-	public void setCharacterStream(String columnName, Reader reader)  {
+	public PreparedStatementMaker setCharacterStream(String columnName, Reader reader)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setCharacterStream(n, reader));
+		return this;
 	}
 
-	public void setNCharacterStream(String columnName, Reader value)  {
+	public PreparedStatementMaker setNCharacterStream(String columnName, Reader value)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNCharacterStream(n, value));
+		return this;
 	}
 
-	public void setClob(String columnName, Reader reader)  {
+	public PreparedStatementMaker setClob(String columnName, Reader reader)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setClob(n, reader));
+		return this;
 	}
 
-	public void setBlob(String columnName, InputStream inputStream)  {
+	public PreparedStatementMaker setBlob(String columnName, InputStream inputStream)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setBlob(n, inputStream));
+		return this;
 	}
 
-	public void setNClob(String columnName, Reader reader)  {
+	public PreparedStatementMaker setNClob(String columnName, Reader reader)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setNClob(n, reader));
+		return this;
 	}
 
-	public void setObject(String columnName, Object x, SQLType targetSqlType, int scaleOrLength)  {
+	public PreparedStatementMaker setObject(String columnName, Object x, SQLType targetSqlType, int scaleOrLength)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setObject(n, x, targetSqlType, scaleOrLength));
+		return this;
 	}
 
-	public  void setObject(String columnName, Object x, SQLType targetSqlType)  {
+	public  PreparedStatementMaker setObject(String columnName, Object x, SQLType targetSqlType)  {
 		int n = pss.size()+1;
 		this.columnNames.add(columnName);
 		pss.add(ps -> ps.setObject(n, x, targetSqlType));
+		return this;
 	} 
 
 	public boolean execute(Connection connection) throws SQLException  {

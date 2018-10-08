@@ -1,35 +1,35 @@
 package sam.anime.entities;
 
-import static sam.anime.meta.AnimeDirsMeta.LAST_MODIFIED;
-import static sam.anime.meta.AnimeDirsMeta.PATH;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Objects;
+
+import sam.anime.meta.AnimeDirsMeta;
 
 public class AnimeDir {
-	
-		private final String path;
-		private final long last_modified;
-		
-		public String getPath() { return path; }
-		public long getLastModified() { return last_modified; }
-		
+	 private final int mal_id;
+	    private final int id;
+	    private final int parent_id;
+	    private final String subpath;
+	    private final int last_modified;
+
 		public AnimeDir(ResultSet rs) throws SQLException {
-			this.path = rs.getString(PATH);
-			this.last_modified = rs.getLong(LAST_MODIFIED);
-		}
-		
-		public AnimeDir(String path, long last_modified) {
-			this.path = Objects.requireNonNull(path);
-			this.last_modified = last_modified;
-		}
+	        this.mal_id = rs.getInt(AnimeDirsMeta.MAL_ID);
+	        this.id = rs.getInt(AnimeDirsMeta.ID);
+	        this.parent_id = rs.getInt(AnimeDirsMeta.PARENT_ID);
+	        this.subpath = rs.getString(AnimeDirsMeta.SUBPATH);
+	        this.last_modified = rs.getInt(AnimeDirsMeta.LAST_MODIFIED);
+	    }
+	    
+	    public int getMalId(){ return this.mal_id; }
+	    public int getId(){ return this.id; }
+	    public int getParentId(){ return this.parent_id; }
+	    public String getSubpath(){ return this.subpath; }
+	    public int getLastModified(){ return this.last_modified; }
+	    
 		@Override
 		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((path == null) ? 0 : path.hashCode());
-			return result;
+			return id;
 		}
 		@Override
 		public boolean equals(Object obj) {
@@ -40,12 +40,10 @@ public class AnimeDir {
 			if (getClass() != obj.getClass())
 				return false;
 			AnimeDir other = (AnimeDir) obj;
-			if (path == null) {
-				if (other.path != null)
-					return false;
-			} else if (!path.equals(other.path))
-				return false;
-			return true;
+			if(id < 0) 
+				return subpath.equals(other.subpath);
+			else
+				return id == other.id;
 		}
 		
 }

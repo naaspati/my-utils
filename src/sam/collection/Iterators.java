@@ -8,8 +8,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import sam.manga.samrock.chapters.Chapter;
-
 public interface Iterators {
 
     public static Iterator<Double> of(double[] values) {

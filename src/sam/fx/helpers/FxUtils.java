@@ -2,6 +2,7 @@ package sam.fx.helpers;
 
 import java.util.function.Consumer;
 
+import javafx.beans.InvalidationListener;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
@@ -47,6 +48,9 @@ public interface FxUtils {
 		
 		return (E) n;
 		
+	}
+	public static InvalidationListener invalidationListener(InvalidationListener invalidationListener) {
+		return invalidationListener;
 	}
 	
 	

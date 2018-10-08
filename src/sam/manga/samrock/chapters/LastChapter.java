@@ -4,6 +4,7 @@ import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTER_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.NUMBER;
 import static sam.manga.samrock.chapters.ChaptersMeta.TABLE_NAME;
+import static sam.sql.querymaker.QueryMaker.qm;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -11,8 +12,6 @@ import java.util.Map;
 
 import sam.manga.samrock.SamrockDB;
 import sam.sql.querymaker.Select;
-
-import static sam.sql.querymaker.QueryMaker.*;
 
 public class LastChapter  {
 	private SamrockDB db;

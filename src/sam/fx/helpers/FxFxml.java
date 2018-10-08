@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import javafx.fxml.FXMLLoader;
-import sam.weak.WeakAndLazy;
+import sam.reference.WeakAndLazy;
 
 public final class FxFxml {
 	private static final WeakAndLazy<FXMLLoader> fxkeep = new WeakAndLazy<>(FXMLLoader::new);

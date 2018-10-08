@@ -1,15 +1,20 @@
 package sam.manga.samrock.mangas;
 
+import static sam.config.MyConfig.MANGA_DIR;
 import static sam.manga.samrock.mangas.MangasMeta.MANGA_ID;
 import static sam.manga.samrock.mangas.MangasMeta.TABLE_NAME;
 import static sam.sql.querymaker.QueryMaker.qm;
 
+import java.io.File;
+import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 import sam.fileutils.FileNameSanitizer;
 import sam.manga.samrock.SamrockDB;
+import sam.reference.WeakAndLazy;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
 public class MangaUtils {
@@ -100,5 +105,25 @@ public class MangaUtils {
     }
     public <E> E select(int mangaId, SqlFunction<ResultSet, E> mapper, String...mangasMeta) throws SQLException {
         return db.executeQuery(qm().select(mangasMeta).from(TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), mapper);
+    }
+    
+    private static WeakReference<String[]> dirList = new WeakReference<String[]>(null);
+    private static long dirListTime = 0;
+    
+    /**
+     * 
+     * @return new File(MANGA_DIR).list()
+     */
+    public static String[] dirList() {
+    	File f = new File(MANGA_DIR);
+    	String[] list = dirList.get();
+    	long t = f.lastModified();
+    	if(list != null && t == dirListTime)
+    		return list;
+    	
+    	dirListTime = t;
+    	list = new File(MANGA_DIR).list();
+    	dirList = new WeakReference<String[]>(list);
+    	return list;
     }
 }

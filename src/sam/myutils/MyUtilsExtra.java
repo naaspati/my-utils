@@ -32,6 +32,9 @@ public interface MyUtilsExtra {
 	public static <E> E nullSafe(E value, E orElse) {
 		return elvis(value != null, value, orElse);
 	}
+	public static <E> E nullSafe(E value, Supplier<E> orElse) {
+		return elvis(value != null, value, orElse);
+	}
 	public static <E, F> F ifNotNull(E value, Function<E, F> action) {
 		if(value == null)
 			return null;

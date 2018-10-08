@@ -34,6 +34,13 @@ public class Select extends QueryMakerBase {
         consumer.apply(where());
         return this;
     }
+    public Select orderBy(boolean inIncreasingOrder, String... columnNames) {
+    	appendAndSpace(" ORDER BY");
+    	append(columnNames, false).append(' ');
+    	if(!inIncreasingOrder)
+    		appendAndSpace("DESC");
+        return this;
+    }
     public Select  append(String sql) {
     	sb.append(' ').append(sql);
     	return this;

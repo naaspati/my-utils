@@ -1,14 +1,12 @@
 package sam.anime.meta;
 
 public interface AnimeDirsMeta {
-	String TABLE_NAME = "DIRS",
-			MAL_ID = "mal_id", 
-			ID = "_id",
-			PATH = "_path",
-			LAST_MODIFIED = "last_modified";
+    String TABLE_NAME="Dirs";
 
-	public static String[] allColumns() {
-		return new String[] {ID,/** myanimelist_id */MAL_ID, PATH, LAST_MODIFIED };
-	}
+    String MAL_ID = "mal_id";
+    String ID = "_id";
+    String PARENT_ID = "parent_id";
+    String SUBPATH = "subpath";
+    String LAST_MODIFIED = "last_modified";
 
 }
