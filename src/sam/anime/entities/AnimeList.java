@@ -1,6 +1,7 @@
 package sam.anime.entities;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -9,10 +10,10 @@ import java.util.List;
 import sam.anime.db.AnimeDB;
 import sam.collection.Iterators;
 import sam.myutils.MyUtilsCheck;
+import sam.sql.SqlBiConsumer;
 import sam.sql.SqlFunction;
 
 public class AnimeList<E> implements Iterable<E> {
-
 	private boolean modified;
 	private List<E> data;
 	/**
@@ -23,12 +24,14 @@ public class AnimeList<E> implements Iterable<E> {
 	private final String[] columnNames;
 	private final String tableName;
 	private final SqlFunction<ResultSet, E> mapper;
+	private final SqlFunction<AnimeDB, List<E>> collector;
 
 	public AnimeList(int mal_id) {
 		this.mal_id = mal_id;
 		columnNames = null;
 		tableName  = null;
 		mapper = null;
+		collector = null;
 	}
 
 	public AnimeList(int mal_id, String[] columnNames, String tableName, SqlFunction<ResultSet, E> mapper) {
@@ -36,19 +39,32 @@ public class AnimeList<E> implements Iterable<E> {
 		this.tableName = tableName;
 		this.mapper = mapper;
 		this.mal_id = mal_id;
+		this.collector = null;
 	}
 	public AnimeList(int mal_id, String columnName, String tableName, SqlFunction<ResultSet, E> mapper) {
 		this(mal_id, new String[] {columnName}, tableName, mapper);
 	}
-
+	public AnimeList(int mal_id, SqlFunction<AnimeDB, List<E>> collector) {
+		this.mal_id = mal_id;
+		this.columnNames = null;
+		this.tableName = null;
+		this.mapper = null;
+		this.collector = collector;
+	}
+	
 	private List<E> unmodif;
-	public List<E> get(AnimeDB db){
+	public List<E> get(AnimeDB db) throws SQLException {
 		if(unmodif != null) return unmodif;
 		if(db == null || columnNames == null) return unmodif;
-
-		data = new ArrayList<>();
+		
+		if(collector != null)
+			data = collector.accept(db);
+		else {
+			data  = new ArrayList<>();
+			db.loadList(mal_id, columnNames, tableName, mapper, data);
+		}
+		
 		unmodif = Collections.unmodifiableList(data);
-		db.loadList(mal_id, columnNames, tableName, mapper, data);
 
 		if(newData != null) {
 			for (E e : newData) add(e);

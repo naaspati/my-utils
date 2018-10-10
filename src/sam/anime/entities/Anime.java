@@ -3,17 +3,23 @@ package sam.anime.entities;
 import static sam.anime.meta.AnimesMeta.AIRED;
 import static sam.anime.meta.AnimesMeta.EPISODES;
 import static sam.anime.meta.AnimesMeta.GENRES;
-import static sam.anime.meta.AnimesMeta./** myanimelist_id */MAL_ID;
+import static sam.anime.meta.AnimesMeta.MAL_ID;
 import static sam.anime.meta.AnimesMeta.SYNOPSIS;
+import static sam.anime.meta.AnimesMeta.TABLE_NAME;
 import static sam.anime.meta.AnimesMeta.TITLE;
+import static sam.anime.meta.RelatedAnimesMeta.ID1;
+import static sam.anime.meta.RelatedAnimesMeta.ID2;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import sam.anime.db.AnimeDB;
 import sam.anime.meta.AnimeDirsMeta;
-import sam.anime.meta.AnimeToshoMeta;
+import sam.anime.meta.AnimeUrlsMeta;
+import sam.anime.meta.RelatedAnimesMeta;
 import sam.anime.meta.TitleSynonymsMeta;
+import sam.sql.querymaker.Select;
 
 public class Anime {
 	private final int mal_id;
@@ -29,7 +35,8 @@ public class Anime {
 
 	private final AnimeList<String> title_synonyms;
 	private final AnimeList<AnimeDir> dirs;
-	private final AnimeList<String> links;
+	private final AnimeList<String> urls;
+	private final AnimeList<MinimalAnime> relatedAnimes;
 
 	public Anime(int mal_id) {
 		this.db = null;
@@ -37,7 +44,8 @@ public class Anime {
 
 		title_synonyms = new  AnimeList<>(mal_id); 
 		dirs = new  AnimeList<>(mal_id);
-		links  = new  AnimeList<>(mal_id);
+		urls  = new  AnimeList<>(mal_id);
+		relatedAnimes  = new  AnimeList<>(mal_id);
 	}
 	public Anime(ResultSet rs0, AnimeDB db) throws SQLException {
 		this.mal_id = rs0.getInt(MAL_ID);
@@ -50,14 +58,24 @@ public class Anime {
 
 		this.title_synonyms = new AnimeList<>(mal_id, TitleSynonymsMeta.TITLE_SYNONYMS, TitleSynonymsMeta.TABLE_NAME, rs -> rs.getString(TitleSynonymsMeta.TITLE_SYNONYMS));
 		this.dirs = new AnimeList<>(mal_id, new String[] {AnimeDirsMeta.SUBPATH, AnimeDirsMeta.LAST_MODIFIED}, AnimeDirsMeta.TABLE_NAME, AnimeDir::new);
-		this.links = new AnimeList<>(mal_id, AnimeToshoMeta.LINK, AnimeToshoMeta.TABLE_NAME, rs -> rs.getString(AnimeToshoMeta.LINK));
+		this.urls = new AnimeList<>(mal_id, AnimeUrlsMeta.URL, AnimeUrlsMeta.TABLE_NAME, rs -> rs.getString(AnimeUrlsMeta.URL));
+		this.relatedAnimes = new AnimeList<>(mal_id, this::relatedAnimesFill);
 	}
 	
-	public AnimeList<String> getTitleSynonyms(){ return this.title_synonyms; }
-
+	private List<MinimalAnime> relatedAnimesFill(AnimeDB db) throws SQLException{
+		
+		String sql = new Select().distinct()
+				.columns(MAL_ID, TITLE)
+				.from(TABLE_NAME)
+				.where(w -> w.inSubSelect(MAL_ID, select -> select.columns(ID1).from(RelatedAnimesMeta.TABLE_NAME).where(w2 -> w2.eq(ID2, mal_id))).or().inSubSelect(MAL_ID, select -> select.columns(ID2).from(RelatedAnimesMeta.TABLE_NAME).where(w2 -> w2.eq(ID1, mal_id)))).build();
+		
+		return db.collectToList(sql, MinimalAnime::new);
+	}
+	
 	public AnimeList<AnimeDir> getDirs(){ return this.dirs; }
-
-	public AnimeList<String> getLinks(){ return this.links; }
+	public AnimeList<String> getTitleSynonyms(){ return this.title_synonyms; }
+	public AnimeList<String> getUrls(){ return this.urls; }
+	public AnimeList<MinimalAnime> getRelatedAnimes() { return relatedAnimes; }
 
 	public int getMalId(){ return this.mal_id; }
 
@@ -83,6 +101,6 @@ public class Anime {
 	public String toString() {
 		return "Anime [mal_id=" + mal_id + ", title=" + title + ", episodes=" + episodes + ", aired=" + aired
 				+ ", genre=" + genre + ", synopsis=" + synopsis + ", jikanJson=" + jikanJson + ", db=" + db
-				+ ", title_synonyms=" + title_synonyms + ", dirs=" + dirs + ", links=" + links + "]";
+				+ ", title_synonyms=" + title_synonyms + ", dirs=" + dirs + ", links=" + urls + "]";
 	}
 }

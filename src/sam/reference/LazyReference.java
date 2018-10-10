@@ -20,7 +20,7 @@ public class LazyReference<E> {
     public E get() {
         E e = reference.get();
         if(e == null)
-            reference = type.get(generator.get());
+            reference = type.get(e = generator.get());
         
         return e;
     }
@@ -30,7 +30,7 @@ public class LazyReference<E> {
     /**
      * @return the value if there is any (without creating).
      */
-    public E getWithoutGenerating() {
+    public E getIfPreset() {
     	return reference.get();
     }
 }

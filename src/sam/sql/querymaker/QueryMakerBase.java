@@ -10,6 +10,11 @@ abstract class QueryMakerBase extends Appender {
     protected QueryMakerBase(StringBuilder sb, String start) {
         this(sb, null, start, false);
     }
+    protected QueryMakerBase(QueryMakerBase parent, String start) {
+    	this.sb = parent.sb;
+        this.maker = parent.maker;
+        appendAndSpace(start);
+	}
     protected QueryMakerBase(StringBuilder sb, QueryMaker maker, String start, boolean resetSize) {
         this.sb = sb;
         this.maker = maker;
@@ -18,7 +23,7 @@ abstract class QueryMakerBase extends Appender {
         appendAndSpace(start);
     }
     protected Where where() {
-       return new Where(sb);
+       return new Where(this);
     }
     public String build() {
         String s = sb.toString();

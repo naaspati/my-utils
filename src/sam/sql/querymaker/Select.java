@@ -4,18 +4,27 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 public class Select extends QueryMakerBase {
-
+	public Select() {
+		this(QueryMaker.qm());
+	}
     Select(QueryMaker maker) {
         super(maker.getBuilder(), maker, "SELECT");
     }
-    Select all() {
+	Select(QueryMakerBase s) {
+		super(s, "SELECT");
+	}
+	public Select all() {
         sb.append("* ");
         return this;
     }
-    Select columns(String[] columnNames) {
+	public Select distinct() {
+        sb.append("DISTINCT ");
+        return this;
+    }
+    public Select columns(String... columnNames) {
         return columns(columnNames, false);
     }
-    Select columns(String[] columnNames, boolean quoted) {
+    public Select columns(String[] columnNames, boolean quoted) {
         Objects.requireNonNull(columnNames, "columnNames cannot be null");
         
         if(columnNames.length == 0)

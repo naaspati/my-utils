@@ -162,6 +162,9 @@ abstract class Appender extends Checker {
     protected StringBuilder appendAndSpace( String string) {
         return sb().append(string).append(' ');
     }
+    protected StringBuilder appendAndSpace( char c) {
+        return sb().append(c).append(' ');
+    }
     protected StringBuilder startIn(String columnName) {
         sb().append(columnName).append(" IN(");
         return sb();

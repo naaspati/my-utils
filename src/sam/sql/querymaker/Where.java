@@ -2,15 +2,24 @@ package sam.sql.querymaker;
 
 import java.util.Iterator;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public class Where extends Appender {
     private final StringBuilder sb;
+	private final QueryMakerBase caller;
 
     @Override
     public StringBuilder sb() {
         return sb;
     }
+    
+    Where(QueryMakerBase caller) {
+    	this.caller = caller ; 
+        this.sb = caller.sb;
+        appendAndSpace("WHERE");
+    }
     Where(StringBuilder sb) {
+    	this.caller = null ; 
         this.sb = sb;
         appendAndSpace("WHERE");
     }
@@ -68,6 +77,13 @@ public class Where extends Appender {
         startIn(columnName);
         append(values);
         closeBracket();
+        return this;
+    }
+    public Where inSubSelect(String columnName, UnaryOperator<Select> subselect) {
+    	startIn(columnName);
+    	Select select = new Select(caller);
+    	subselect.apply(select);
+    	closeBracket();
         return this;
     }
     @SafeVarargs

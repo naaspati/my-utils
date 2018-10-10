@@ -53,6 +53,7 @@ public interface MyUtilsExtra {
 		return to.cast(o);
 	}
 	
+	@SafeVarargs
 	public static <E> void forEach(Consumer<E> consumer, E...data ) {
 		for (E e : data) 
 			consumer.accept(e);
