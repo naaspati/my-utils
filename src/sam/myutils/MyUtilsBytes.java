@@ -1,7 +1,5 @@
 package sam.myutils;
 
-import sam.string.StringUtils;
-
 public class MyUtilsBytes {
     //2^10 = 1024
     /**
@@ -72,9 +70,21 @@ public class MyUtilsBytes {
                 if(unit == bytes)
                     return sink.append(1).append(' ').append(units[i]);
                 else if(bytes > unit && bytes < bytesSize[i + 1])
-                    return sink.append(StringUtils.doubleToString(((double)bytes)/bytesSize[i], 3)).append(' ').append(units[i+1]).append('b');
+                    return sink.append(doubleToString(((double)bytes)/bytesSize[i], 3)).append(' ').append(units[i+1]).append('b');
             }
         }
         return sink;
     }
+    
+    public static String doubleToString(double d, int trimToPlaces) {
+		 if(d == (int)d)
+			 return String.valueOf((int)d);
+		 else {
+			 String s = String.valueOf(d);
+			 if(trimToPlaces == Integer.MAX_VALUE)
+				 return s;
+			 int index = s.indexOf('.') + trimToPlaces + 1;
+			 return s.substring(0, Math.min(index, s.length()));
+		 }
+	 }
 }

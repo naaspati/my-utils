@@ -2,12 +2,12 @@ package sam.console;
 
 import java.util.Arrays;
 
-import sam.myutils.MyUtilsSystem;
+import sam.myutils.System2;
 
 public final class ANSI {
     public static final double VERSION = 1.2;
 
-    private static boolean no_color = Boolean.valueOf(MyUtilsSystem.lookup("sam.console.ANSI.no_color", "false"));
+    private static boolean no_color = Boolean.valueOf(System2.lookup("sam.console.ANSI.no_color", "false"));
     public static void disable() {
     	no_color = true;
     }

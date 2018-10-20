@@ -21,13 +21,14 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 import sam.config.Properties2;
-import sam.reference.ReferenceList;
+import sam.logging.MyLoggerFactory;
+import sam.reference.WeakList;
 
 public final class InternetUtils {
 	public static final double VERSION = 1.24;
 	public static final String REQUIRED = "1509532146836-internet-utils.properties";
 
-	final Logger logger = Logger.getLogger(InternetUtils.class.getSimpleName());
+	final Logger logger = MyLoggerFactory.logger(InternetUtils.class.getSimpleName());
 	public  static final int DEFAULT_CONNECT_TIMEOUT;
 	public  static final int DEFAULT_READ_TIMEOUT;
 	public  static final String DEFAULT_USER_AGENT;
@@ -40,7 +41,7 @@ public final class InternetUtils {
 	public  boolean SHOW_WARNINGS;
 	public  int BUFFER_SIZE;
 
-	private final ReferenceList<byte[]> buffers0;
+	private final WeakList<byte[]> buffers0;
 	
 	private static Properties2 config0() {
 		try {
@@ -87,7 +88,7 @@ public final class InternetUtils {
 		return s != null ? Integer.parseInt(s) : defaultValue; 
 	}
 	public  InternetUtils(boolean threadSafe) {
-		buffers0 = !threadSafe ? null : new ReferenceList<>(true, () -> new byte[BUFFER_SIZE]);
+		buffers0 = !threadSafe ? null : new WeakList<>(true, () -> new byte[BUFFER_SIZE]);
 		
 		Properties2 config = config();
 

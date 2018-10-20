@@ -19,7 +19,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,6 +28,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import sam.config.MyConfig;
+import sam.logging.MyLoggerFactory;
 import sam.myutils.MyUtilsPath;
 import sam.sql.sqlite.SQLiteDB;
 import sam.string.StringUtils;
@@ -46,14 +46,14 @@ public class BooksDB extends SQLiteDB {
 		BACKUP_FOLDER = APP_FOLDER.resolve("backups").normalize();
 	}
 
-	public BooksDB() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+	public BooksDB() throws  SQLException {
 		this(DB);
 	}
-	public BooksDB(Path dbpath) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+	public BooksDB(Path dbpath) throws  SQLException {
 		super(dbpath);
 	}
-	public int changeBookStatus(List<BookBase> book, BookStatus newStatus) throws Exception {
-		return changeBookStatus(book.stream().collect(Collectors.toMap(BookBase::getBookId, BookBase::getFullPath, (o,n) -> n)), newStatus);
+	public int changeBookStatus(List<BookImpl> book, BookStatus newStatus) throws Exception {
+		return changeBookStatus(book.stream().collect(Collectors.toMap(BookImpl::getBookId, BookImpl::getFullPath, (o,n) -> n)), newStatus);
 	}
 	public int changeBookStatus(Map<Integer, Path> bookIdPathMap, final BookStatus newStatus) throws Exception {
 		Objects.requireNonNull(newStatus);
@@ -69,7 +69,7 @@ public class BooksDB extends SQLiteDB {
 		Map<Integer, String> bookIdFileNameMap = collectToMap(qm().select(BOOK_ID,FILE_NAME).from(TABLE_NAME).where(w -> w.in(BOOK_ID, bookIdPathMap.keySet(), false)).build(), rs -> rs.getInt(BOOK_ID), rs -> rs.getString(FILE_NAME));
 		
 		try {
-			Logger logger = Logger.getLogger(getClass().getSimpleName()); 
+			Logger logger = MyLoggerFactory.logger(getClass().getSimpleName()); 
 			
 			for (Entry<Integer, Path> entry : bookIdPathMap.entrySet()) {
 				Path path = Objects.requireNonNull(entry.getValue());
@@ -172,13 +172,5 @@ public class BooksDB extends SQLiteDB {
 	public static String toJson(int book_id, String isbn, String name) {
 		String format = "{\"id\":%d, \"isbn\":\"%s\", \"book_name\":\"%s\"}";
 		return String.format(format, book_id, isbn, name);
-	}
-	public HashMap<Integer, String> pathsMap() throws SQLException {
-		String pathSql = qm().selectAllFrom(BookPathMeta.TABLE_NAME).build();
-		return collectToMap(pathSql, rs -> rs.getInt(BookPathMeta.PATH_ID), rs -> rs.getString(BookPathMeta.PATH));
-	}
-	public static HashMap<Integer, String> pathsMap(SQLiteDB db) throws SQLException {
-		String pathSql = qm().selectAllFrom(BookPathMeta.TABLE_NAME).build();
-		return db.collectToMap(pathSql, rs -> rs.getInt(BookPathMeta.PATH_ID), rs -> rs.getString(BookPathMeta.PATH));
 	}
 }

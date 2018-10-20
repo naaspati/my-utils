@@ -6,13 +6,19 @@ import static sam.string.StringUtils.isEmptyTrimmed;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import sam.logging.MyLoggerFactory;
 
 public class TextSearchPredicate<E> {
 	private final Function<E, String> mapper;
 	final boolean isFieldLowerCased;
+	private String currentSearchedText;
 	public final Predicate<E> TRUE_ALL = s -> true;
 	public final Predicate<E> FALSE_ALL = s -> false;
+	private Predicate<E> _filter = TRUE_ALL;
+	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearchPredicate.class.getSimpleName());
 	
 	public TextSearchPredicate(Function<E, String> mapper, boolean isFieldLowerCased) {
 		this.mapper = mapper;
@@ -22,9 +28,9 @@ public class TextSearchPredicate<E> {
 	private String get(E e) {
 		return mapper.apply(e);
 	}
-	private Predicate<E> _filter;
 	public Predicate<E> createFilter(String searchKeyword){
 		_filter = filter0(searchKeyword);
+		LOGGER.fine(() -> "Filter created for: "+searchKeyword);
 		return _filter; 
 	}
 	public Predicate<E> getFilter() {
@@ -32,14 +38,18 @@ public class TextSearchPredicate<E> {
 	}
 	private static final Pattern pattern = Pattern.compile("\\s+");
 	
+	public String getCurrentSearchedText() {
+		return currentSearchedText;
+	}
 	private Predicate<E> filter0(String searchKeyword){
+		currentSearchedText = searchKeyword;
 		if(isEmpty(searchKeyword)) {
-			return TRUE_ALL;
+			return (Predicate<E>) TRUE_ALL;
 		} else {
 			if(isEmptyTrimmed(searchKeyword))
 				return (d -> get(d).contains(searchKeyword));
 			else {
-				final String str = isFieldLowerCased ? searchKeyword.toLowerCase() : searchKeyword;
+				final String str = currentSearchedText = isFieldLowerCased ? searchKeyword.toLowerCase() : searchKeyword;
 				if(!containsAny(str.trim(), ' ', '\n', '\t'))
 					return (d -> get(d).contains(str));
 				else {
@@ -51,6 +61,10 @@ public class TextSearchPredicate<E> {
 				}
 			}
 		}
+	}
+	public void reset() {
+		_filter = TRUE_ALL;
+		currentSearchedText = null;
 	}
 
 }

@@ -20,7 +20,7 @@ public class Update extends QueryMakerBase {
         count++;
         return sb;
     }
-
+    
     public Update set(String columnName, int value) {
         _append(columnName).append(value);
         return this;

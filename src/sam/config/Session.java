@@ -1,5 +1,9 @@
 package sam.config;
 
+import static sam.myutils.MyUtilsException.noError;
+import static sam.myutils.MyUtilsPath.resolveToClassLoaderPath;
+import static sam.myutils.System2.lookup;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -19,20 +23,14 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import sam.logging.MyLoggerFactory;
+
 public class Session {
 	public static final double VERSION = 0.401;
 
 	private static volatile Map<String, String> store;
-	private static Path path;
 	private static boolean modified = false;
 
-	public static void setPath(Path path) {
-		Objects.requireNonNull(path, "session path cannot be null");
-		Session.path = path;
-	}
-	public static Path getPath() {
-		return path;
-	}
 	private static volatile boolean threadSafe; 
 	public static void makeThreadSafe() {
 		if(threadSafe)
@@ -57,15 +55,13 @@ public class Session {
 			synchronized (Session.class) {
 				if(store == null) {
 					store = new LinkedHashMap<>();
+					Path path = null;
 					try {
-						if(path == null)
-							path = Paths.get(ClassLoader.getSystemResource(".").toURI());
-						if(Files.isDirectory(path))
-							path  = path.resolve("session.properties");
+						path = path();
+						
+						logger().config("session_file: "+path);
 
-						if(Files.notExists(path))
-							logger().warning(path.getFileName()+" not found, at path:"+path+"  thus will be created");
-						else {
+						if(Files.exists(path)) {
 							Files.lines(path)
 							.filter(s ->  !s.trim().startsWith("#") && s.indexOf('=') > 0)
 							.map(Session::parseKeyValue)
@@ -80,13 +76,38 @@ public class Session {
 						try {
 							save();
 						} catch (IOException | URISyntaxException e) {
-							logger().severe("failed to save session:"+path+"  "+e);
+							logger().severe("failed to save session:"+noError(() -> path())+"  "+e);
 						}
 					}));
 				}
 			}
 		}
 	}
+
+	private static Path sessionFile;
+
+	private static Path path() throws URISyntaxException {
+		if(sessionFile != null) return sessionFile;
+
+		String s = lookup("session_file");
+		Path p = null;
+
+		if(s == null)
+			logger().warning("session_file variable not set");
+		else 
+			p = Paths.get(s);
+
+		if(p != null) {
+			if(Files.exists(p))
+				return sessionFile = p;
+			if(Files.isDirectory(p))
+				return sessionFile = p.resolve("session.properties");
+			p = null;
+		}
+
+		return sessionFile = resolveToClassLoaderPath("session.properties");
+	}
+
 	private static String[] parseKeyValue(String s) {
 		int n = s.indexOf('=');
 		String key = s.substring(0, n);
@@ -102,7 +123,7 @@ public class Session {
 		}
 		String value = unescapeString(key.length() == s.length() - 1 ? "" : s.substring(n + 1));
 		key = unescapeKey(key);
-		
+
 		return new String[] {key, value};
 	}
 
@@ -135,15 +156,15 @@ public class Session {
 	private static String escapeString(String string) {
 		if(string == null || string.isEmpty())
 			return string;
-		
+
 		if(string.indexOf('\r') == -1 && string.indexOf('\n') == -1)
 			return string;
-		
+
 		//string.replace("\r", "\\r").replace("\n", "\\n")
-		
+
 		char[] chars = string.toCharArray();
 		StringBuilder sb = new StringBuilder(chars.length);
-		
+
 		for (char c : chars) {
 			if(c == '\r' || c == '\n')
 				sb.append(c == '\r' ? "\\r" : "\\n");
@@ -152,7 +173,7 @@ public class Session {
 		}
 		return sb.toString();
 	}
-	
+
 	private static int countPrecedingBackwordSlashes(char[] chars, int startAt) {
 		if(chars[startAt - 1] == '\\') {
 			int i = 2;
@@ -163,7 +184,7 @@ public class Session {
 			return 0;
 	}
 	private static Logger logger() {
-		return Logger.getLogger(Session.class.getCanonicalName());
+		return MyLoggerFactory.logger(Session.class.getCanonicalName());
 	}
 
 	public static String get(String key) {
@@ -194,10 +215,10 @@ public class Session {
 
 		if(key.trim().isEmpty())
 			throw new IllegalArgumentException("key cannot be a empty string");
-		
+
 		if(value == null)
 			throw new NullPointerException("value cannot be a null");
-			
+
 		init();
 		String oldValue = store.get(key);
 		modified = modified || !Objects.equals(oldValue, value);
@@ -212,7 +233,7 @@ public class Session {
 	public static void forEach(BiConsumer<String, String> action) {
 		store.forEach(action);
 	}
-	
+
 	public static void save() throws IOException, URISyntaxException {
 		if(!modified)
 			return;
@@ -220,6 +241,8 @@ public class Session {
 		modified = false;
 
 		String date = "# --TIME -> "+LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))+"  VERSION: "+VERSION;
+		
+		Path path = path();
 
 		if(path == null)
 			path = Paths.get(ClassLoader.getSystemResource(".").toURI()).resolve("session.properties");
@@ -233,22 +256,22 @@ public class Session {
 						String[] keyValue = parseKeyValue(s);
 						String key = keyValue[0];
 						String value = keyValue[1];
-						
+
 						if(!has(key))
 							return null;
-						
+
 						String newValue = get(key);
 						remove(key);
-						
+
 						if(Objects.equals(value, newValue))
 							return s;
-						
+
 						return escapeKey(key)+"="+escapeString(newValue);
 					})
 					.filter(s -> s != null)
 					.collect(Collectors.toList());
 
-			
+
 			if(!list.isEmpty() && list.get(0).startsWith("# --TIME -> "))
 				list.set(0, date);
 			else

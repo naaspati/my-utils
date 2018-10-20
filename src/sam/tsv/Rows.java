@@ -121,6 +121,7 @@ interface Rows {
      */
     default Row removeFirstWhere(int index, String value){
         Iterator<Row> itr = tsv().rows.iterator();
+        
         while (itr.hasNext()) {
             Row row = itr.next();
             

@@ -4,8 +4,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import javafx.scene.control.Hyperlink;
-import sam.fileutils.FileOpenerNE;
 import sam.fx.popup.FxPopupShop;
+import sam.io.fileutils.FileOpenerNE;
 
 public interface FxHyperlink {
 

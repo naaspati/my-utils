@@ -1,5 +1,6 @@
 package sam.manga.samrock.chapters;
 
+import static sam.collection.Iterables.wrap;
 import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTER_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.NAME;
@@ -25,7 +26,6 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +38,10 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import sam.collection.Iterable2;
 import sam.collection.Iterables;
 import sam.config.MyConfig;
-import sam.fileutils.FileNameSanitizer;
+import sam.io.fileutils.FileNameSanitizer;
 import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MangaUtils;
 import sam.manga.samrock.mangas.MangasMeta;
@@ -259,14 +260,13 @@ public class ChapterUtils {
 		if(source.isEmpty())
 			return;
 
-		Iterator<ChapterWithMangaId> itr = source.iterator();
-		while (itr.hasNext()) {
-			ChapterWithMangaId c = itr.next();
+		source.removeIf(c -> {
 			if(c.getMangaId() == manga_id) {
-				itr.remove();
 				sink.put(c.getFileName(), c);
+				return true;
 			}
-		}
+			return false;
+		});
 	}
 	public Map<Integer, List<Chapter>> getChapters(Iterable<Integer> mangaIds) throws SQLException {
 		Map<Integer, List<Chapter>> map = new HashMap<>();
@@ -336,7 +336,7 @@ public class ChapterUtils {
 		db.executeUpdate(qm().update(TABLE_NAME).set(READ, 0).where(w -> w.in(CHAPTER_ID, ids2)).build());
 	}
 	private int deleteChapters(Iterable<Chapter> chapters, StringBuilder logger) throws SQLException {
-		Iterator<Chapter> itr = chapters.iterator(); 
+		Iterable2<Chapter> itr = wrap(chapters); 
 		if(!itr.hasNext())
 			return 0 ;
 
@@ -345,14 +345,14 @@ public class ChapterUtils {
 
 		if(logger != null) {
 			logger.append("chapters deleted: \n");
-			for (Chapter c : Iterables.of(itr)) logger.append("   ").append(c.getFileName()).append('\n');
+			for (Chapter c : itr) logger.append("   ").append(c.getFileName()).append('\n');
 			logger.append(" executes: ").append(executes).append('\n');
 		}
 		return executes;
 	}
 	public int deleteChapters(Iterable<Integer> chapterIds) throws SQLException {
 		Objects.requireNonNull(chapterIds);
-		Iterator<Integer> itr = chapterIds.iterator();
+		Iterable2<Integer> itr = wrap(chapterIds);
 		Objects.requireNonNull(itr);
 
 		if(!itr.hasNext())
@@ -381,7 +381,7 @@ public class ChapterUtils {
 	}
 
 	private int insertNewChapters(int mangaId, Iterable<Chapter> chapters, StringBuilder logger) throws SQLException {
-		Iterator<Chapter> itr = chapters.iterator();
+		Iterable2<Chapter> itr = wrap(chapters);
 
 		if(!itr.hasNext())
 			return 0;
@@ -396,7 +396,7 @@ public class ChapterUtils {
 				READ),
 
 				ps -> {
-					for (Chapter ch : Iterables.of(itr)) {
+					for (Chapter ch : itr) {
 						if(logger != null)
 							logger.append("   ").append(ch.getFileName()).append('\n');
 

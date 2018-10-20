@@ -12,9 +12,13 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import sam.logging.MyLoggerFactory;
+
 public class Properties2 {
+	private static final Logger LOGGER = MyLoggerFactory.logger(Properties2.class.getSimpleName());
 
 	private final Properties properties = new Properties();
 	private final HashMap<String, String> parsed = new HashMap<>();
@@ -66,6 +70,11 @@ public class Properties2 {
 		return parsed.containsKey(key);
 	}
 	public String get(String key) {
+		String s = get0(key);
+		LOGGER.fine(() -> key+"="+s);
+		return s;
+	}
+	private  String get0(String key) {
 		String value = parsed.get(key);
 
 		if(value != null)

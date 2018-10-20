@@ -25,7 +25,7 @@ public interface FxCell {
 	}
 	
 	public static <E> Callback<ListView<E>, ListCell<E>> listCell(Function<E, String> mapper) {
-		return listCell((cell, e) -> mapper.apply(e));
+		return listCell((cell, e) -> cell.setText(mapper.apply(e)));
 	}
 
 }

@@ -42,24 +42,45 @@ public class StringUtils {
 	public static Stream<String> splitStream(String string, char c) {
 		return splitStream(string, c, Integer.MAX_VALUE);
 	}
+	public static String[] splitAtNewline(String string) {
+		return splitAtNewline(string, Integer.MAX_VALUE);
+	}
+	public static String[] splitAtNewline(String string, int limit) {
+		return splitAtNewlineStream(string).toArray(String[]::new);
+	}
+	
+	public static Stream<String> splitAtNewlineStream(String string) {
+		return splitAtNewlineStream(string, Integer.MAX_VALUE);
+	}
+	public static Stream<String> splitAtNewlineStream(String string, int limit) {
+		return splitStream(string, '\n', limit).map(s -> s.isEmpty() || s.charAt(s.length() - 1) != '\r' ? s : s.substring(0, s.length() - 1));
+	}
 	public static Stream<String> splitStream(String string, char c, int limit) {
 		Objects.requireNonNull(string);
 		if(isEmpty(string))
 			return Stream.empty();
-		
-		int limit2 = limit - 1;
 
-		Spliterator<String> sp = Spliterators.spliteratorUnknownSize(new Iterator<String>() {
+		Spliterator<String> sp = Spliterators.spliteratorUnknownSize(new StringSplitIterator(string, c, limit), Spliterator.IMMUTABLE);
+		return StreamSupport.stream(sp, false);
+	}
+	
+	public static class StringSplitIterator implements Iterator<String> {
 			String current;
 			int start = 0;
 			int count = 0;
-
-			{
+			private final String string;
+			private final char c;
+			private final int limit;
+			
+			public StringSplitIterator(String string, char c, int limit) {
+				this.string = string;
+				this.c = c;
+				this.limit = limit - 1;
 				current = next0();
 			}
 
 			private String next0() {
-				if(count < limit2) {
+				if(count < limit) {
 					for (int end = start; end < string.length(); end++) {
 						if(string.charAt(end) == c) {
 							String s = string.substring(start, end); 
@@ -89,9 +110,6 @@ public class StringUtils {
 				this.current = next0();
 				return ss;
 			}
-		}, Spliterator.IMMUTABLE);
-
-		return StreamSupport.stream(sp, false);
 	}
 	/**
 	 * joinIfNotEndsWithSeparator("anime", "sanam", "/") -> anime/sanam

@@ -6,81 +6,90 @@ import static sam.anime.meta.AnimesMeta.GENRES;
 import static sam.anime.meta.AnimesMeta.MAL_ID;
 import static sam.anime.meta.AnimesMeta.SYNOPSIS;
 import static sam.anime.meta.AnimesMeta.TABLE_NAME;
-import static sam.anime.meta.AnimesMeta.TITLE;
-import static sam.anime.meta.RelatedAnimesMeta.ID1;
-import static sam.anime.meta.RelatedAnimesMeta.ID2;
+import static sam.sql.querymaker.QueryMaker.qm;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import sam.anime.db.AnimeDB;
-import sam.anime.meta.AnimeDirsMeta;
-import sam.anime.meta.AnimeUrlsMeta;
 import sam.anime.meta.RelatedAnimesMeta;
 import sam.anime.meta.TitleSynonymsMeta;
-import sam.sql.querymaker.Select;
+import sam.anime.meta.UrlsMeta;
+import sam.myutils.MyUtilsException;
+import sam.sql.SqlFunction;
 
-public class Anime {
-	private final int mal_id;
-	private String title;
+public class Anime extends MinimalAnime {
+	public static final String SELECT_BY_MAL_ID = qm().selectAll().from(TABLE_NAME).where(w -> w.eq(MAL_ID, "", false)).build();
+
 	private String episodes;
 	private String aired;
 	private String genre;
 	private String synopsis;
-	
+
 	private String jikanJson;
 
-	private final AnimeDB db;
-
-	private final AnimeList<String> title_synonyms;
-	private final AnimeList<AnimeDir> dirs;
-	private final AnimeList<String> urls;
-	private final AnimeList<MinimalAnime> relatedAnimes;
+	private AnimeList<String> title_synonyms;
+	private AnimeList<MinimalAnimeDir> dirs;
+	private AnimeList<String> urls;
+	private AnimeList<MinimalAnime> relatedAnimes;
 
 	public Anime(int mal_id) {
-		this.db = null;
-		this.mal_id = mal_id;
-
-		title_synonyms = new  AnimeList<>(mal_id); 
-		dirs = new  AnimeList<>(mal_id);
-		urls  = new  AnimeList<>(mal_id);
-		relatedAnimes  = new  AnimeList<>(mal_id);
+		super(mal_id, null);
 	}
-	public Anime(ResultSet rs0, AnimeDB db) throws SQLException {
-		this.mal_id = rs0.getInt(MAL_ID);
-		this.title = rs0.getString(TITLE);
-		this.episodes = rs0.getString(EPISODES);
-		this.aired = rs0.getString(AIRED);
-		this.genre = rs0.getString(GENRES);
-		this.synopsis = rs0.getString(SYNOPSIS);
-		this.db = db;
+	public Anime(ResultSet rs) throws SQLException {
+		super(rs);
+		this.episodes = rs.getString(EPISODES);
+		this.aired = rs.getString(AIRED);
+		this.genre = rs.getString(GENRES);
+		this.synopsis = rs.getString(SYNOPSIS);
+	}
+	protected <E> List<E> getter(String selectByMalIDSQL, SqlFunction<ResultSet, E> mapper, AnimeDB db) {
+		return MyUtilsException.noError(() -> db.collectToList(selectByMalIDSQL+mal_id, mapper));
+	}
 
-		this.title_synonyms = new AnimeList<>(mal_id, TitleSynonymsMeta.TITLE_SYNONYMS, TitleSynonymsMeta.TABLE_NAME, rs -> rs.getString(TitleSynonymsMeta.TITLE_SYNONYMS));
-		this.dirs = new AnimeList<>(mal_id, new String[] {AnimeDirsMeta.SUBPATH, AnimeDirsMeta.LAST_MODIFIED}, AnimeDirsMeta.TABLE_NAME, AnimeDir::new);
-		this.urls = new AnimeList<>(mal_id, AnimeUrlsMeta.URL, AnimeUrlsMeta.TABLE_NAME, rs -> rs.getString(AnimeUrlsMeta.URL));
+	@Override
+	public void setTitle(String title) {
+		super.setTitle(title);
+	}
+	public AnimeList<MinimalAnimeDir> getDirs(){
+		if(dirs != null) return dirs;
+		this.dirs = new AnimeList<>(mal_id, this::getDirs);
+		return this.dirs; 
+	}
+	protected List<MinimalAnimeDir> getDirs(AnimeDB db){
+		return getter(MinimalAnimeDir.SELECT_BY_MAL_ID_SQL, AnimeDir::new, db);
+	}
+	public AnimeList<String> getTitleSynonyms(){
+		if(title_synonyms != null) return title_synonyms;
+		this.title_synonyms = new AnimeList<>(mal_id, this::getTitleSynonyms);
+		return this.title_synonyms; 
+	}
+	protected List<String> getTitleSynonyms(AnimeDB db){
+		return getter(TitleSynonymsMeta.SELECT_BY_MAL_ID, rs -> rs.getString(1), db);
+	}
+	
+	public AnimeList<String> getUrls(){ 
+		if(urls != null) return urls;
+		this.urls = new AnimeList<>(mal_id, this::getUrls);
+		return this.urls; 
+	}
+	protected List<String> getUrls(AnimeDB db){
+		return getter(UrlsMeta.SELECT_BY_MAL_ID, rs -> rs.getString(1), db);
+	}
+	public AnimeList<MinimalAnime> getRelatedAnimes() {
+		if(relatedAnimes != null) return relatedAnimes;
 		this.relatedAnimes = new AnimeList<>(mal_id, this::relatedAnimesFill);
+		return this.relatedAnimes; 
 	}
-	
-	private List<MinimalAnime> relatedAnimesFill(AnimeDB db) throws SQLException{
-		
-		String sql = new Select().distinct()
-				.columns(MAL_ID, TITLE)
-				.from(TABLE_NAME)
-				.where(w -> w.inSubSelect(MAL_ID, select -> select.columns(ID1).from(RelatedAnimesMeta.TABLE_NAME).where(w2 -> w2.eq(ID2, mal_id))).or().inSubSelect(MAL_ID, select -> select.columns(ID2).from(RelatedAnimesMeta.TABLE_NAME).where(w2 -> w2.eq(ID1, mal_id)))).build();
-		
-		return db.collectToList(sql, MinimalAnime::new);
+	protected int[] getRelatedAnimeMalIds(AnimeDB db) {
+		String sql = qm().selectAll().from(RelatedAnimesMeta.TABLE_NAME).where(w -> w.eq(RelatedAnimesMeta.ID1, mal_id).or().eq(RelatedAnimesMeta.ID2, mal_id)).build();
+		return MyUtilsException.noError(() -> db.stream(sql, rs -> IntStream.of(rs.getInt(1), rs.getInt(2))).flatMapToInt(i -> i).distinct().filter(id -> id != mal_id).toArray());
 	}
-	
-	public AnimeList<AnimeDir> getDirs(){ return this.dirs; }
-	public AnimeList<String> getTitleSynonyms(){ return this.title_synonyms; }
-	public AnimeList<String> getUrls(){ return this.urls; }
-	public AnimeList<MinimalAnime> getRelatedAnimes() { return relatedAnimes; }
-
-	public int getMalId(){ return this.mal_id; }
-
-	public String getTitle(){ return this.title; }
-	public void setTitle(String title){ this.title=title; }
+	protected List<MinimalAnime> relatedAnimesFill(AnimeDB db) {
+		return MyUtilsException.noError(() -> db.collectToList(qm().select(MinimalAnime.columns()).from(TABLE_NAME).where(w -> w.in(MAL_ID, getRelatedAnimeMalIds(db))).build(), MinimalAnime::new));
+	}
 
 	public String getEpisodes(){ return this.episodes; }
 	public void setEpisodes(String episodes){ this.episodes=episodes; }
@@ -99,8 +108,8 @@ public class Anime {
 
 	@Override
 	public String toString() {
-		return "Anime [mal_id=" + mal_id + ", title=" + title + ", episodes=" + episodes + ", aired=" + aired
-				+ ", genre=" + genre + ", synopsis=" + synopsis + ", jikanJson=" + jikanJson + ", db=" + db
+		return "Anime [mal_id=" + mal_id + ", title=" + getTitle() + ", episodes=" + episodes + ", aired=" + aired
+				+ ", genre=" + genre + ", synopsis=" + synopsis + ", jikanJson=" + jikanJson 
 				+ ", title_synonyms=" + title_synonyms + ", dirs=" + dirs + ", links=" + urls + "]";
 	}
 }

@@ -27,380 +27,292 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
-import sam.sql.SqlBiConsumer;
+import sam.collection.Iterables;
 import sam.sql.sqlite.SQLiteDB;
+import sam.string.StringUtils;
 
 public abstract class PreparedStatementMakerBatch<E> {
-	protected final String tableName;
-	protected ArrayList<SqlBiConsumer<PreparedStatement, E>> pss = new ArrayList<>();
-	protected ArrayList<String> columnNames = new ArrayList<>();
+	private final ArrayList<CustomConsumer2<E>> pss;
+	
+	public PreparedStatementMakerBatch() {
+		this.pss = new ArrayList<>();
+	}
+	public PreparedStatementMakerBatch(PreparedStatementMakerBatch<E> from) {
+		this.pss = from.pss;
+	}
+	private void add(String columnName, CustomConsumer2<E> s) {
+		if(StringUtils.isEmptyTrimmed(columnName))
+			throw new IllegalArgumentException("invalid columnname: "+columnName);
+		
+		addColumn(columnName);
+		pss.add(s);
+	}
+	protected abstract void addColumn(String columnName);
 
-	protected  PreparedStatementMakerBatch(String tableName) {
-		this.tableName = tableName;
-	}
-	public PreparedStatementMakerBatch<E> setNull(String columnName, ToIntFunction<E> sqlType)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setNull(n, sqlType.applyAsInt(e)));
-		return this;
-	}
-
-	public PreparedStatementMakerBatch<E> setBoolean(String columnName, Function<E, Boolean> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setBoolean(n, x.apply(e)));
-		return this;
-	}
-
-	public PreparedStatementMakerBatch<E> setByte(String columnName, Function<E, Byte> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setByte(n, x.apply(e)));
-		return this;
-	}
-	public PreparedStatementMakerBatch<E> setShort(String columnName, Function<E, Short> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setShort(n, x.apply(e)));
-		return this;
+	public void setNull(String columnName, ToIntFunction<E> sqlType)  {
+		add(columnName, (n, ps, e) -> ps.setNull(n, sqlType.applyAsInt(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setInt(String columnName, ToIntFunction<E> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setInt(n, x.applyAsInt(e)));
-		return this;
+	public void setBoolean(String columnName, Function<E, Boolean> x)  {
+		add(columnName, (n, ps, e) -> ps.setBoolean(n, x.apply(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setLong(String columnName, ToLongFunction<E> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setLong(n, x.applyAsLong(e)));
-		return this;
+	public void setByte(String columnName, Function<E, Byte> x)  {
+		add(columnName, (n, ps, e) -> ps.setByte(n, x.apply(e)));
+	}
+	public void setShort(String columnName, Function<E, Short> x)  {
+		add(columnName, (n, ps, e) -> ps.setShort(n, x.apply(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setFloat(String columnName, Function<E, Float> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setFloat(n, x.apply(e)));
-		return this;
+	public void setInt(String columnName, ToIntFunction<E> x)  {
+		add(columnName,(n, ps, e) -> ps.setInt(n, x.applyAsInt(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setDouble(String columnName, ToDoubleFunction<E> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setDouble(n, x.applyAsDouble(e)));
-		return this;
+	public void setLong(String columnName, ToLongFunction<E> x)  {
+		add(columnName,(n, ps, e) -> ps.setLong(n, x.applyAsLong(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setBigDecimal(String columnName, Function<E, BigDecimal> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setBigDecimal(n, x.apply(e)));
-		return this;
+	public void setFloat(String columnName, Function<E, Float> x)  {
+		add(columnName, (n, ps, e) -> ps.setFloat(n, x.apply(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setString(String columnName, Function<E, String> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setString(n, x.apply(e)));
-		return this;
+	public void setDouble(String columnName, ToDoubleFunction<E> x)  {
+		add(columnName, (n, ps, e) -> ps.setDouble(n, x.applyAsDouble(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setBytes(String columnName, Function<E, byte[]> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setBytes(n, x.apply(e)));
-		return this;
+	public void setBigDecimal(String columnName, Function<E, BigDecimal> x)  {
+		add(columnName, (n, ps, e) -> ps.setBigDecimal(n, x.apply(e)));
 	}
 
-	public PreparedStatementMakerBatch<E> setDate(String columnName, Function<E, Date> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setDate(n, x.apply(e)));
-		return this;
+	public void setString(String columnName, Function<E, String> x)  {
+		add(columnName, (n, ps, e) -> ps.setString(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setTime(String columnName, Function<E, Time> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setTime(n, x.apply(e)));
-		return this;
+	public void setBytes(String columnName, Function<E, byte[]> x)  {
+		add(columnName, (n, ps, e) -> ps.setBytes(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setTimestamp(String columnName, Function<E, Timestamp> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setTimestamp(n, x.apply(e)));
-		return this;
+	public void setDate(String columnName, Function<E, Date> x)  {
+		add(columnName, (n, ps, e) -> ps.setDate(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setAsciiStream(String columnName, Function<E, InputStream> x, ToIntFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setAsciiStream(n, x.apply(e), length.applyAsInt(e)));
-		return this;
+	public void setTime(String columnName, Function<E, Time> x)  {
+		add(columnName, (n, ps, e) -> ps.setTime(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setBinaryStream(String columnName, Function<E, InputStream> x, ToIntFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setBinaryStream(n, x.apply(e), length.applyAsInt(e)));
-		return this;
+	public void setTimestamp(String columnName, Function<E, Timestamp> x)  {
+		add(columnName, (n, ps, e) -> ps.setTimestamp(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setObject(String columnName, Function<E, Object> x, ToIntFunction<E> targetSqlType)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.applyAsInt(e)));
-		return this;
+	public void setAsciiStream(String columnName, Function<E, InputStream> x, ToIntFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setAsciiStream(n, x.apply(e), length.applyAsInt(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setObject(String columnName, Function<E, Object> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setObject(n, x.apply(e)));
-		return this;
+	public void setBinaryStream(String columnName, Function<E, InputStream> x, ToIntFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setBinaryStream(n, x.apply(e), length.applyAsInt(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setCharacterStream(String columnName, Function<E, Reader> reader, ToIntFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setCharacterStream(n, reader.apply(e), length.applyAsInt(e)));
-		return this;
+	public void setObject(String columnName, Function<E, Object> x, ToIntFunction<E> targetSqlType)  {
+		add(columnName, (n,ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.applyAsInt(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setRef(String columnName, Function<E, Ref> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setRef(n, x.apply(e)));
-		return this;
+	public void setObject(String columnName, Function<E, Object> x)  {
+		add(columnName, (n, ps, e) -> ps.setObject(n, x.apply(e)));
+
+	}
+
+	public void setCharacterStream(String columnName, Function<E, Reader> reader, ToIntFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setCharacterStream(n, reader.apply(e), length.applyAsInt(e)));
+
+	}
+
+	public void setRef(String columnName, Function<E, Ref> x)  {
+		add(columnName, (n, ps, e) -> ps.setRef(n, x.apply(e)));
+
 	}
 
 
 
-	public PreparedStatementMakerBatch<E> setArray(String columnName, Function<E, Array> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setArray(n, x.apply(e)));
-		return this;
+	public void setArray(String columnName, Function<E, Array> x)  {
+		add(columnName, (n, ps, e) -> ps.setArray(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setDate(String columnName, Function<E, Date> x, Function<E, Calendar> cal)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setDate(n, x.apply(e), cal.apply(e)));
-		return this;
+	public void setDate(String columnName, Function<E, Date> x, Function<E, Calendar> cal)  {
+		add(columnName, (n,ps,e) -> ps.setDate(n, x.apply(e), cal.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setTime(String columnName, Function<E, Time> x, Function<E, Calendar> cal)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setTime(n, x.apply(e), cal.apply(e)));
-		return this;
+	public void setTime(String columnName, Function<E, Time> x, Function<E, Calendar> cal)  {
+		add(columnName, (n,ps,e) -> ps.setTime(n, x.apply(e), cal.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setTimestamp(String columnName, Function<E, Timestamp> x, Function<E, Calendar> cal)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setTimestamp(n, x.apply(e), cal.apply(e)));
-		return this;
+	public void setTimestamp(String columnName, Function<E, Timestamp> x, Function<E, Calendar> cal)  {
+		add(columnName, (n,ps,e) -> ps.setTimestamp(n, x.apply(e), cal.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNull(String columnName, ToIntFunction<E> sqlType, Function<E, String> typeName)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setNull(n, sqlType.applyAsInt(e), typeName.apply(e)));
-		return this;
+	public void setNull(String columnName, ToIntFunction<E> sqlType, Function<E, String> typeName)  {
+		add(columnName, (n,ps,e) -> ps.setNull(n, sqlType.applyAsInt(e), typeName.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setURL(String columnName, Function<E, URL> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setURL(n, x.apply(e)));
-		return this;
+	public void setURL(String columnName, Function<E, URL> x)  {
+		add(columnName, (n, ps, e) -> ps.setURL(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setRowId(String columnName, Function<E, RowId> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setRowId(n, x.apply(e)));
-		return this;
+	public void setRowId(String columnName, Function<E, RowId> x)  {
+		add(columnName, (n, ps, e) -> ps.setRowId(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNString(String columnName, Function<E, String> value)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setNString(n, value.apply(e)));
-		return this;
+	public void setNString(String columnName, Function<E, String> value)  {
+		add(columnName, (n, ps, e) -> ps.setNString(n, value.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNCharacterStream(String columnName, Function<E, Reader> value, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setNCharacterStream(n, value.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setNCharacterStream(String columnName, Function<E, Reader> value, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setNCharacterStream(n, value.apply(e), length.applyAsLong(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNClobByReader(String columnName, Function<E, Reader> reader)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setNClob(n, reader.apply(e)));
-		return this;
+	public void setNClobByReader(String columnName, Function<E, Reader> reader)  {
+		add(columnName, (n, ps, e) -> ps.setNClob(n, reader.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNClob(String columnName, Function<E, NClob> value)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setNClob(n, value.apply(e)));
-		return this;
+	public void setNClob(String columnName, Function<E, NClob> value)  {
+		add(columnName, (n, ps, e) -> ps.setNClob(n, value.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setClob(String columnName,  Function<E, Reader> reader, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setClob(n, reader.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setClob(String columnName,  Function<E, Reader> reader, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setClob(n, reader.apply(e), length.applyAsLong(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setBlob(String columnName, Function<E, InputStream> inputStream, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setBlob(n, inputStream.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setBlob(String columnName, Function<E, InputStream> inputStream, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setBlob(n, inputStream.apply(e), length.applyAsLong(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNClob(String columnName,  Function<E, Reader> reader, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setNClob(n, reader.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setNClob(String columnName,  Function<E, Reader> reader, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setNClob(n, reader.apply(e), length.applyAsLong(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setSQLXML(String columnName, Function<E, SQLXML> xmlObject)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setSQLXML(n, xmlObject.apply(e)));
-		return this;
+	public void setSQLXML(String columnName, Function<E, SQLXML> xmlObject)  {
+		add(columnName, (n, ps, e) -> ps.setSQLXML(n, xmlObject.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setObject(String columnName, Function<E, Object> x, ToIntFunction<E> targetSqlType, ToIntFunction<E> scaleOrLength)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.applyAsInt(e), scaleOrLength.applyAsInt(e)));
-		return this;
+	public void setObject(String columnName, Function<E, Object> x, ToIntFunction<E> targetSqlType, ToIntFunction<E> scaleOrLength)  {
+		add(columnName, (n,ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.applyAsInt(e), scaleOrLength.applyAsInt(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setAsciiStream(String columnName, Function<E, InputStream> x, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setAsciiStream(n, x.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setAsciiStream(String columnName, Function<E, InputStream> x, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setAsciiStream(n, x.apply(e), length.applyAsLong(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setBinaryStream(String columnName, Function<E, InputStream> x, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setBinaryStream(n, x.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setBinaryStream(String columnName, Function<E, InputStream> x, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setBinaryStream(n, x.apply(e), length.applyAsLong(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setCharacterStream(String columnName,  Function<E, Reader> reader, ToLongFunction<E> length)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setCharacterStream(n, reader.apply(e), length.applyAsLong(e)));
-		return this;
+	public void setCharacterStream(String columnName,  Function<E, Reader> reader, ToLongFunction<E> length)  {
+		add(columnName, (n,ps,e) -> ps.setCharacterStream(n, reader.apply(e), length.applyAsLong(e)));
+
 	}
-	public PreparedStatementMakerBatch<E> setAsciiStream(String columnName, Function<E, InputStream> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setAsciiStream(n, x.apply(e)));
-		return this;
+	public void setAsciiStream(String columnName, Function<E, InputStream> x)  {
+		add(columnName, (n, ps, e) -> ps.setAsciiStream(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setBinaryStream(String columnName, Function<E, InputStream> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setBinaryStream(n, x.apply(e)));
-		return this;
+	public void setBinaryStream(String columnName, Function<E, InputStream> x)  {
+		add(columnName, (n, ps, e) -> ps.setBinaryStream(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setCharacterStream(String columnName, Function<E, Reader> reader)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setCharacterStream(n, reader.apply(e)));
-		return this;
+	public void setCharacterStream(String columnName, Function<E, Reader> reader)  {
+		add(columnName, (n, ps, e) -> ps.setCharacterStream(n, reader.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setNCharacterStream(String columnName, Function<E, Reader> value)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setNCharacterStream(n, value.apply(e)));
-		return this;
+	public void setNCharacterStream(String columnName, Function<E, Reader> value)  {
+		add(columnName, (n, ps, e) -> ps.setNCharacterStream(n, value.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setBlob(String columnName, Function<E, Blob> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setBlob(n, x.apply(e)));
-		return this;
+	public void setBlob(String columnName, Function<E, Blob> x)  {
+		add(columnName, (n, ps, e) -> ps.setBlob(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setClob(String columnName, Function<E, Clob> x)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setClob(n, x.apply(e)));
-		return this;
+	public void setClob(String columnName, Function<E, Clob> x)  {
+		add(columnName, (n, ps, e) -> ps.setClob(n, x.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setClobByReader(String columnName, Function<E, Reader> reader)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setClob(n, reader.apply(e)));
-		return this;
+	public void setClobByReader(String columnName, Function<E, Reader> reader)  {
+		add(columnName, (n, ps, e) -> ps.setClob(n, reader.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setBlobByInputStream(String columnName, Function<E, InputStream> inputStream)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps, e) -> ps.setBlob(n, inputStream.apply(e)));
-		return this;
+	public void setBlobByInputStream(String columnName, Function<E, InputStream> inputStream)  {
+		add(columnName, (n, ps, e) -> ps.setBlob(n, inputStream.apply(e)));
+
 	}
 
-	public PreparedStatementMakerBatch<E> setObject(String columnName, Function<E, Object> x, Function<E, SQLType> targetSqlType, ToIntFunction<E> scaleOrLength)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.apply(e), scaleOrLength.applyAsInt(e)));
-		return this;
+	public void setObject(String columnName, Function<E, Object> x, Function<E, SQLType> targetSqlType, ToIntFunction<E> scaleOrLength)  {
+		add(columnName, (n,ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.apply(e), scaleOrLength.applyAsInt(e)));
+
 	}
 
-	public  PreparedStatementMakerBatch<E> setObject(String columnName, Function<E, Object> x, Function<E, SQLType> targetSqlType)  {
-		int n = pss.size()+1;
-		this.columnNames.add(columnName);
-		pss.add((ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.apply(e)));
-		return this;
+	public void setObject(String columnName, Function<E, Object> x, Function<E, SQLType> targetSqlType)  {
+		add(columnName, (n,ps,e) -> ps.setObject(n, x.apply(e), targetSqlType.apply(e)));
 	} 
-
+	protected void check() {
+		if(isEmpty())
+			throw new IllegalStateException("empty preparedstatement");
+	}
 	public int execute(Connection connection, Iterable<E> data) throws SQLException  {
+		check();
 		return execute(connection.prepareStatement(toString()), data);
 	}
+	
 	public int execute(SQLiteDB db, Iterable<E> data) throws SQLException  {
 		return execute(db.prepareStatement(toString()), data);
 	}
 	private int execute(PreparedStatement prepareStatement, Iterable<E> data) throws SQLException  {
+		return execute2(prepareStatement, data).length;
+	}
+	private int[] execute2(PreparedStatement prepareStatement, Iterable<E> data) throws SQLException  {
 		Objects.requireNonNull(data);
 		Iterator<E> itr = data.iterator();
 		if(!itr.hasNext())
-			return 0;
+			return new int[0];
 
 		try(PreparedStatement ps = prepareStatement){
-			for (E e : data) {
-				for (SqlBiConsumer<PreparedStatement, E> c : pss) {
-					c.accept(ps, e);
-				}
+			for (E e : Iterables.of(itr)) {
+				int n = 1;
+				for (CustomConsumer2<E> c : pss) 
+					c.accept(n++, ps, e);
+				
 				ps.addBatch();
 			}
-			return ps.executeBatch().length;
+			return ps.executeBatch();
 		}
 	}
 	public boolean isEmpty() {

@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Objects;
 
-import sam.fileutils.StringToFileWriter;
+import sam.io.serilizers.StringWriter2;
 
 public class TsvSaver extends Escaper {
     private final boolean append;
@@ -55,6 +55,11 @@ public class TsvSaver extends Escaper {
         save(b, path, charset);
     }
     void save(StringBuilder data, Path path, Charset charset) throws IOException {
-        new StringToFileWriter(2 << 10).write(path, data, charset, append, onMalformedInput, onUnmappableCharacter);
+    	StringWriter2.writer()
+    	.charset(charset)
+    	.target(path, append)
+    	.onMalformedInput(onMalformedInput)
+    	.onUnmappableCharacter(onUnmappableCharacter)
+    	.write(data);
     }
 }

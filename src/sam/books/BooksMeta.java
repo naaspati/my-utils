@@ -1,6 +1,10 @@
 package sam.books;
 
+
+
 public interface BooksMeta {
+    String TABLE_NAME = "Books";
+
     String BOOK_ID = "_id";
     String NAME = "name";
     String FILE_NAME = "file_name";
@@ -11,6 +15,7 @@ public interface BooksMeta {
     String YEAR = "year";
     String DESCRIPTION = "description";
     String STATUS = "status";
-    
-    String TABLE_NAME = "Books";
+    String URL = "url";
+    String CREATED_ON = "created_on";
+
 }

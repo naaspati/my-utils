@@ -13,24 +13,26 @@ import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import sam.logging.MyLoggerFactory;
 
 public abstract class JDBCHelper implements AutoCloseable {
 	private Statement defaultStatement;
 	private final Connection connection;
+	private final Logger LOGGER = MyLoggerFactory.logger(getClass().getSimpleName());
 
 	protected JDBCHelper(Connection connection) {
 		this.connection = connection;
 	}
-	public Statement getDefaultStatement() {
-		return defaultStatement;
-	}
-	public void createDefaultStatement() throws SQLException {
+	public Statement getDefaultStatement() throws SQLException {
 		if(defaultStatement != null)
-			return;
-		defaultStatement = connection.createStatement();
+			return defaultStatement;
+		return defaultStatement = connection.createStatement();
 	}
+
 	public void commit() throws SQLException {
 		connection.commit();
 	}
@@ -44,16 +46,24 @@ public abstract class JDBCHelper implements AutoCloseable {
 		return connection.prepareStatement(sql);
 	}
 	public int executeUpdate(String sql) throws SQLException {
-		return getStatement().executeUpdate(sql); 
-	}
-	private Statement getStatement() throws SQLException {
-		return defaultStatement == null ? createStatement() : defaultStatement;
+		LOGGER.fine(() -> "UPDATE: "+sql);
+		return getDefaultStatement().executeUpdate(sql); 
 	}
 	public Statement createStatement() throws SQLException {
 		return connection.createStatement();
 	}
+	/**
+	 * .executeQuery(sql)
+	 * @param sql
+	 * @return
+	 * @throws SQLException
+	 */
+	public ResultSet query(String sql) throws SQLException {
+		LOGGER.fine(() -> "QUERY: "+sql);
+		return getDefaultStatement().executeQuery(sql);
+	}
 	public ResultSet executeQuery(String sql) throws SQLException {
-		return getStatement().executeQuery(sql);
+		return query(sql);
 	}
 	/**
 	 * <pre>
@@ -68,30 +78,12 @@ public abstract class JDBCHelper implements AutoCloseable {
 	 * @throws SQLException
 	 */
 	public <E> E executeQuery(String sql, SqlFunction<ResultSet, E> action) throws SQLException {
-		try(ResultSet rs = getStatement().executeQuery(sql)) {
+		try(ResultSet rs = query(sql)) {
 			return action.accept(rs);
 		}
 	}
-	/**
-	 * 
-	 * <pre>
-	 * try(ResultSet rs = statement.executeQuery(sql)) {
-	 *      while(rs.next()) action.accept(rs);
-	 * }
-	 * </pre>
-	 * 
-	 * @param sql
-	 * @param action
-	 * @return 
-	 * @throws SQLException
-	 */
-
-	public ResultSet rs(String sql) throws SQLException {
-		return getStatement().executeQuery(sql);
-	}
-
 	public void iterate(String sql, SqlConsumer<ResultSet> action) throws SQLException {
-		iterate(rs(sql), action);
+		iterate(query(sql), action);
 	}
 	public static void iterate(ResultSet rs, SqlConsumer<ResultSet> action) throws SQLException {
 		try(ResultSet rs2 = rs) {
@@ -99,10 +91,10 @@ public abstract class JDBCHelper implements AutoCloseable {
 		}
 	}
 	public <C extends Collection<E>, E> C collect(String sql,C sink, SqlFunction<ResultSet, E> mapper) throws SQLException {
-		return collect(rs(sql), sink, mapper); 
+		return collect(query(sql), sink, mapper); 
 	}
 	public <E> ArrayList<E> collectToList(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException {
-		return collect(rs(sql), new ArrayList<>(), mapper); 
+		return collect(query(sql), new ArrayList<>(), mapper); 
 	}
 	public static <E> ArrayList<E> collectToList(ResultSet rs, SqlFunction<ResultSet, E> mapper) throws SQLException {
 		return collect(rs, new ArrayList<>(), mapper); 
@@ -115,14 +107,14 @@ public abstract class JDBCHelper implements AutoCloseable {
 	}
 
 	public <K, V>  HashMap<K, V> collectToMap(String sql, SqlFunction<ResultSet, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
-		return collect(rs(sql), new HashMap<>(), keymapper, valuemapper);
+		return collect(query(sql), new HashMap<>(), keymapper, valuemapper);
 	}
 	public static <K, V>  HashMap<K, V> collectToMap(ResultSet rs, SqlFunction<ResultSet, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
 		return collect(rs, new HashMap<>(), keymapper, valuemapper);
 	}
 
 	public <M extends Map<K, V>, K, V>  M collect(String sql,M sink, SqlFunction<ResultSet, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
-		return collect(rs(sql), sink, keymapper, valuemapper);
+		return collect(query(sql), sink, keymapper, valuemapper);
 	}
 	public static <M extends Map<K, V>, K, V>  M collect(ResultSet rs0,M sink, SqlFunction<ResultSet, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
 		try(ResultSet rs = rs0) {
@@ -132,7 +124,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 	}
 
 	public <E> Stream<E> stream(String sql, SqlFunction<ResultSet, E> mapper, Consumer<SQLException> onError) throws SQLException {
-		return stream(getStatement().executeQuery(sql), mapper, onError);
+		return stream(query(sql), mapper, onError);
 	}
 	/**
 	 * will throw runtime exception onError
@@ -151,7 +143,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 				});
 	}
 	public <E> Iterator<E> iterator(String sql, SqlFunction<ResultSet, E> mapper, Consumer<SQLException> onError) throws SQLException {
-		return iterator(getStatement().executeQuery(sql), mapper, onError);
+		return iterator(query(sql), mapper, onError);
 	}
 	public static <E> Iterator<E> iterator(ResultSet rs, SqlFunction<ResultSet, E> mapper, Consumer<SQLException> onError) throws SQLException {
 		return new Iterator<E>() {
@@ -184,32 +176,32 @@ public abstract class JDBCHelper implements AutoCloseable {
 			}
 		};
 	}
-
 	public <E> Stream<E> stream(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException {
-		return stream(sql,mapper,JDBCHelper::throwruntime);
+		return stream(sql,mapper,DEFAULT_ON_ERROR);
 	}
 	public static <E> Stream<E> stream(ResultSet rs, SqlFunction<ResultSet, E> mapper) throws SQLException {
-		return  stream(rs,mapper,JDBCHelper::throwruntime);
+		return  stream(rs,mapper,DEFAULT_ON_ERROR);
 	}
 	public <E> Iterator<E> iterator(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException {
-		return  iterator(sql,mapper,JDBCHelper::throwruntime);
+		return  iterator(sql,mapper,DEFAULT_ON_ERROR);
 	}
 	public static <E> Iterator<E> iterator(ResultSet rs, SqlFunction<ResultSet, E> mapper) throws SQLException {
-		return  iterator(rs,mapper,JDBCHelper::throwruntime);
+		return  iterator(rs,mapper,DEFAULT_ON_ERROR);
 	}
-	public static void throwruntime(SQLException e) {
-		throw new RuntimeException(e);
-	}
+	public static final Consumer<SQLException> DEFAULT_ON_ERROR = e -> {throw new RuntimeException(e);}; 
+
 	public void createStatementBlock(SqlConsumer<Statement> consumer) throws SQLException {
 		try(Statement s = connection.createStatement()) {
 			consumer.accept(s);   
 		}
 	}
 	public <E> E prepareStatementBlock(String sql, SqlFunction<PreparedStatement, E> action) throws SQLException {
+		LOGGER.fine(() -> "PreparedStatement: "+sql);
 		try(PreparedStatement s = connection.prepareStatement(sql)) {
 			return action.accept(s);   
 		}
 	}
-
-
+	public <E> E findFirst(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException{
+		return executeQuery(sql, rs -> rs.next() ? mapper.accept(rs) : null); 
+	}
 }

@@ -1,17 +1,15 @@
 package sam.anime.entities;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 import sam.anime.db.AnimeDB;
 import sam.collection.Iterators;
 import sam.myutils.MyUtilsCheck;
-import sam.sql.SqlBiConsumer;
-import sam.sql.SqlFunction;
 
 public class AnimeList<E> implements Iterable<E> {
 	private boolean modified;
@@ -21,49 +19,31 @@ public class AnimeList<E> implements Iterable<E> {
 	 */
 	private ArrayList<E> newData;
 	private final int mal_id;
-	private final String[] columnNames;
-	private final String tableName;
-	private final SqlFunction<ResultSet, E> mapper;
-	private final SqlFunction<AnimeDB, List<E>> collector;
-
-	public AnimeList(int mal_id) {
-		this.mal_id = mal_id;
-		columnNames = null;
-		tableName  = null;
-		mapper = null;
-		collector = null;
-	}
-
-	public AnimeList(int mal_id, String[] columnNames, String tableName, SqlFunction<ResultSet, E> mapper) {
-		this.columnNames = columnNames;
-		this.tableName = tableName;
-		this.mapper = mapper;
-		this.mal_id = mal_id;
-		this.collector = null;
-	}
-	public AnimeList(int mal_id, String columnName, String tableName, SqlFunction<ResultSet, E> mapper) {
-		this(mal_id, new String[] {columnName}, tableName, mapper);
-	}
-	public AnimeList(int mal_id, SqlFunction<AnimeDB, List<E>> collector) {
-		this.mal_id = mal_id;
-		this.columnNames = null;
-		this.tableName = null;
-		this.mapper = null;
-		this.collector = collector;
-	}
+	private Function<AnimeDB, List<E>> mapper;
 	
+	public AnimeList(int mal_id, List<E> data) {
+		this(mal_id);
+		this.data = data;
+		unmodif = data == null ? null : Collections.unmodifiableList(data);
+	}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public AnimeList(int mal_id) {
+		this(mal_id, (Function)null);
+	}
+	public int getMalId() {
+		return mal_id;
+	}
+	public AnimeList(int mal_id, Function<AnimeDB, List<E>> mapper) {
+		this.mal_id = mal_id;
+		this.mapper = mapper;
+	}
 	private List<E> unmodif;
+	@SuppressWarnings("unchecked")
 	public List<E> get(AnimeDB db) throws SQLException {
 		if(unmodif != null) return unmodif;
-		if(db == null || columnNames == null) return unmodif;
+		if(db == null || mapper == null) return Collections.EMPTY_LIST;
 		
-		if(collector != null)
-			data = collector.accept(db);
-		else {
-			data  = new ArrayList<>();
-			db.loadList(mal_id, columnNames, tableName, mapper, data);
-		}
-		
+		data = mapper.apply(db);
 		unmodif = Collections.unmodifiableList(data);
 
 		if(newData != null) {

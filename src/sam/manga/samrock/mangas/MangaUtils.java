@@ -9,19 +9,41 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
-import sam.fileutils.FileNameSanitizer;
+import sam.io.fileutils.FileNameSanitizer;
 import sam.manga.samrock.SamrockDB;
-import sam.reference.WeakAndLazy;
+import sam.myutils.MyUtilsCheck;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
+import sam.string.StringUtils;
 public class MangaUtils {
     private final SamrockDB db;
     public MangaUtils(SamrockDB db) {
         this.db = db;
     }
+    /**
+	 * tags to sorted tags int array <br>
+	 * <pre> ".1..2..3..5..7..8..18..19..24." -> [1, 2, 3, 5, 7, 8, 18, 19, 24] </pre> 
+	 * @param tags
+	 * @return
+	 */
+	public static int[] tagsToIntArray(String tags) {
+		if(MyUtilsCheck.isEmptyTrimmed(tags))
+			return new int[0];
+		
+		int[] n = tagsToIntStream(tags).toArray();
+		Arrays.sort(n);
+		return n;
+	}
+	public static IntStream tagsToIntStream(String tags) {
+		if(MyUtilsCheck.isEmptyTrimmed(tags))
+			return IntStream.empty();
+		
+		return StringUtils.splitStream(tags, '.').map(String::trim).filter(MyUtilsCheck::isNotEmpty).mapToInt(Integer::parseInt);
+	} 
     private static FileNameSanitizer remover;
     /*
      * why manual work instead of regex? because i have time :]

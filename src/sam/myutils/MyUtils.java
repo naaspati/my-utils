@@ -47,10 +47,10 @@ public final class MyUtils {
 	 public static boolean isEmpty(Map<?, ?> s) {return MyUtilsCheck.isEmpty(s);}
 
 
-	/** {@link MyUtilsSystem#lookup(String,String)} */
-	public static String lookup(String key, String defaultValue) { return MyUtilsSystem.lookup(key,defaultValue); }
-	/** {@link MyUtilsSystem#lookup(String)} */
-	public static String lookup(String key) { return MyUtilsSystem.lookup(key); }
+	/** {@link System2#lookup(String,String)} */
+	public static String lookup(String key, String defaultValue) { return System2.lookup(key,defaultValue); }
+	/** {@link System2#lookup(String)} */
+	public static String lookup(String key) { return System2.lookup(key); }
 
 	/** {@link MyUtilsExtra#elvis(boolean,E,E)} */
 	public static <E> E elvis(boolean ifTrue, E than, E otherwise) { return MyUtilsExtra.elvis(ifTrue,than,otherwise); }

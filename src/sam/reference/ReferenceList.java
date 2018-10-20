@@ -23,15 +23,10 @@ public class ReferenceList<T>  {
     public ReferenceList(ReferenceType type, Supplier<T> valueGenerator) {
     	this(type, false, valueGenerator); 
 	}
-    public ReferenceList(Supplier<T> valueGenerator) {
-    	this(ReferenceType.WEAK, valueGenerator); 
-	}
-    public ReferenceList(boolean threadsafe, Supplier<T> valueGenerator) {
-    	this(ReferenceType.WEAK, threadsafe, valueGenerator); 
-	}
+    
 	public ReferenceList(ReferenceType type, boolean threadSafe, Supplier<T> valueGenerator) {
-    	this.valueGenerator = Objects.requireNonNull(valueGenerator);
-    	this.type = Objects.requireNonNull(type);
+    	this.valueGenerator = valueGenerator == null ? (() -> null) : valueGenerator;
+    	this.type = type;
     	
     	if(threadSafe)
     		list = new ConcurrentLinkedQueue<>();
@@ -84,14 +79,19 @@ public class ReferenceList<T>  {
      * @return 
      */
     public T poll() {
+        if(list.isEmpty()) {
+            T v = valueGenerator.get();
+            return v;
+        }
+        
+        T t = ReferenceUtils.get(list.poll());
+        if(t != null)
+            return t;
+        
         while(true) {
-            if(list.isEmpty()) {
-            	T v = valueGenerator.get();
-                return v;
-            }
-            T t = ReferenceUtils.get(list.poll());
+            t = ReferenceUtils.get(list.poll());
             if(t != null)
-                return t; 
+                return t;
         }
     }
     public void clear() {
@@ -118,6 +118,14 @@ public class ReferenceList<T>  {
         E e = function.apply(v);
         add(v);
         return e;
+    }
+    public boolean isEmpty() {
+    	if(list.isEmpty()) return true;
+    	if(list.stream().allMatch(r -> ReferenceUtils.get(r) == null)) {
+    		list.clear();
+    		return true;
+    	}
+    	return false;
     }
 	public void forEach(Consumer<T> consumer) {
 		if(list.isEmpty())

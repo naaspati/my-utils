@@ -3,26 +3,47 @@ package sam.fx.helpers;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.Map;
+import java.util.IdentityHashMap;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import javafx.fxml.FXMLLoader;
+import javafx.util.Builder;
 import javafx.util.BuilderFactory;
 import javafx.util.Callback;
+import sam.logging.MyLoggerFactory;
 
-public final class FxFxml {
-	private static final Logger LOGGER = Logger.getLogger(FxFxml.class.getSimpleName());
-	
+public final class FxFxml implements BuilderFactory  {
+	private static final Logger LOGGER = MyLoggerFactory.logger(FxFxml.class.getSimpleName());
+
 	private static URL FXML_DIR;
 	public static void setFxmlDir(URL fxml_dir) {
 		FXML_DIR = fxml_dir;
 	}
 
 	public final FXMLLoader loader;
+	private IdentityHashMap<Class<?>, Object> builds;
+
+	private BuilderFactory builderFactory;
+
+	@SuppressWarnings("rawtypes")
+	@Override
+	public Builder<?> getBuilder(Class<?> type) {
+		Object o = builds.get(type);
+		if(o == null)
+			return null;
+		if(o instanceof Builder)
+			return (Builder)o;
+			 
+		return () -> o;
+	}  
 
 	public <E> E load() throws IOException {
 		LOGGER.fine(() -> "Loading fxml: "+loader.getLocation());
+		if(builderFactory != null)
+			loader.setBuilderFactory(builderFactory);
+		if(builds != null)
+			loader.setBuilderFactory(this);	
 		return loader.load();
 	}
 	public FxFxml() {
@@ -43,15 +64,6 @@ public final class FxFxml {
 	public FxFxml(Object obj, boolean isDynamicRoot) throws IOException {
 		this(obj, isDynamicRoot ? obj : null, obj);
 	}
-	public static <E> E fxml(URL url, Object root, Object controller) throws IOException {
-		return new FxFxml(url, root, controller).load();
-	}
-	public static <E> E fxml(Object parentclass, Object root, Object controller) throws IOException {
-		return new FxFxml(parentclass, root, controller).load();
-	}
-	public static <E> E fxml(Object obj, boolean isDynamicRoot) throws IOException {
-		return new FxFxml(obj, isDynamicRoot ? obj : null, obj).load();
-	}
 	
 	public FxFxml location(URL location) {
 		loader.setLocation(location);
@@ -70,11 +82,19 @@ public final class FxFxml {
 		return this;
 	}
 	public FxFxml builderFactory(BuilderFactory builderFactory) {
-		loader.setBuilderFactory(builderFactory);
+		this.builderFactory = builderFactory;
 		return this;
 	}
-	public FxFxml builderFactory(Map<Class<?>, ?> map) {
-		loader.setBuilderFactory(cls -> () -> map.get(cls));
+	public <E> FxFxml putBuilder(Class<E> cls, E value) {
+		if(builds == null)
+			builds = new IdentityHashMap<>();
+		builds.put(cls, value);
+		return this;
+	}
+	public <E> FxFxml putBuilder(Class<E> cls, Builder<E> builder) {
+		if(builds == null)
+			builds = new IdentityHashMap<>();
+		builds.put(cls, builder);
 		return this;
 	}
 	public FxFxml controllerFactory(Callback<Class<?>, Object> controllerFactory) {
@@ -89,4 +109,17 @@ public final class FxFxml {
 		loader.setClassLoader(classLoader);
 		return this;
 	}
+
+	
+	public static <E> E load(URL url, Object root, Object controller) throws IOException {
+		return new FxFxml(url, root, controller).load();
+	}
+	public static <E> E load(Object parentclass, Object root, Object controller) throws IOException {
+		return new FxFxml(parentclass, root, controller).load();
+	}
+	public static <E> E load(Object obj, boolean isDynamicRoot) throws IOException {
+		return new FxFxml(obj, isDynamicRoot ? obj : null, obj).load();
+	}
+
+
 }

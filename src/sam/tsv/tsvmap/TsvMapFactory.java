@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import sam.fileutils.DefaultCharset;
+import static sam.io.DefaultCharset.*;
 import sam.tsv.TsvMap;
 
 
@@ -29,7 +29,7 @@ public interface TsvMapFactory {
         public TsvMapBuilder(Converter<K> keyConverter, Converter<V> valueConverter) {
             this(new TsvMapConfig<>(true), keyConverter, valueConverter);
             config.isFirstRowColumnNames = true;
-            config.charset = DefaultCharset.get();
+            config.charset = DEFAULT_CHARSET;
             config.map = new HashMap<>();
         }
         public void map(Map<K, V> map) {
@@ -76,6 +76,6 @@ public interface TsvMapFactory {
         return builder(new LinkedHashMap<>(), isFirstRowColumnNames, charset, keyConverter, valueConverter);
     }
     public static <K, V> TsvMapBuilder<K, V> builder(boolean isFirstRowColumnNames, Converter<K> keyConverter, Converter<V> valueConverter) {
-        return builder(new LinkedHashMap<>(), isFirstRowColumnNames, DefaultCharset.get(), keyConverter, valueConverter);
+        return builder(new LinkedHashMap<>(), isFirstRowColumnNames, DEFAULT_CHARSET, keyConverter, valueConverter);
     }
 }

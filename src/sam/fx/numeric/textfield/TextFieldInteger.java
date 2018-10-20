@@ -68,6 +68,7 @@ public class TextFieldInteger extends TextField {
 			return isDigit(c);
 	}
 
+	@SuppressWarnings("unused")
 	private ReadOnlyIntegerProperty valueProperty() {
 		if(value == null) {
 			value = new ReadOnlyIntegerWrapper();
