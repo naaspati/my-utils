@@ -19,8 +19,6 @@ import java.util.Objects;
 import java.util.zip.GZIPOutputStream;
 
 public final class ObjectWriter {
-	public static final ObjectSerializer<Integer> INT_SERIALIZER = (dos, e) -> dos.writeInt(e);
-	public static final ObjectSerializer<Long> LONG_SERIALIZER = (dos, e) -> dos.writeLong(e);
 	
 	public static  WriterConfig writer(boolean gzip) {
 		return new WriterConfig(gzip);
@@ -45,13 +43,13 @@ public final class ObjectWriter {
 			Objects.requireNonNull(target, "target not set");
 			write0(object, this);
 		}
-		public <E> void write(E object, ObjectSerializer< E> mapper) throws IOException {
+		public <E> void write(E object, OneObjectWriter< E> mapper) throws IOException {
 			Objects.requireNonNull(object);
 			Objects.requireNonNull(mapper);
 			Objects.requireNonNull(target, "target not set");
 			write0(object, this, mapper);
 		}
-		public <E> void writeList(Collection<E> list, ObjectSerializer< E> mapper) throws IOException {
+		public <E> void writeList(Collection<E> list, OneObjectWriter< E> mapper) throws IOException {
 			Objects.requireNonNull(target, "target not set");
 			Objects.requireNonNull(list, "data cannot be null");
 			Objects.requireNonNull(mapper, "mapper cannot be null");
@@ -63,7 +61,7 @@ public final class ObjectWriter {
 			else
 				return Files.newOutputStream((Path)target, CREATE, WRITE, TRUNCATE_EXISTING);
 		}
-		public <K,V> void writeMap(Map<K, V> data, ObjectSerializer<K> keyWriter, ObjectSerializer<V> valueWriter) throws IOException {
+		public <K,V> void writeMap(Map<K, V> data, OneObjectWriter<K> keyWriter, OneObjectWriter<V> valueWriter) throws IOException {
 			Objects.requireNonNull(data);
 			Objects.requireNonNull(keyWriter);
 			Objects.requireNonNull(valueWriter);
@@ -81,22 +79,22 @@ public final class ObjectWriter {
     public static void writeGzip(Path path, Object object) throws  IOException{
          writer(true).target(path).write(object);
     }
-    public static <E> void writeGzip(Path path, E data, ObjectSerializer<E> mapper) throws  IOException{
+    public static <E> void writeGzip(Path path, E data, OneObjectWriter<E> mapper) throws  IOException{
         new WriterConfig(true).target(path).write(data, mapper);
     }
-    public static <E> void write(Path path, E data, ObjectSerializer<E> mapper) throws  IOException{
+    public static <E> void write(Path path, E data, OneObjectWriter<E> mapper) throws  IOException{
         new WriterConfig(false).target(path).write(data, mapper);
     }
-    public static <E> void writeGzip(Path path, Collection<E> data, ObjectSerializer<E> mapper) throws  IOException{
+    public static <E> void writeGzip(Path path, Collection<E> data, OneObjectWriter<E> mapper) throws  IOException{
         new WriterConfig(true).target(path).writeList(data, mapper);
     }
-    public static <E> void writeList(Path path, Collection<E> data, ObjectSerializer<E> mapper) throws  IOException{
+    public static <E> void writeList(Path path, Collection<E> data, OneObjectWriter<E> mapper) throws  IOException{
         new WriterConfig(false).target(path).writeList(data, mapper);
     }
-    public static <K,V> void writeMap(Path path, Map<K,V> data, ObjectSerializer<K> keyWriter, ObjectSerializer<V> valueWriter) throws  IOException{
+    public static <K,V> void writeMap(Path path, Map<K,V> data, OneObjectWriter<K> keyWriter, OneObjectWriter<V> valueWriter) throws  IOException{
         new WriterConfig(false).target(path).writeMap(data, keyWriter, valueWriter);
     }
-    private static <E> void write0(E e, WriterConfig config, ObjectSerializer<E> mapper) throws  IOException {
+    private static <E> void write0(E e, WriterConfig config, OneObjectWriter<E> mapper) throws  IOException {
         try(OutputStream os2 = config.target();
         		OutputStream os3 = config.gzip ? new GZIPOutputStream(os2) : os2;
                 DataOutputStream out = new DataOutputStream(os3)) {
@@ -111,7 +109,7 @@ public final class ObjectWriter {
         }
     }
     
-    private static <E> void writeList0(Collection<E> data, WriterConfig config, ObjectSerializer<E> mapper) throws  IOException {
+    private static <E> void writeList0(Collection<E> data, WriterConfig config, OneObjectWriter<E> mapper) throws  IOException {
     	Objects.requireNonNull(data);
     	
         try(OutputStream in2 = config.target();

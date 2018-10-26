@@ -17,8 +17,6 @@ import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 
 public final class ObjectReader {
-	public static final IOExceptionFunction<DataInputStream, Integer> INT_READER = DataInputStream::readInt;
-	public static final IOExceptionFunction<DataInputStream, Long> LONG_READER = DataInputStream::readLong;
 	
 	public static <E> ReaderConfig reader(boolean gzip) {
 		return new ReaderConfig(gzip);
@@ -44,7 +42,7 @@ public final class ObjectReader {
 			Objects.requireNonNull(source, "source not set");
 			return (E)read0(this);
 		}
-		public <E> E read(IOExceptionFunction<DataInputStream, E> mapper) throws IOException {
+		public <E> E read(OneObjectReader< E> mapper) throws IOException {
 			Objects.requireNonNull(source, "source not set");
 			return read0(this, mapper);
 		}
@@ -52,17 +50,17 @@ public final class ObjectReader {
 			Objects.requireNonNull(source, "source not set");
 			iterate0(this, dis -> {consumer.accept(dis); return null;}, true);
 		}
-		public <E> List<E> readList(IOExceptionFunction<DataInputStream, E> mapper) throws IOException {
+		public <E> List<E> readList(OneObjectReader< E> mapper) throws IOException {
 			Objects.requireNonNull(source, "source not set");
 			return iterate0(this, mapper, false);
 		}
-		public <K, V> Map<K,V> readMap(IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws IOException {
+		public <K, V> Map<K,V> readMap(OneObjectReader< K> keyReader, OneObjectReader< V> valueReader) throws IOException {
 			Objects.requireNonNull(source, "source not set");
 			
 			Map<K, V> map = new HashMap<>();
 			
 			iterate0(this, dis -> {
-				map.put(keyReader.apply(dis), valueReader.apply(dis));
+				map.put(keyReader.read(dis), valueReader.read(dis));
 				return null;
 			}, true) ;
 			return map;
@@ -89,19 +87,19 @@ public final class ObjectReader {
 		return  read(path);
 	}
 
-	public static <E> E readGzip(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
+	public static <E> E readGzip(Path path, OneObjectReader< E> mapper) throws  IOException{
 		return  new ReaderConfig(true).source(path).read(mapper);
 	}
-	public static <E> E read(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
+	public static <E> E read(Path path, OneObjectReader< E> mapper) throws  IOException{
 		return  new ReaderConfig(false).source(path).read(mapper);
 	}
-	public static <E> List<E> readListGzip(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
+	public static <E> List<E> readListGzip(Path path, OneObjectReader< E> mapper) throws  IOException{
 		return  new ReaderConfig(true).source(path).readList(mapper);
 	}
-	public static <E> List<E> readList(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
+	public static <E> List<E> readList(Path path, OneObjectReader< E> mapper) throws  IOException{
 		return  new ReaderConfig(false).source(path).readList(mapper);
 	}
-	public static <K, V> Map<K,V> readMap(Path path, IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws  IOException{
+	public static <K, V> Map<K,V> readMap(Path path, OneObjectReader< K> keyReader, OneObjectReader< V> valueReader) throws  IOException{
 		return  new ReaderConfig(false).source(path).readMap(keyReader, valueReader);
 	}
 	public static void iterateGzip(Path path, IOExceptionConsumer<DataInputStream> consumer) throws  IOException{
@@ -110,11 +108,11 @@ public final class ObjectReader {
 	public static void iterate(Path path, IOExceptionConsumer<DataInputStream> consumer) throws  IOException{
 		new ReaderConfig(false).source(path).iterate(consumer);
 	}
-	private static <E> E read0(ReaderConfig config, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException {
+	private static <E> E read0(ReaderConfig config, OneObjectReader< E> mapper) throws  IOException {
 		try(InputStream os2 = config.source();
 				InputStream os3 = config.gzip ? new GZIPInputStream(os2) : os2;
 				DataInputStream out = new DataInputStream(os3)) {
-			return mapper.apply(out);
+			return mapper.read(out);
 		}
 	}
 	private static Object read0( ReaderConfig config) throws  IOException, ClassNotFoundException {
@@ -125,7 +123,7 @@ public final class ObjectReader {
 		}
 	}
 
-	private static <E> List<E> iterate0( ReaderConfig config, IOExceptionFunction<DataInputStream, E> mapper, boolean iterateOnly) throws  IOException {
+	private static <E> List<E> iterate0( ReaderConfig config, OneObjectReader< E> mapper, boolean iterateOnly) throws  IOException {
 		try(InputStream in2 = config.source();
 				InputStream in3 = config.gzip ? new GZIPInputStream(in2) : in2;
 				DataInputStream in = new DataInputStream(in3)) {
@@ -134,9 +132,9 @@ public final class ObjectReader {
 
 			for (int i = 0; i < size; i++) {
 				if(iterateOnly)
-					mapper.apply(in);
+					mapper.read(in);
 				else
-					list.add(mapper.apply(in));
+					list.add(mapper.read(in));
 			}
 			return list;
 		}
