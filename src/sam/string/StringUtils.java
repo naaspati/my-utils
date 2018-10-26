@@ -8,6 +8,7 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static sam.myutils.MyUtilsCheck.*;
 public class StringUtils {
 	public static final double VERSION = 0.004;
 
@@ -259,11 +260,4 @@ public class StringUtils {
 
 		 return sb;
 	 } 
-	 public static boolean isEmpty(String s) {
-		 return s == null || s.isEmpty();
-	 }
-	 public static boolean isEmptyTrimmed(String s) {
-		 return isEmpty(s) || s.trim().isEmpty();
-	 }
-
 }

@@ -26,7 +26,7 @@ public final class System2 {
 			return s = defaultValue;
 		} finally {
 			String s2 = s;
-			LOGGER.config(() -> key+"="+s2);
+			LOGGER.fine(() -> key+"="+s2);
 		}
 	}
 	public static String lookup(String key) { return lookup(key, null);}

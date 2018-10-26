@@ -19,23 +19,30 @@ public class PathsImpl {
 		this.path = rs.getString(PATH);
 		this.marker = rs.getString(MARKER);
 	}
+	
 
+	public PathsImpl(int path_id, String path, String marker) {
+		this.path_id = path_id;
+		this.path = path;
+		this.marker = marker;
+	}
+	
 	public int getPathId(){ return this.path_id; }
 	public String getPath(){ return this.path; }
 	public String getMarker(){ return this.marker; }
 
 	private Path fullpath;
 	public Path getFullPath() {
-		return fullpath != null ? fullpath : (fullpath = BooksDB.ROOT.resolve(path));
+		return fullpath != null ? fullpath : (fullpath = BooksDBMinimal.ROOT.resolve(path));
 	}
 	
 	
-	public static List<PathsImpl> getAll(BooksDB db) throws SQLException{
+	public static List<PathsImpl> getAll(BooksDBMinimal db) throws SQLException{
 		return db.collectToList("SELECT * FROM "+TABLE_NAME, PathsImpl::new);
 	}
 	
-	public static final String FIND_BY_PATH_ID = "SELECT * FROM "+TABLE_NAME+" WHERE =";
-	public static PathsImpl getByPathId(BooksDB db, int path_id) throws SQLException {
+	public static final String FIND_BY_PATH_ID = "SELECT * FROM "+TABLE_NAME+" WHERE "+PATH_ID+"=";
+	public static PathsImpl getByPathId(BooksDBMinimal db, int path_id) throws SQLException {
 		return db.findFirst(FIND_BY_PATH_ID+path_id, PathsImpl::new);
 	}
 }

@@ -15,7 +15,6 @@ import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -27,27 +26,15 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import sam.config.MyConfig;
 import sam.logging.MyLoggerFactory;
 import sam.myutils.MyUtilsPath;
-import sam.sql.sqlite.SQLiteDB;
+import sam.string.BasicFormat;
 import sam.string.StringUtils;
 
-public class BooksDB extends SQLiteDB {
-	public static final Path ROOT;
-	public static final Path APP_FOLDER;
-	public static final Path BACKUP_FOLDER;
-	public static final Path DB;
-
-	static {
-		ROOT = Paths.get(MyConfig.BOOKLIST_ROOT).normalize();
-		APP_FOLDER = Paths.get(MyConfig.BOOKLIST_APP_DIR).normalize();
-		DB = Paths.get(MyConfig.BOOKLIST_DB).normalize();
-		BACKUP_FOLDER = APP_FOLDER.resolve("backups").normalize();
-	}
+public class BooksDB extends BooksDBMinimal {
 
 	public BooksDB() throws  SQLException {
-		this(DB);
+		super(DB);
 	}
 	public BooksDB(Path dbpath) throws  SQLException {
 		super(dbpath);
@@ -169,8 +156,10 @@ public class BooksDB extends SQLiteDB {
 			sb.setLength(sb.length() - 4);
 		return p.matcher(sb).replaceAll("-");
 	}
+	private static BasicFormat bookJson;
 	public static String toJson(int book_id, String isbn, String name) {
-		String format = "{\"id\":%d, \"isbn\":\"%s\", \"book_name\":\"%s\"}";
-		return String.format(format, book_id, isbn, name);
+		if(bookJson == null) 
+			bookJson = new BasicFormat("\\{\"book_name\":\"{}\",\"id\":{}, \"isbn\":\"{}\"\\}") ;	
+		return bookJson.format(name,book_id, isbn);
 	}
 }

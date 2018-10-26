@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+//import sam.logging.LogFilter;
+
 public final class MyLoggerFactory {
 	static {
 		String key = "java.util.logging.config.file";

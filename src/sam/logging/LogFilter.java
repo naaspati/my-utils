@@ -2,6 +2,7 @@ package sam.logging;
 
 import java.util.HashMap;
 import java.util.logging.Filter;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 public class LogFilter implements Filter {
@@ -13,6 +14,8 @@ public class LogFilter implements Filter {
 
 	@Override
 	public boolean isLoggable(LogRecord record) {
+		if(record.getLevel()  != Level.FINE)
+			return true;
 		Boolean b = map.get(record.getLoggerName());
 		if(b == null) {
 			b = record.getSourceClassName().startsWith("sam.");

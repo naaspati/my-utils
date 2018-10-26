@@ -1,8 +1,6 @@
 package sam.string;
 
 import static sam.string.StringUtils.containsAny;
-import static sam.string.StringUtils.isEmpty;
-import static sam.string.StringUtils.isEmptyTrimmed;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -10,6 +8,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import sam.logging.MyLoggerFactory;
+import static sam.myutils.MyUtilsCheck.*;
+
 
 public class TextSearchPredicate<E> {
 	private final Function<E, String> mapper;

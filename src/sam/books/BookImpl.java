@@ -101,9 +101,9 @@ public class BookImpl {
 		Map<Integer, PathsImpl> paths = PathsImpl.getAll(db).stream().collect(Collectors.toMap(PathsImpl::getPathId, s -> s));
 		return db.collectToList("SELECT * FROM "+TABLE_NAME, rs -> new BookImpl(rs, paths.get(rs.getInt(PATH_ID))));
 	}
-	public static final String FIND_BY_ID = "SELECT * FROM "+TABLE_NAME+" WHERE =";
+	public static final String FIND_BY_ID = "SELECT * FROM "+TABLE_NAME+ " NATURAL JOIN "+PathsMeta.TABLE_NAME+" WHERE "+BOOK_ID+"=";
 	public static BookImpl getById(BooksDB db, int id) throws SQLException {
-		return db.findFirst(FIND_BY_ID+id, rs -> new BookImpl(rs, PathsImpl.getByPathId(db, rs.getInt(PATH_ID))));
+		return db.findFirst(FIND_BY_ID+id, rs -> new BookImpl(rs, new PathsImpl(rs)));
 	}
 
 }

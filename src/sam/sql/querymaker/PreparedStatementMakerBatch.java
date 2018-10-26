@@ -1,5 +1,7 @@
 package sam.sql.querymaker;
 
+import static sam.myutils.MyUtilsCheck.isEmptyTrimmed;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -29,7 +31,6 @@ import java.util.function.ToLongFunction;
 
 import sam.collection.Iterables;
 import sam.sql.sqlite.SQLiteDB;
-import sam.string.StringUtils;
 
 public abstract class PreparedStatementMakerBatch<E> {
 	private final ArrayList<CustomConsumer2<E>> pss;
@@ -41,7 +42,7 @@ public abstract class PreparedStatementMakerBatch<E> {
 		this.pss = from.pss;
 	}
 	private void add(String columnName, CustomConsumer2<E> s) {
-		if(StringUtils.isEmptyTrimmed(columnName))
+		if(isEmptyTrimmed(columnName))
 			throw new IllegalArgumentException("invalid columnname: "+columnName);
 		
 		addColumn(columnName);

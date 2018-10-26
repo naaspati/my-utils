@@ -16,9 +16,10 @@ import sam.logging.MyLoggerFactory;
 public final class FxFxml implements BuilderFactory  {
 	private static final Logger LOGGER = MyLoggerFactory.logger(FxFxml.class.getSimpleName());
 
-	private static URL FXML_DIR;
+	private static String FXML_DIR;
 	public static void setFxmlDir(URL fxml_dir) {
-		FXML_DIR = fxml_dir;
+		FXML_DIR = fxml_dir.toString();
+		LOGGER.fine(() -> "FXML_DIR: "+FXML_DIR);
 	}
 
 	public final FXMLLoader loader;
@@ -56,10 +57,13 @@ public final class FxFxml implements BuilderFactory  {
 	}
 	public FxFxml(Object parentclass, Object root, Object controller) throws IOException {
 		String name = parentclass.getClass().getSimpleName()+".fxml";
-		URL url = FXML_DIR != null ? new URL(FXML_DIR, name) : ClassLoader.getSystemResource(name);
+		URL url = FXML_DIR != null ? new URL(FXML_DIR+"/"+name) : ClassLoader.getSystemResource(name);
 		loader = new FXMLLoader(url);
 		loader.setController(controller);
 		loader.setRoot(root);
+	}
+	public URL location() {
+		return loader.getLocation();
 	}
 	public FxFxml(Object obj, boolean isDynamicRoot) throws IOException {
 		this(obj, isDynamicRoot ? obj : null, obj);
@@ -109,7 +113,6 @@ public final class FxFxml implements BuilderFactory  {
 		loader.setClassLoader(classLoader);
 		return this;
 	}
-
 	
 	public static <E> E load(URL url, Object root, Object controller) throws IOException {
 		return new FxFxml(url, root, controller).load();

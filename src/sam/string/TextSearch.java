@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import javafx.collections.ObservableList;
 import sam.logging.MyLoggerFactory;
 
+import static sam.myutils.MyUtilsCheck.*;
+
 public class TextSearch<E> extends TextSearchPredicate<E>{
 	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearch.class.getSimpleName());
 
@@ -52,8 +54,8 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 		notifyChange();
 	}
 	public void search(String str) {
-		if(searchDelay <= 0 || StringUtils.isEmpty(str)) {
-			if(StringUtils.isEmpty(str))
+		if(searchDelay <= 0 || isEmpty(str)) {
+			if(isEmpty(str))
 				reset();
 			else
 				changeFilter(str);
