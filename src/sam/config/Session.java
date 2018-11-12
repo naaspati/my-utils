@@ -1,7 +1,7 @@
 package sam.config;
 
+import static sam.myutils.MyUtilsException.noError;
 import static sam.myutils.MyUtilsPath.resolveToClassLoaderPath;
-import static sam.myutils.System2.lookup;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -20,11 +20,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
+import sam.myutils.System2;
 
 
 public class Session {
 	private static final Logger LOGGER = MyLoggerFactory.logger(Session.class.getSimpleName());
-	public static final double VERSION = 0.1;
+	public static final double VERSION = 0.12;
 
 	private static Properties properties;
 	private static boolean modified = false;
@@ -37,36 +38,31 @@ public class Session {
 	private static void init0() {
 		if(properties != null) return;
 
-		Path path = null;
 		try {
-			path = path();
 			properties = new Properties();
-			if(Files.notExists(path))
+			if(Files.notExists(SESSION_FILE))
 				return;
-			properties.load(Files.newInputStream(path));
-			Path p = path;
-			LOGGER.config(() -> "session_file: "+p);
-		} catch (IOException | URISyntaxException e) {
-			LOGGER.log(Level.SEVERE, "failed to load session_file: "+path, e);
+			properties.load(Files.newInputStream(SESSION_FILE));
+			LOGGER.config(() -> "session_file: "+SESSION_FILE);
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "failed to load session_file: "+SESSION_FILE, e);
 		}
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			Path path2 = null;
 			try {
-				path2 = path();
-				save(path2);
+				save(SESSION_FILE);
 			} catch (IOException | URISyntaxException e) {
 				LOGGER.log(Level.SEVERE, "failed to session_file: "+path2, e);
 			}
 		}) );
 	}
 
-	private static Path sessionFile;
+	public static final Path SESSION_FILE = noError(() -> path_0());
 
-	private static Path path() throws URISyntaxException {
-		if(sessionFile != null) return sessionFile;
-
-		String s = lookup("session_file");
+	private static Path path_0() throws URISyntaxException {
+		String s = System2.lookupAny("session_file", "session.file", "SESSION_FILE", "SESSION.FILE");
+			
 		Path p = null;
 
 		if(s == null)
@@ -76,12 +72,15 @@ public class Session {
 
 		if(p != null) {
 			if(Files.isDirectory(p))
-				return sessionFile = p.resolve("session.properties");
+				return p.resolve("session.properties");
 
-			return sessionFile = p;
+			return p;
 		}
 
-		return sessionFile = resolveToClassLoaderPath("session.properties");
+		p = resolveToClassLoaderPath("session.properties");
+		if(p == null)
+			return noError(() -> Files.createTempFile("session", ".properties"));
+		return p;
 	}
 	private static String toKey(Class<?> cls, String key) {
 		if(key == null || key.trim().isEmpty())
@@ -172,7 +171,7 @@ public class Session {
 		modified = false;
 		properties.keySet().removeIf(k -> k == null || k.getClass() != String.class);
 		properties.values().removeIf(k -> k == null || k.getClass() != String.class);
-		properties.store(Files.newOutputStream(path(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)));
+		properties.store(Files.newOutputStream(SESSION_FILE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)));
 		
 		LOGGER.config(() -> "SESSION SAVED ");
 	}

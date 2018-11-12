@@ -1,7 +1,11 @@
 package sam.myutils;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public interface MyUtilsCheck {
@@ -73,5 +77,25 @@ public interface MyUtilsCheck {
 	 */
 	public static boolean isOfType(Object value, @SuppressWarnings("rawtypes") Class cls) {
 		return value != null && value.getClass() == cls;
+	}
+	public static boolean exists(File file) {
+		return file != null && file.exists();
+	}
+	public static boolean notExists(File file) {
+		return file == null || !file.exists();
+	}
+	public static boolean exists(Path file) {
+		return file != null && Files.exists(file);
+	}
+	public static boolean notExists(Path file) {
+		return file == null || Files.notExists(file);
+	}
+	@SafeVarargs
+	public static <E> boolean anyMatch(Predicate<E> tester, E...es) {
+		for (E e : es) {
+			if(tester.test(e))
+				return true;
+		}
+		return false;
 	}
 }

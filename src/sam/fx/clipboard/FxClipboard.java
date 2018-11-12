@@ -1,35 +1,30 @@
 package sam.fx.clipboard;
 
 import java.io.File;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
+import sam.reference.WeakAndLazy;
 
 public interface FxClipboard {
-    public static Clipboard clipboard() {
-        return Clipboard.getSystemClipboard();
-    }
+    static final WeakAndLazy<Clipboard> CLIPBOARD = new WeakAndLazy<>(Clipboard::getSystemClipboard);
+    
    public static boolean setContent(Map<DataFormat, Object> map) {
-       return clipboard().setContent(map);
+       return CLIPBOARD.get().setContent(map);
    }
-	public static boolean copyToClipboard(DataFormat format, Object data) {
-        Map<DataFormat, Object> map = new HashMap<>();
-        map.put(format, data);
-        return setContent(map);
+	public static boolean setContent(DataFormat format, Object data) {
+        return setContent(Collections.singletonMap(format, data));
     }
-    public static boolean copyToClipboard(String data) {
-    	ClipboardContent cc = new ClipboardContent();
-    	cc.putString(data);
-    	return setContent(cc);
+    public static boolean setString(String data) {
+    	return setContent(DataFormat.PLAIN_TEXT, data);
     }
     public static String getString() {
-        return clipboard().getString();
+        return CLIPBOARD.get().getString();
     }
     public static List<File> getFiles() {
-        return clipboard().getFiles();
+        return CLIPBOARD.get().getFiles();
     }
 }

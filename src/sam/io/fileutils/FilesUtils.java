@@ -30,7 +30,7 @@ public final class FilesUtils {
      */
     @SafeVarargs
     public static <T> void watchDir(Path path, Consumer<Path> onupdate, Function<Throwable, Boolean> onError, WatchEvent.Kind<T>...watchTypes) {
-        new DirWatcher().start(path, onupdate, onError, watchTypes);
+        new DirWatcher(path, onupdate, onError, watchTypes).run();
     }
     
 /** {@link FilesUtilsIO#listDirsFiles(Path)} */

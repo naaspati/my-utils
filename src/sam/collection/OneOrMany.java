@@ -55,7 +55,7 @@ public class OneOrMany<E> implements Iterable<E> {
             return Iterators.empty();
 
         if(!singleValued)
-            return new Iterator4<>(values.size(), values.iterator());
+            return values.iterator();
         
         return Iterators.repeat(value, 1);
     }

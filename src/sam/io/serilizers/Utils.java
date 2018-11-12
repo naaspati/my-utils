@@ -1,5 +1,6 @@
 package sam.io.serilizers;
 
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -12,7 +13,8 @@ interface Utils {
 		ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
 		c.read(buffer);
 		buffer.flip();
-		return buffer.getInt();
+		int n = buffer.getInt();
+		return n;
 	}
 	public static void writeInt(int value, WritableByteChannel c) throws IOException {
 		writeInt(ByteBuffer.allocate(Integer.BYTES), value, c);
@@ -43,5 +45,4 @@ interface Utils {
         channel.write(buffer);
         buffer.clear();
 	}
-
 }

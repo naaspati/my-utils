@@ -11,13 +11,12 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogEvent;
 import javafx.scene.control.DialogPane;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.Callback;
+import sam.myutils.MyUtilsCheck;
 
 public final class AlertBuilder {
     public static final double VERSION = 1.2;
@@ -139,19 +138,17 @@ public final class AlertBuilder {
 
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
+        sw.append("--------------------------------------------------\r\n") 
+        .append("------------------ Stack Trace -------------------\r\n") 
+        .append("--------------------------------------------------\n\n");
+        
+        if(MyUtilsCheck.isEmpty(alert.getContentText()) && MyUtilsCheck.isNotEmpty(e.getMessage())) 
+        	content(e.getClass().getSimpleName()+": "+e.getMessage());
 
         e.printStackTrace(pw);
 
-        VBox root = new VBox(10);
-        root.getChildren().add(new Label("Stack Trace"));
-
-        TextArea area = new TextArea(sw.toString());
-        area.maxWidth(Double.MAX_VALUE);
-        area.maxHeight(Double.MAX_VALUE);
-
-        root.getChildren().add(area);
-        alert.getDialogPane().setExpandableContent(root);
-        alert.getDialogPane().setExpanded(true);
+        expandableText(sw);
+        expanded(true);
 
         return this;
     }

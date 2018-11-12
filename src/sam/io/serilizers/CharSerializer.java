@@ -33,6 +33,7 @@ public interface CharSerializer {
 	}
 	public static void write(char value, WritableByteChannel c) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
+		buffer.clear();
 		buffer.putChar(value);
 		Utils.write(buffer, c);
 	} 
@@ -46,9 +47,10 @@ public interface CharSerializer {
 	}
 	public static char read( ReadableByteChannel c) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
+		buffer.clear();
 		c.read(buffer);
 		buffer.flip();
-		return buffer.getChar(); 
+		return buffer.getChar();
 	} 
 	public static char read( InputStream is) throws IOException {
 		return read(newChannel(is));
@@ -84,8 +86,7 @@ public interface CharSerializer {
 			Utils.write(buffer, c);
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { char[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2);
-
+		LOGGER.fine(() -> "WRITE { char[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 	} 
 	public static void write(char[] value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -123,8 +124,7 @@ public interface CharSerializer {
 			}
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { char[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2);
-
+		LOGGER.fine(() -> "READ { char[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 		return array;
 	} 
 	public static char[] readArray( InputStream is) throws IOException {

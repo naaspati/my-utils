@@ -9,21 +9,29 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import sam.myutils.System2;
 import sam.sql.JDBCHelper;
 
 public class SQLiteDB extends JDBCHelper {
     private final Object path;
-
+    
+    private static Properties defaultProperties() {
+		return new Properties();
+	}
     public SQLiteDB(String dbPath) throws SQLException {
-        this(Paths.get(dbPath), new Properties(), false);
+        this(Paths.get(dbPath), defaultProperties(), false);
+    }
+    
+	public SQLiteDB(Path dbPath, boolean create) throws SQLException {
+        this(dbPath, defaultProperties(), create);
     }
     public SQLiteDB(Path dbPath) throws SQLException {
-        this(dbPath, new Properties(), false);
+        this(dbPath, defaultProperties(), false);
     }
     public SQLiteDB(File dbPath) throws SQLException {
-        this(dbPath.toPath(), new Properties(), false);
+        this(dbPath.toPath(), defaultProperties(), false);
     }
     
     /**
@@ -44,13 +52,14 @@ public class SQLiteDB extends JDBCHelper {
        this.path = dbPath; 
     }
     private static Connection connection(Path dbPath, Properties prop, boolean create) throws SQLException {
-    	if(create && Files.notExists(dbPath))
+    	if(!create && Files.notExists(dbPath))
     		throw new SQLException(new FileNotFoundException("db file no found: "+dbPath));
     	
     	try {
     		Driver driver = (Driver) Class.forName("org.sqlite.JDBC").newInstance();
             Connection connection = driver.connect("jdbc:sqlite:"+dbPath, prop);
             connection.setAutoCommit(Boolean.valueOf(System2.lookup("sql.autocommit")));
+            Logger.getLogger(SQLiteDB.class.getSimpleName()).fine(() -> "Sqlite Connection open: jdbc:sqlite:"+dbPath);
             return connection;
 		} catch (InstantiationException| IllegalAccessException| ClassNotFoundException e) {
 			throw new SQLException(e);

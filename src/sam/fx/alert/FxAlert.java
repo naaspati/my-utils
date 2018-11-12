@@ -45,8 +45,8 @@ public final class FxAlert {
 				.header(header);
 
 		if(error == null) {}
-		else if(error instanceof Exception) 
-			alert.exception((Exception)error);
+		else if(error instanceof Throwable) 
+			alert.exception((Throwable)error);
 		else
 			alert.expandableText(error);
 

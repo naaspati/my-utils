@@ -18,17 +18,21 @@ import java.nio.file.StandardOpenOption;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import sam.io.BufferSize;
 import sam.logging.MyLoggerFactory;
+
+import static sam.io.BufferSize.*;
 
 public class GZipStore {
     private final int password = 1235;
 
     public void write(CharSequence data, Path path, Charset charset) throws IOException {
+    	final ByteBuffer bb = ByteBuffer.allocate(Integer.BYTES);
+    	
         try(OutputStream os = Files.newOutputStream(path, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
                 GZIPOutputStream gos = new GZIPOutputStream(os);
                 WritableByteChannel wbc = Channels.newChannel(gos);
                 ) {
-            final ByteBuffer bb = ByteBuffer.allocate(Integer.BYTES);
 
             writeInt(bb, password, wbc); // write password;
 
@@ -84,7 +88,7 @@ public class GZipStore {
             Charset charset = Charset.forName(StandardCharsets.UTF_8.decode(nameBuf).toString());
             MyLoggerFactory.logger(getClass().getName()).config(() -> "charset: "+charset);
             
-            final ByteBuffer buffer = ByteBuffer.allocate(readInt(bb, rbc));
+            ByteBuffer buffer = ByteBuffer.allocate(readInt(bb, rbc));
             rbc.read(buffer);
             buffer.flip();
 

@@ -1,5 +1,7 @@
 package sam.string;
 
+import static sam.myutils.MyUtilsCheck.isEmpty;
+import static sam.myutils.MyUtilsCheck.isEmptyTrimmed;
 import static sam.string.StringUtils.containsAny;
 
 import java.util.function.Function;
@@ -8,21 +10,31 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import sam.logging.MyLoggerFactory;
-import static sam.myutils.MyUtilsCheck.*;
 
 
+/**
+ * highly recommended <br>
+ *   - search-key to be lowercased <br>
+ *   - data   to be lowercased <br>
+ * @author Sameer
+ *
+ * @param <E>
+ */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class TextSearchPredicate<E> {
+	public static final Predicate TRUE_ALL = s -> true;
+	public static final Predicate FALSE_ALL = s -> false;
+	
+	public static <E> Predicate<E> trueAll() { return TRUE_ALL; }
+	public static <E> Predicate<E> falseAll(){ return FALSE_ALL; }
+	
 	private final Function<E, String> mapper;
-	final boolean isFieldLowerCased;
 	private String currentSearchedText;
-	public final Predicate<E> TRUE_ALL = s -> true;
-	public final Predicate<E> FALSE_ALL = s -> false;
 	private Predicate<E> _filter = TRUE_ALL;
 	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearchPredicate.class.getSimpleName());
 	
-	public TextSearchPredicate(Function<E, String> mapper, boolean isFieldLowerCased) {
+	public TextSearchPredicate(Function<E, String> mapper) {
 		this.mapper = mapper;
-		this.isFieldLowerCased = isFieldLowerCased;
 	}
 	
 	private String get(E e) {
@@ -49,11 +61,10 @@ public class TextSearchPredicate<E> {
 			if(isEmptyTrimmed(searchKeyword))
 				return (d -> get(d).contains(searchKeyword));
 			else {
-				final String str = currentSearchedText = isFieldLowerCased ? searchKeyword.toLowerCase() : searchKeyword;
-				if(!containsAny(str.trim(), ' ', '\n', '\t'))
-					return (d -> get(d).contains(str));
+				if(!containsAny(searchKeyword.trim(), ' ', '\n', '\t'))
+					return (d -> get(d).contains(searchKeyword));
 				else {
-					 Predicate<String> filter = pattern.splitAsStream(str)
+					 Predicate<String> filter = pattern.splitAsStream(searchKeyword)
 					 .<Predicate<String>>map(s -> source -> source.contains(s))
 					 .reduce(Predicate::and).orElse(null); 
 					 

@@ -1,5 +1,7 @@
 package sam.tsv;
 
+import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -14,7 +16,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static sam.io.DefaultCharset.*;
 import sam.tsv.tsvmap.Converter;
 import sam.tsv.tsvmap.TsvMapConfig;
 

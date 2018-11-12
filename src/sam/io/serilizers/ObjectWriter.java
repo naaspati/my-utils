@@ -16,20 +16,15 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.zip.GZIPOutputStream;
 
 public final class ObjectWriter {
-	
-	public static  WriterConfig writer(boolean gzip) {
-		return new WriterConfig(gzip);
+	public static  WriterConfig writer() {
+		return new WriterConfig();
 	}
+	
 	public static class WriterConfig {
 		Object target;
-		final boolean gzip;
-
-		private WriterConfig(boolean gzip) {
-			this.gzip = gzip;
-		}
+		
 		public WriterConfig target(OutputStream target){ this.target=target;  return this; }
 		public WriterConfig target(Path target){ 
 			this.target= target;
@@ -43,83 +38,88 @@ public final class ObjectWriter {
 			Objects.requireNonNull(target, "target not set");
 			write0(object, this);
 		}
-		public <E> void write(E object, OneObjectWriter< E> mapper) throws IOException {
+		public <E> void write(E object, IOExceptionBiConsumer<E, DataOutputStream> mapper) throws IOException {
 			Objects.requireNonNull(object);
 			Objects.requireNonNull(mapper);
 			Objects.requireNonNull(target, "target not set");
 			write0(object, this, mapper);
 		}
-		public <E> void writeList(Collection<E> list, OneObjectWriter< E> mapper) throws IOException {
+		public <E> void writeList(Collection<E> list, IOExceptionBiConsumer<E, DataOutputStream> mapper) throws IOException {
 			Objects.requireNonNull(target, "target not set");
 			Objects.requireNonNull(list, "data cannot be null");
 			Objects.requireNonNull(mapper, "mapper cannot be null");
 			writeList0(list, this, mapper);
 		}
-		private OutputStream target() throws IOException {
-			if(target instanceof OutputStream)
-				return (OutputStream)target;
-			else
-				return Files.newOutputStream((Path)target, CREATE, WRITE, TRUNCATE_EXISTING);
+		private WrapperW target() throws IOException {
+			return new WrapperW(target);
 		}
-		public <K,V> void writeMap(Map<K, V> data, OneObjectWriter<K> keyWriter, OneObjectWriter<V> valueWriter) throws IOException {
-			Objects.requireNonNull(data);
+		public <K, V> void writeMap(Map<K, V> map, IOExceptionBiConsumer<DataOutputStream, K> keyWriter, IOExceptionBiConsumer<DataOutputStream, V> valueWriter) throws IOException {
+			Objects.requireNonNull(map);
 			Objects.requireNonNull(keyWriter);
 			Objects.requireNonNull(valueWriter);
 			
-			Collection<Entry<K, V>> set = data.entrySet();
-			writeList(set, (dos, e) -> {
-				keyWriter.write(dos, e.getKey());
-				valueWriter.write(dos, e.getValue());
+			Collection<Entry<K, V>> set = map.entrySet();
+			writeList(set, (e, dis) -> {
+				keyWriter.accept(dis, e.getKey());
+				valueWriter.accept(dis, e.getValue());
 			});
 		}
-	} 
+	}
+	
+	private static class WrapperW implements AutoCloseable {
+		Object target;
+		OutputStream is;
+		
+		public WrapperW(Object target) {
+			this.target = target;
+		}
+		public OutputStream get() throws IOException {
+			if(target instanceof OutputStream)
+				return (OutputStream)target;
+			else 
+				return is = Files.newOutputStream((Path)target, CREATE, WRITE, TRUNCATE_EXISTING);
+		}
+		@Override
+		public void close() throws IOException {
+			if(is != null) is.close();
+		}
+	}
+	
     public static void write(Path path, Object object) throws  IOException{
-        writer(false).target(path).write(object);
+        writer().target(path).write(object);
     }
-    public static void writeGzip(Path path, Object object) throws  IOException{
-         writer(true).target(path).write(object);
+    public static <E> void write(Path path, E data, IOExceptionBiConsumer<E, DataOutputStream> mapper) throws  IOException{
+        new WriterConfig().target(path).write(data, mapper);
     }
-    public static <E> void writeGzip(Path path, E data, OneObjectWriter<E> mapper) throws  IOException{
-        new WriterConfig(true).target(path).write(data, mapper);
+    public static <E> void writeList(Path path, Collection<E> data, IOExceptionBiConsumer<E, DataOutputStream> mapper) throws  IOException{
+        new WriterConfig().target(path).writeList(data, mapper);
     }
-    public static <E> void write(Path path, E data, OneObjectWriter<E> mapper) throws  IOException{
-        new WriterConfig(false).target(path).write(data, mapper);
+    public static <K,V> void writeMap(Path path, Map<K,V> data, IOExceptionBiConsumer<DataOutputStream, K> keyWriter, IOExceptionBiConsumer<DataOutputStream, V> valueWriter) throws  IOException{
+        new WriterConfig().target(path).writeMap(data, keyWriter, valueWriter);
     }
-    public static <E> void writeGzip(Path path, Collection<E> data, OneObjectWriter<E> mapper) throws  IOException{
-        new WriterConfig(true).target(path).writeList(data, mapper);
-    }
-    public static <E> void writeList(Path path, Collection<E> data, OneObjectWriter<E> mapper) throws  IOException{
-        new WriterConfig(false).target(path).writeList(data, mapper);
-    }
-    public static <K,V> void writeMap(Path path, Map<K,V> data, OneObjectWriter<K> keyWriter, OneObjectWriter<V> valueWriter) throws  IOException{
-        new WriterConfig(false).target(path).writeMap(data, keyWriter, valueWriter);
-    }
-    private static <E> void write0(E e, WriterConfig config, OneObjectWriter<E> mapper) throws  IOException {
-        try(OutputStream os2 = config.target();
-        		OutputStream os3 = config.gzip ? new GZIPOutputStream(os2) : os2;
-                DataOutputStream out = new DataOutputStream(os3)) {
-            mapper.write(out, e);
+    
+    private static <E> void write0(E e, WriterConfig config, IOExceptionBiConsumer<E, DataOutputStream> mapper) throws  IOException {
+        try(WrapperW w = config.target();
+                DataOutputStream out = new DataOutputStream(w.get())) {
+            mapper.accept(e, out);
         }
     }
     private static void write0(Object object, WriterConfig config) throws  IOException {
-        try(OutputStream os2 = config.target();
-        		OutputStream os3 = config.gzip ? new GZIPOutputStream(os2) : os2;
-                ObjectOutputStream out = new ObjectOutputStream(os3)) {
+    	try(WrapperW w = config.target();
+                ObjectOutputStream out = new ObjectOutputStream(w.get())) {
             out.writeObject(object);
         }
     }
     
-    private static <E> void writeList0(Collection<E> data, WriterConfig config, OneObjectWriter<E> mapper) throws  IOException {
+    private static <E> void writeList0(Collection<E> data, WriterConfig config, IOExceptionBiConsumer<E, DataOutputStream> mapper) throws  IOException {
     	Objects.requireNonNull(data);
     	
-        try(OutputStream in2 = config.target();
-        		OutputStream in3 = config.gzip ? new GZIPOutputStream(in2) : in2;
-                DataOutputStream in = new DataOutputStream(in3)) {
-        	in.writeInt(data.size());
+    	try(WrapperW w = config.target();
+                DataOutputStream out = new DataOutputStream(w.get())) {
+        	out.writeInt(data.size());
         	
-        	for (E e : data) {
-				mapper.write(in, e);
-			}
+        	for (E e : data)
+				mapper.accept(e, out);
         }
     }
     

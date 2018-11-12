@@ -113,10 +113,12 @@ public class StringWriter2 {
 		.write(s);
 	}
 	public static void writeText(WritableByteChannel channel, CharSequence s, WriterConfig config) throws IOException {
+		if(s.length() == 0) return;
+		
 		CharsetEncoder encoder = config.encoder();
 		double bytes = encoder.averageBytesPerChar();
 
-		CharBuffer chars = CharBuffer.wrap(s);
+		CharBuffer chars = s.getClass() == CharBuffer.class ? (CharBuffer) s : CharBuffer.wrap(s);
 		int buffersize = (int) (chars.length() * bytes);
 
 		buffersize = buffersize > DEFAULT_BUFFER_SIZE ? DEFAULT_BUFFER_SIZE : buffersize;
@@ -147,7 +149,7 @@ public class StringWriter2 {
 		}
 
 		int t2 = loops;
-		LOGGER.fine(() -> "WRITE { charset:"+config.charset()+", CharSequence.length:"+s.length()+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+t2); 
+		LOGGER.fine(() -> "WRITE { charset:"+config.charset()+", CharSequence.length:"+s.length()+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+t2+"}"); 
 	}
 
 	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {

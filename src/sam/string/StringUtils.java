@@ -1,5 +1,7 @@
 package sam.string;
 
+import static sam.myutils.MyUtilsCheck.isEmpty;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
@@ -7,8 +9,6 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static sam.myutils.MyUtilsCheck.*;
 public class StringUtils {
 	public static final double VERSION = 0.004;
 

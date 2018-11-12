@@ -2,9 +2,14 @@ package sam.io;
 
 import static sam.myutils.System2.lookup;
 
+import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.util.Arrays;
 import java.util.Optional;
 
 import sam.logging.MyLoggerFactory;
+import sam.reference.ReferenceUtils;
 
 public final class BufferSize {
 	public static final int DEFAULT_BUFFER_SIZE = get0();
@@ -16,29 +21,7 @@ public final class BufferSize {
 		if(bufferSize < 512)
 			throw new RuntimeException("minimum buffer size can be: 512, but given "+bufferSize);
 
-		MyLoggerFactory.bySimpleName(BufferSize.class).config("DEFAULT_BUFFER_SIZE: "+bufferSize);
+		MyLoggerFactory.logger(BufferSize.class).config("DEFAULT_BUFFER_SIZE: "+bufferSize);
 		return bufferSize;
 	}
-
-	private int bufferSize = -1;
-
-	public BufferSize() {}
-	public BufferSize(int buffersize) {
-		set(buffersize);
-	}
-
-	public void set(int bufferSize) {
-		if(bufferSize < 512)
-			throw new IllegalArgumentException("minimum buffer size can be: 512, but given "+bufferSize);
-		this.bufferSize = bufferSize;
-	}
-
-	public int get() {
-		if(bufferSize > 0 )
-			return bufferSize;
-
-		bufferSize = get0();
-		return bufferSize; 
-	}
-
 }

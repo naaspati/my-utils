@@ -1,5 +1,7 @@
 package sam.tsv.tsvmap;
 
+import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -10,7 +12,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static sam.io.DefaultCharset.*;
 import sam.tsv.TsvMap;
 
 

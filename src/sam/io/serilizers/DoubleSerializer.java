@@ -22,9 +22,11 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
+import sam.reference.WeakAndLazy;
 
 public interface DoubleSerializer {
-	static final Logger LOGGER = MyLoggerFactory.logger(DoubleSerializer.class.getSimpleName());
+	Logger LOGGER = MyLoggerFactory.logger(DoubleSerializer.class.getSimpleName());
+	WeakAndLazy<ByteBuffer> wbuffer = new WeakAndLazy<>(() -> ByteBuffer.allocate(BYTES));
 
 	public static void write(double value, Path path) throws IOException {
 		try(WritableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
@@ -32,9 +34,11 @@ public interface DoubleSerializer {
 		}
 	}
 	public static void write(double value, WritableByteChannel c) throws IOException {
-		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
+		ByteBuffer buffer = wbuffer.pop();
+		buffer.clear();
 		buffer.putDouble(value);
 		Utils.write(buffer, c);
+		wbuffer.set(buffer);
 	} 
 	public static void write(double value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -45,10 +49,13 @@ public interface DoubleSerializer {
 		}
 	}
 	public static double read( ReadableByteChannel c) throws IOException {
-		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
+		ByteBuffer buffer = wbuffer.pop();
+		buffer.clear();
 		c.read(buffer);
 		buffer.flip();
-		return buffer.getDouble(); 
+		double d = buffer.getDouble();
+		wbuffer.set(buffer);
+		return d;
 	} 
 	public static double read( InputStream is) throws IOException {
 		return read(newChannel(is));
@@ -85,7 +92,7 @@ public interface DoubleSerializer {
 		}
 
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { double[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2);
+		LOGGER.fine(() -> "WRITE { double[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 	} 
 	public static void write(double[] value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -123,7 +130,7 @@ public interface DoubleSerializer {
 		}
 
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { double[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2);
+		LOGGER.fine(() -> "READ { double[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 		return array;
 	} 
 	public static double[] readArray( InputStream is) throws IOException {

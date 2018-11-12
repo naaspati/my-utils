@@ -11,8 +11,21 @@ import java.nio.file.WatchService;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class DirWatcher {
-    public <T> void start(Path path, Consumer<Path> onupdate, Function<Throwable, Boolean> onError, Kind<T>[] watchTypes) {
+@SuppressWarnings("rawtypes")
+public class DirWatcher implements Runnable {
+	private final Path path;
+	private final Consumer<Path> onupdate;
+	private final Function<Throwable, Boolean> onError;
+	private final Kind[] watchTypes;
+	
+    public DirWatcher(Path path, Consumer<Path> onupdate, Function<Throwable, Boolean> onError, Kind...watchTypes) {
+		this.path = path;
+		this.onupdate = onupdate;
+		this.onError = onError;
+		this.watchTypes = watchTypes;
+	}
+
+	public void run() {
         if(!Files.isDirectory(path))
             throw new IllegalArgumentException("path can only be a directory");
 

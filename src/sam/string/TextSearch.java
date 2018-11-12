@@ -1,11 +1,9 @@
 package sam.string;
 
+import static sam.myutils.MyUtilsCheck.isEmpty;
+
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Delayed;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -14,28 +12,33 @@ import java.util.stream.Collectors;
 import javafx.collections.ObservableList;
 import sam.logging.MyLoggerFactory;
 
-import static sam.myutils.MyUtilsCheck.*;
-
+/**
+ * highly recommended <br>
+ *   - search-key to be lowercased <br>
+ *   - data   to be lowercased <br>
+ * @author Sameer
+ *
+ * @param <E>
+ */
+@SuppressWarnings({"unchecked"})
 public class TextSearch<E> extends TextSearchPredicate<E>{
 	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearch.class.getSimpleName());
 
 	private String oldSearch = "";
 	private Collection<E> allData, searchBackup;
-	private Runnable onChange;
+	private transient Runnable onChange;
 	private Predicate<E> _preFilter = TRUE_ALL;
 	private boolean preFilterChanged;
+	private final int searchDelay ;
+	private SearchThread searchThread; 
 
-	public TextSearch(Function<E, String> mapper, boolean isFieldLowerCased, int searchDelay) {
-		super(mapper, isFieldLowerCased);
+	public TextSearch(Function<E, String> mapper, int searchDelay) {
+		super(mapper);
 		this.searchDelay = searchDelay;
 	}
 
-	private Thread searchThread;
-	private int searchDelay;
-	private AtomicReference<String> searchKey;
-	private DelayQueue<Delayed> queue;
-
 	public void setOnChange(Runnable onChange) {
+		reset();
 		this.onChange = onChange;
 	}
 	
@@ -53,6 +56,7 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 		setPreFilter0(preFilter);
 		notifyChange();
 	}
+	
 	public void search(String str) {
 		if(searchDelay <= 0 || isEmpty(str)) {
 			if(isEmpty(str))
@@ -63,46 +67,12 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 		}
 
 		if(searchThread == null) {
-			queue = new DelayQueue<>();
-			searchKey = new AtomicReference<String>(null);
-
-			searchThread = new Thread(() -> {
-				try {
-					while(true) {
-						queue.take();
-						if(searchKey.get() == null && !queue.isEmpty())
-							continue;
-
-						String s = searchKey.getAndSet(null);
-						if(s == null) continue;
-						changeFilter(s);
-					}
-				} catch (Exception e) {
-					searchThread = null;
-				} 
-			});
-			searchThread.setDaemon(true);
+			searchThread = new SearchThread(searchDelay, this::changeFilter);
 			searchThread.start();
 		}
-		searchKey.set(str);
-		queue.offer(new DL());
+		searchThread.add(str);
+		
 	}
-
-	private class DL implements Delayed {
-		private final long time = System.currentTimeMillis() + searchDelay;
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public int compareTo(Delayed o) {
-			return Long.compare(((DL)o).time, time);
-		}
-		@Override
-		public long getDelay(TimeUnit unit) {
-			long diff = time - System.currentTimeMillis();
-			return unit.convert(diff, TimeUnit.MILLISECONDS);
-		}
-	}
-
 	public void setAllData(Collection<E> allData) {
 		this.allData = allData;
 		reset();
@@ -111,10 +81,8 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 		return allData;
 	}
 	public void reset() {
-		if(queue != null) {
-			searchKey.set(null);
-			queue.clear();
-		}
+		if(searchThread != null)
+			searchThread.reset();
 		
 		oldSearch = "";
 		searchBackup = null;
@@ -191,5 +159,10 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 			return allFilter = _preFilter;
 
 		return allFilter = _preFilter.and(f);
+	}
+	public void stop(){
+		if(searchThread == null) return;
+		searchThread.stop();
+		searchThread = null;
 	}
 }

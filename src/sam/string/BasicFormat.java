@@ -139,4 +139,6 @@ public class BasicFormat {
 			return String.valueOf(args[index]);
 		return String.valueOf(args[pointer]);
 	}
+
+	
 }

@@ -52,10 +52,12 @@ public class ReferenceList<T>  {
         return add(value);
     }
     public boolean contains(Object obj) {
-        for (Reference<T> w : list)
-            if(w.get() == obj)
+    	if(obj == null) return false;
+    	
+        for (Reference<T> w : list) {
+            if(obj.equals(ReferenceUtils.get(w)))
                 return true;
-        
+        }
         return false;
     }
     @SuppressWarnings("unchecked")
@@ -99,12 +101,19 @@ public class ReferenceList<T>  {
     }
     
     public Stream<T> stream(){
+    	clean();
+    	
     	if(list.isEmpty())
     		return Stream.empty();
     	
     	return list.stream().map(ReferenceUtils::get).filter(Objects::nonNull);
     }
-    /**
+    private void clean() {
+    	if(list.isEmpty()) return;
+    	list.removeIf(w -> ReferenceUtils.get(w) == null);
+	}
+
+	/**
      * poll -> consume -> return to store
      * @param consumer
      */
@@ -120,7 +129,9 @@ public class ReferenceList<T>  {
         return e;
     }
     public boolean isEmpty() {
+    	clean();
     	if(list.isEmpty()) return true;
+    	
     	if(list.stream().allMatch(r -> ReferenceUtils.get(r) == null)) {
     		list.clear();
     		return true;
@@ -128,6 +139,7 @@ public class ReferenceList<T>  {
     	return false;
     }
 	public void forEach(Consumer<T> consumer) {
+		clean();
 		if(list.isEmpty())
 			return;
 		
@@ -136,6 +148,5 @@ public class ReferenceList<T>  {
 			if(t != null)
 				consumer.accept(t);
 		}
-		
 	}
 }

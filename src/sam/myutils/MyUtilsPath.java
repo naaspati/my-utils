@@ -5,6 +5,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -65,9 +67,11 @@ public interface MyUtilsPath {
 	public static Path resolveToClassLoaderPath0(ClassLoader loader, String resourceName) throws URISyntaxException {
 		URL u = loader.getResource(resourceName);
 		
-		if(u == null)
-			return Paths.get(ClassLoader.getSystemResource(".").toURI()).resolve(resourceName);
-		else
+		if(u == null) {
+			u = ClassLoader.getSystemResource(".");
+			if(u == null) return null;
+			return Paths.get(u.toURI()).resolve(resourceName);
+		} else
 			return Paths.get(u.toURI());
 	}
 	public static Path resolveToClassLoaderPath(ClassLoader loader, String resourceName) {
@@ -77,7 +81,10 @@ public interface MyUtilsPath {
 			throw new RuntimeException(e);
 		}
 	}
-	public static Path resolveToTempDir(String subpath) {
-		return Paths.get(System.getProperty("java.io.tmpdir"), subpath);
+	
+	public static final Path TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir")); 
+	
+	public static String pathFormattedDateTime() {
+		return LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy'T'HH.mm"));
 	}
 }

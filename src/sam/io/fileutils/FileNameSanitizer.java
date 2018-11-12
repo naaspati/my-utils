@@ -1,10 +1,10 @@
 package sam.io.fileutils;
 
+import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
-
-import static sam.io.DefaultCharset.*;
 
 public final class FileNameSanitizer {
     public static final double VERSION = 1.22;

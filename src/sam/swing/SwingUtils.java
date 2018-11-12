@@ -156,6 +156,8 @@ public final class SwingUtils {
 		JButton cancel = new JButton("CANCEL");
 
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5), false);
+		buttons.add(cancel);
+		buttons.add(ok);
 
 		boolean b[] = {false};
 

@@ -1,10 +1,10 @@
 package sam.tsv.tsvmap;
 
+import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+
 import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static sam.io.DefaultCharset.*;
 
 public class TsvMapConfig<K, V> {
     Map<K, V> map;

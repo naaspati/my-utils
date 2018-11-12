@@ -5,6 +5,10 @@ import java.util.Iterator;
 import java.util.Objects;
 
 public class Iterable2<E> implements Iterable<E> {
+	public static <T> Iterable2<T> wrap(Iterable<T> iter) {
+		return new Iterable2<>(iter);
+	}
+	
 	// private final Iterable<E> iterable;
 	private final Iterator<E> iterator;
 	private final int size;

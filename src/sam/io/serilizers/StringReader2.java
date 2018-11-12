@@ -107,6 +107,9 @@ public class StringReader2 {
 		CharsetDecoder decoder = config.decoder();
 
 		ReadableByteChannel channel2 = config.channel();
+		if(channel2 instanceof FileChannel && ((FileChannel)channel2).size() == 0)
+			return "";
+			
 		long[] buffersize = buffersize(channel2);
 		ByteBuffer bytes = ByteBuffer.allocate((int)buffersize[1]);
 		String result = null;
@@ -125,7 +128,7 @@ public class StringReader2 {
 				if(result == null)
 					result = cb.toString();
 				else
-					result += cb.toString();
+					result = concat(result, cb);
 				bytes.clear();
 			}
 		}
@@ -134,12 +137,29 @@ public class StringReader2 {
 		LOGGER.fine(() -> "READ { charset:"+config.charset()+", fileSize:"+buffersize[0]+", ByteBuffer.capacity:"+bytes.capacity()+", loopCount:"+loops2+"}");
 		return result;
 	}
+	private static String concat(String result, CharBuffer cb) {
+		if(result.length() == 0) return cb.toString();
+		if(cb.length() == 0) return result;
+		
+		char[] chars = new char[result.length() + cb.length()];
+		int n = 0;
+		for (int i = 0; i < result.length(); i++) 
+			chars[n++] = result.charAt(i);
+		
+		for (int i = 0; i < cb.length(); i++) 
+			chars[n++] = cb.charAt(i);
+		
+		return new String(chars);
+	}
 	public static StringBuilder getText0(ReaderConfig config) throws IOException {
 		CharsetDecoder decoder = config.decoder();
 
 		double d = decoder.averageCharsPerByte();
 		int bytesPer = (int) Math.round(d);
-		ReadableByteChannel channel2 = config.channel(); 
+		ReadableByteChannel channel2 = config.channel();
+		if(channel2 instanceof FileChannel && ((FileChannel)channel2).size() == 0)
+			return new StringBuilder();
+		
 		long[] bs = buffersize(channel2);
 		int buffersize = (int) bs[1];
 

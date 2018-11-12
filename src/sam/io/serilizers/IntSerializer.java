@@ -9,7 +9,7 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static sam.io.serilizers.Utils.getBuffer;
 import static sam.io.serilizers.Utils.readInt;
-import static sam.io.serilizers.Utils.*;
+import static sam.io.serilizers.Utils.writeInt;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,7 +80,7 @@ public interface IntSerializer {
 			Utils.write(buffer, c);
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { int[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2);
+		LOGGER.fine(() -> "WRITE { int[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 	}
  
 	public static void write(int[] value, OutputStream os) throws IOException {
@@ -118,7 +118,7 @@ public interface IntSerializer {
 			}
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { int[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2);
+		LOGGER.fine(() -> "READ { int[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 		
 		return array;
 		

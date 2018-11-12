@@ -1,6 +1,6 @@
 package sam.myutils;
 
 @FunctionalInterface
-public interface ErrorSupplier<T> {
-	public T get() throws Exception;
+public interface ErrorSupplier<E> {
+	public E get() throws Exception;
 }

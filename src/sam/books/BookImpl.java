@@ -17,25 +17,24 @@ import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class BookImpl {
-	private final int book_id ;
-	private final String name ;
-	private final String file_name ;
-	private final int path_id ;
-	private final PathsImpl dir; 
-	private final String author ;
-	private final String isbn ;
-	private final int page_count ;
-	private final String year ;
-	private final String description ;
-	private final BookStatus status;
-	private final String url;
+	public final int book_id ;
+	public final String name ;
+	public final String file_name ;
+	public final int path_id ;
+	public final String author ;
+	public final String isbn ;
+	public final int page_count ;
+	public final String year ;
+	public final String description ;
+	public final BookStatus status;
+	public final String url;
+	
+	public final PathsImpl dir;
 
-	public BookImpl(ResultSet rs, PathsImpl dir) throws SQLException {
+	public BookImpl(ResultSet rs) throws SQLException {
 		this.book_id = rs.getInt(BOOK_ID);
 		this.name = rs.getString(NAME);
 		this.file_name = rs.getString(FILE_NAME);
@@ -48,8 +47,7 @@ public class BookImpl {
 		this.status = Optional.ofNullable(rs.getString(STATUS)).map(BookStatus::valueOf).orElse(BookStatus.NONE);
 		this.url = rs.getString(URL);
 
-		this.dir = dir;
-
+		this.dir = new PathsImpl(rs);
 	}
 
 	BookImpl(int book_id, String name, String file_name, int path_id, PathsImpl dir, String author,
@@ -95,15 +93,23 @@ public class BookImpl {
 		return p2 != null ? p2 : getExpepectedFullPath();
 	}
 
+	@Override
+	public String toString() {
+		return "BookImpl [book_id=" + book_id + ", name=" + name + ", file_name=" + file_name + ", path_id=" + path_id
+				+ ", author=" + author + ", isbn=" + isbn + ", page_count=" + page_count + ", year=" + year
+				+ ", description=" + description + ", status=" + status + ", url=" + url + ", dir=" + dir + "]";
+	}
 
+
+
+	public static final String SELECT_ALL  = "SELECT * FROM "+TABLE_NAME+ " NATURAL JOIN "+PathsMeta.TABLE_NAME; 
 
 	public static List<BookImpl> getAll(BooksDB db) throws SQLException{
-		Map<Integer, PathsImpl> paths = PathsImpl.getAll(db).stream().collect(Collectors.toMap(PathsImpl::getPathId, s -> s));
-		return db.collectToList("SELECT * FROM "+TABLE_NAME, rs -> new BookImpl(rs, paths.get(rs.getInt(PATH_ID))));
+		return db.collectToList(SELECT_ALL, BookImpl::new);
 	}
-	public static final String FIND_BY_ID = "SELECT * FROM "+TABLE_NAME+ " NATURAL JOIN "+PathsMeta.TABLE_NAME+" WHERE "+BOOK_ID+"=";
+	public static final String FIND_BY_ID = SELECT_ALL+" WHERE "+BOOK_ID+"=";
 	public static BookImpl getById(BooksDB db, int id) throws SQLException {
-		return db.findFirst(FIND_BY_ID+id, rs -> new BookImpl(rs, new PathsImpl(rs)));
+		return db.findFirst(FIND_BY_ID+id, BookImpl::new);
 	}
 
 }
