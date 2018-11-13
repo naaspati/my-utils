@@ -86,7 +86,7 @@ public interface CharSerializer {
 			Utils.write(buffer, c);
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { char[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "WRITE { char[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 	} 
 	public static void write(char[] value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -124,7 +124,7 @@ public interface CharSerializer {
 			}
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { char[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "READ { char[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 		return array;
 	} 
 	public static char[] readArray( InputStream is) throws IOException {

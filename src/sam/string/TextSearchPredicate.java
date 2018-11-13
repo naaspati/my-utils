@@ -66,14 +66,14 @@ public class TextSearchPredicate<E> {
 				else {
 					 Predicate<String> filter = pattern.splitAsStream(searchKeyword)
 					 .<Predicate<String>>map(s -> source -> source.contains(s))
-					 .reduce(Predicate::and).orElse(null); 
+					 .reduce(Predicate::and).get(); 
 					 
 					 return (d -> filter.test(get(d)));
 				}
 			}
 		}
 	}
-	public void reset() {
+	public void clear() {
 		_filter = TRUE_ALL;
 		currentSearchedText = null;
 	}

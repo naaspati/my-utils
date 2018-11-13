@@ -34,7 +34,7 @@ import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
 
 public final class SwingUtils {
-	public static final double VERSION = 1.2;
+	// VERSION = 1.2;
 
 
 	/**

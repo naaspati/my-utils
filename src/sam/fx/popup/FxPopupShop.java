@@ -9,7 +9,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 public final class FxPopupShop {
-    public static final double VERSION = 1.2;
+    // VERSION = 1.2;
     
 	private static Window parent;
 	private static String style = "-fx-background-color:#1B1B1B;-fx-background-radius:10;-fx-padding:10 20 10 20;-fx-text-fill:white;-fx-border-width:0.3;-fx-border-color:white"; 

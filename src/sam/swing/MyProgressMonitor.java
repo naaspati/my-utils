@@ -14,7 +14,7 @@ import javax.swing.JFrame;
 import javax.swing.JProgressBar;
 
 public class MyProgressMonitor {
-    public static final double VERSION = 1.2;
+    // VERSION = 1.2;
     
 	private JFrame dialog;
 	private JProgressBar progressBar;

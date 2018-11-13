@@ -11,8 +11,8 @@ import java.util.function.Function;
 
 import sam.io.fileutils.FilesWalker.FileWalkResult;
 
+//VERSION = 1.21;
 public final class FilesUtils {
-    public static final double VERSION = 1.21;
 
     private FilesUtils() {}
     

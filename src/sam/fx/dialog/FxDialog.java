@@ -8,9 +8,8 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.util.Callback;
 
+//VERSION = 1.2;
 public class FxDialog {
-    public static final double VERSION = 1.2;
-    
     public static <E> Dialog<E> showDialog(Node content, Node header, Callback<ButtonType, E> resultConverter, ButtonType...buttons) {
         Objects.requireNonNull(resultConverter, "result converter cannot be null");
         if(buttons.length == 0)

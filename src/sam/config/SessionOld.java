@@ -25,9 +25,10 @@ import java.util.stream.Collectors;
 
 import sam.logging.MyLoggerFactory;
 
+//VERSION = 0.401;
 @Deprecated
 class SessionOld {
-	public static final double VERSION = 0.401;
+	
 
 	private static volatile Map<String, String> store;
 	private static boolean modified = false;
@@ -243,7 +244,7 @@ class SessionOld {
 
 		modified = false;
 
-		String date = "# --TIME -> "+LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))+"  VERSION: "+VERSION;
+		String date = "# --TIME -> "+LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
 		
 		Path path = path();
 

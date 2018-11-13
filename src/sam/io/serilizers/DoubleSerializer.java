@@ -92,7 +92,7 @@ public interface DoubleSerializer {
 		}
 
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { double[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "WRITE { double[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 	} 
 	public static void write(double[] value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -130,7 +130,7 @@ public interface DoubleSerializer {
 		}
 
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { double[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "READ { double[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 		return array;
 	} 
 	public static double[] readArray( InputStream is) throws IOException {

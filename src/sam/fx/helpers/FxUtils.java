@@ -11,7 +11,7 @@ import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 
 public interface FxUtils {
-	public static final double VERSION = 1.02;
+	// VERSION = 1.02;
 	public static void makeStageDraggable(Stage stage, Node node) {
 		double[] start = {0,0};
 

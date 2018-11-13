@@ -12,8 +12,8 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+//VERSION = 1.2;
 public interface ZipTools {
-    public static final double VERSION = 1.2;
     
 	public static void zip(Path input, Path output, boolean keepRoot) throws IOException {
 		Files.createDirectories(output.getParent());

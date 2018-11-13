@@ -8,9 +8,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 
+//VERSION = 1.214;
 public final class MyUtils {
-	public static final double VERSION = 1.214;
-
 	private MyUtils() {}
 
 	/** {@link MyUtilsBytes#bytesToHumanReadableUnits(long,boolean)} */

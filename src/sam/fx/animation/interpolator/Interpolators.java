@@ -7,8 +7,9 @@ import javafx.animation.Interpolator;
  * http://easings.net/#
  *
  */
+//VERSION = 1;
 public interface Interpolators {
-    public static final double VERSION = 1;
+    
     
 	public static final Interpolator EASE_IN_SINE = Interpolator.SPLINE(0.47, 0, 0.745, 0.715);
 	public static final Interpolator EASE_OUT_SINE = Interpolator.SPLINE(0.39, 0.575, 0.565, 1);

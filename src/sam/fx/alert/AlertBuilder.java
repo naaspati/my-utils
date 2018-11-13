@@ -18,8 +18,8 @@ import javafx.stage.Window;
 import javafx.util.Callback;
 import sam.myutils.MyUtilsCheck;
 
+//VERSION = 1.2;
 public final class AlertBuilder {
-    public static final double VERSION = 1.2;
 
     private final Alert alert;
 

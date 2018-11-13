@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 import sam.myutils.System2;
 
+//VERSION = 1.2;
 public final class ANSI {
-    public static final double VERSION = 1.2;
 
     private static boolean no_color = Boolean.valueOf(System2.lookup("sam.console.ANSI.no_color", "false"));
     public static void disable() {
@@ -36,7 +36,7 @@ public final class ANSI {
     /**5 Blink: Slow less than 150 per minute*/
     public static  final byte BLINK_SLOW = 5;
 
-    /**6 Blink: Rapid MS­DOS SYS? 150+ per minute? not widely supported*/
+    /**6 Blink: Rapid MSï¿½DOS SYS? 150+ per minute? not widely supported*/
     public static  final byte BLINK_RAPID = 6;
 
     /**Image: Negative inverse or reverse swap foreground and background {@link "https://en.wikipedia.org/wiki/Reverse_video"}*/
@@ -45,13 +45,13 @@ public final class ANSI {
     /**8 Conceal Not widely supported.*/
     public static  final byte CONCEAL_NOT = 8;
 
-    /**strikethrough on (Crossed­out Characters legible, but marked for deletion. Not widely supported.)*/
+    /**strikethrough on (Crossedï¿½out Characters legible, but marked for deletion. Not widely supported.)*/
     public static  final byte  STRIKETHROUGH_ON = 9;
 
     /**10 Primary(default) font*/
     public static  final byte PRIMARY_FONT = 10;
 
-    /**11–19 ­th alternate font Select the ­th alternate font (14 being the fourth alternate font, up to 19 being the 9th alternate font).*/
+    /**11ï¿½19 ï¿½th alternate font Select the ï¿½th alternate font (14 being the fourth alternate font, up to 19 being the 9th alternate font).*/
 
     /**20 Fraktur hardly ever supported*/
     public static  final byte FRAKTUR = 20;
@@ -140,7 +140,7 @@ public final class ANSI {
     public static  final byte NOT_OVERLINED = 55;
 
 
-    /**56–59 Reserved*/
+    /**56ï¿½59 Reserved*/
 
     /**60 ideogram underline or right side line hardly ever supported*/
     public static  final byte IDEOGRAM_UNDERLINE_OR_RIGHT_SIDE_LINE = 60;
@@ -162,7 +162,7 @@ public final class ANSI {
     public static  final byte IDEOGRAM_STRESS_MARKING = 64;
 
 
-    /**65 ideogram attributes off hardly ever supported, reset the effects of all of 60–64*/
+    /**65 ideogram attributes off hardly ever supported, reset the effects of all of 60ï¿½64*/
     public static  final byte IDEOGRAM_ATTRIBUTES_OFF = 65;
 
     /**Set foreground text color Black, high byteensity aixterm (not in standard) */

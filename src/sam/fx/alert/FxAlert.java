@@ -8,8 +8,9 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Window;
 
+//VERSION = 1.2;
 public final class FxAlert {
-    public static final double VERSION = 1.2;
+    
     
 	private static Window parent;
 

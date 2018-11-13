@@ -1,7 +1,5 @@
 package sam.string;
 
-import static sam.myutils.MyUtilsCheck.isEmpty;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Function;
@@ -13,95 +11,76 @@ import javafx.collections.ObservableList;
 import sam.logging.MyLoggerFactory;
 
 /**
+ * for javafx app user TextSearchFx</br>
+ * 
  * highly recommended <br>
  *   - search-key to be lowercased <br>
- *   - data   to be lowercased <br>
+ *   - data  to be lowercased <br>
  * @author Sameer
  *
  * @param <E>
  */
-@SuppressWarnings({"unchecked"})
-public class TextSearch<E> extends TextSearchPredicate<E>{
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class TextSearch<E> {
 	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearch.class.getSimpleName());
+	
+	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
+	public static final Predicate FALSE_ALL = TextSearchPredicate.FALSE_ALL;
+	
+	public static <E> Predicate<E> trueAll() { return TRUE_ALL; }
+	public static <E> Predicate<E> falseAll(){ return FALSE_ALL; }
 
 	private String oldSearch = "";
+	private String currentSearch;
 	private Collection<E> allData, searchBackup;
-	private transient Runnable onChange;
-	private Predicate<E> _preFilter = TRUE_ALL;
-	private boolean preFilterChanged;
-	private final int searchDelay ;
-	private SearchThread searchThread; 
+	private Predicate<E> preFilter = TRUE_ALL, textFilter = TRUE_ALL;
+	private boolean preFilterChanged, allDataChanged, newSearchContainsOldSearch;
+	private final TextSearchPredicate<E> tsp;
 
-	public TextSearch(Function<E, String> mapper, int searchDelay) {
-		super(mapper);
-		this.searchDelay = searchDelay;
+	public TextSearch(Function<E, String> mapper) {
+		this.tsp = new TextSearchPredicate<>(mapper);
 	}
-
-	public void setOnChange(Runnable onChange) {
-		reset();
-		this.onChange = onChange;
-	}
-	
-	private void setPreFilter0(Predicate<E> preFilter) {
-		this._preFilter = preFilter;
-		this.preFilterChanged = true;
+	public void set(Predicate<E> preFilter) {
 		allFilter = null;
-	} 
-	
-	public void search(Predicate<E> prefilter, String searchString) {
-		setPreFilter0(prefilter);
-		search(searchString);
+		this.preFilter = preFilter;
+		this.preFilterChanged = true;
 	}
-	public void setPreFilter(Predicate<E> preFilter) {
-		setPreFilter0(preFilter);
-		notifyChange();
+	public void set(String searchKeyword) {
+		allFilter = null;
+		this.oldSearch = this.currentSearch;
+		this.currentSearch = searchKeyword;
+		this.newSearchContainsOldSearch = oldSearch != null && searchKeyword != null && searchKeyword.contains(oldSearch);
+		textFilter = tsp.createFilter(searchKeyword); 
 	}
-	
-	public void search(String str) {
-		if(searchDelay <= 0 || isEmpty(str)) {
-			if(isEmpty(str))
-				reset();
-			else
-				changeFilter(str);
-			return;
-		}
-
-		if(searchThread == null) {
-			searchThread = new SearchThread(searchDelay, this::changeFilter);
-			searchThread.start();
-		}
-		searchThread.add(str);
-		
+	public String getCurrentSearchKeyword() {
+		return currentSearch;
+	}
+	public void set(Predicate<E> prefilter, String searchString) {
+		set(prefilter);
+		set(searchString);
 	}
 	public void setAllData(Collection<E> allData) {
 		this.allData = allData;
-		reset();
+		searchBackup = null;
+		allDataChanged = true;
 	}
 	public Collection<E> getAllData() {
 		return allData;
 	}
-	public void reset() {
-		if(searchThread != null)
-			searchThread.reset();
-		
+	public void clear() {
+		allDataChanged = false;
+		preFilterChanged = false;
 		oldSearch = "";
 		searchBackup = null;
 		allFilter = null;
-		super.reset();
-		changeFilter(null);
-	}
-	private void changeFilter(String s){
-		createFilter(s);
-		notifyChange();
-	}
-	private void notifyChange() {
-		if(onChange != null)
-			onChange.run();
+		preFilter = null;
+		textFilter = null;
+		tsp.clear();
 	}
 	public Collection<E> getFilterData() {
-		return searchBackup = process(searchBackup);
+		return searchBackup = applyFilter(searchBackup);
 	}
-	public Collection<E> process(Collection<E> list){
+	public Collection<E> applyFilter(Collection<E> list){
 		if(allData == null) {
 			if(list != null)
 				list.removeIf(getFilter().negate());
@@ -115,18 +94,15 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 			LOGGER.fine(() -> "filter == TRUE_ALL");
 			return setAll(list, allData);
 		} else {
-			String str = getCurrentSearchedText();
-			String os = oldSearch;
-			oldSearch = str;
-
-			if(!preFilterChanged && list != null && os != null && str != null && str.contains(os)) {
-				list.removeIf(filter.negate());
-				LOGGER.fine(() -> String.format("\"%s\".contains(\"%s\")", str, os));
-				return list;
-			} else {
+			if(allDataChanged || preFilterChanged || list == null || !newSearchContainsOldSearch) {
 				LOGGER.fine(() -> "ALL DATA FILTER");
 				preFilterChanged = false;
+				allDataChanged = false;
 				return setAll(list, allData.stream().filter(filter).collect(Collectors.toList()));
+			} else {
+				list.removeIf(filter.negate());
+				LOGGER.fine(() -> String.format("\"%s\".contains(\"%s\")", currentSearch, oldSearch));
+				return list;
 			}
 		}
 	} 
@@ -138,31 +114,21 @@ public class TextSearch<E> extends TextSearchPredicate<E>{
 			((ObservableList<E>)list).setAll(allData);
 		return list;
 	}
-	@Override
-	public Predicate<E> createFilter(String searchKeyword) {
-		allFilter = null;
-		return super.createFilter(searchKeyword);
-	}
 	private Predicate<E> allFilter;
-	@Override
+	
 	public Predicate<E> getFilter() {
 		if(allFilter != null)
 			return allFilter;
+		
+		Predicate<E> x = preFilter;
+		Predicate<E> y = textFilter;
+		
+		if(x == y)
+			return allFilter = x == null ? TRUE_ALL : x;
+		
+		if(x == null || y == null)
+			return allFilter = x == null ? y : x;
 
-		Predicate<E> f = super.getFilter();
-
-		if(_preFilter == TRUE_ALL && f == TRUE_ALL)
-			return TRUE_ALL;
-		if(_preFilter == TRUE_ALL)
-			return allFilter = f;
-		if(f == TRUE_ALL)
-			return allFilter = _preFilter;
-
-		return allFilter = _preFilter.and(f);
-	}
-	public void stop(){
-		if(searchThread == null) return;
-		searchThread.stop();
-		searchThread = null;
+		return allFilter = x.and(y);
 	}
 }

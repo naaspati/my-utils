@@ -149,7 +149,7 @@ public class StringWriter2 {
 		}
 
 		int t2 = loops;
-		LOGGER.fine(() -> "WRITE { charset:"+config.charset()+", CharSequence.length:"+s.length()+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+t2+"}"); 
+		LOGGER.finer(() -> "WRITE { charset:"+config.charset()+", CharSequence.length:"+s.length()+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+t2+"}"); 
 	}
 
 	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {

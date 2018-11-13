@@ -1,7 +1,7 @@
 package sam.console;
 
 public final class VT100 {
-    public static final double VERSION = 1.2;
+    // VERSION = 1.2;
     
 	/* ###############################################################
 	 * ######################  Device Status #########################

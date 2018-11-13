@@ -18,8 +18,8 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 
+//VERSION = 1.2;
 public class FxDeveloperUtils {
-	public static final double VERSION = 1.2;
 
 	public static void setEscapeExit(Scene scene) {
 		scene.getAccelerators().put(new KeyCodeCombination(KeyCode.ESCAPE), () -> System.exit(0));

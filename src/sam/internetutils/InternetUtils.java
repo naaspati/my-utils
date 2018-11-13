@@ -24,9 +24,10 @@ import sam.config.Properties2;
 import sam.logging.MyLoggerFactory;
 import sam.reference.WeakList;
 
+// VERSION = 1.24;
+// REQUIRED = 1509532146836-internet-utils.properties
 public final class InternetUtils {
-	public static final double VERSION = 1.24;
-	public static final String REQUIRED = "1509532146836-internet-utils.properties";
+	
 
 	final Logger logger = MyLoggerFactory.logger(InternetUtils.class.getSimpleName());
 	public  static final int DEFAULT_CONNECT_TIMEOUT;
@@ -45,7 +46,7 @@ public final class InternetUtils {
 	
 	private static Properties2 config0() {
 		try {
-			Properties2 p = new Properties2(InternetUtils.class.getResourceAsStream(REQUIRED));
+			Properties2 p = new Properties2(InternetUtils.class.getResourceAsStream("1509532146836-internet-utils.properties"));
 			p.setSystemEnvLooup(true);
 			p.setSystemPropertyLooup(true);
 			return p;

@@ -6,9 +6,11 @@ import java.lang.reflect.Field;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+//VERSION = 1.2
+//REQUIRED = 1509527940769-my-config.properties
+
 public final class MyConfig {
-	public static final double VERSION = 1.2;
-	public static final String REQUIRED = "1509527940769-my-config.properties";
+	
 
 	static {
 		try(InputStream is = MyConfig.class.getResourceAsStream("1509527940769-my-config.properties")) {

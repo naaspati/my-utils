@@ -1,7 +1,6 @@
 package sam.config;
 
 import static sam.myutils.MyUtilsException.noError;
-import static sam.myutils.MyUtilsPath.resolveToClassLoaderPath;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -23,9 +22,9 @@ import sam.logging.MyLoggerFactory;
 import sam.myutils.System2;
 
 
+// VERSION = 0.12;
 public class Session {
 	private static final Logger LOGGER = MyLoggerFactory.logger(Session.class.getSimpleName());
-	public static final double VERSION = 0.12;
 
 	private static Properties properties;
 	private static boolean modified = false;
@@ -37,6 +36,11 @@ public class Session {
 
 	private static void init0() {
 		if(properties != null) return;
+		
+		if(SESSION_FILE == null) {
+			properties = new Properties();
+			return;
+		}
 
 		try {
 			properties = new Properties();
@@ -62,24 +66,17 @@ public class Session {
 
 	private static Path path_0() throws URISyntaxException {
 		String s = System2.lookupAny("session_file", "session.file", "SESSION_FILE", "SESSION.FILE");
-			
+
 		Path p = null;
 
-		if(s == null)
+		if(s == null) {
 			LOGGER.warning("session_file variable not set");
-		else 
+			return null;
+		} else 
 			p = Paths.get(s);
 
-		if(p != null) {
-			if(Files.isDirectory(p))
-				return p.resolve("session.properties");
-
-			return p;
-		}
-
-		p = resolveToClassLoaderPath("session.properties");
-		if(p == null)
-			return noError(() -> Files.createTempFile("session", ".properties"));
+		if(p != null && Files.isDirectory(p))
+			return p.resolve("session.properties");
 		return p;
 	}
 	private static String toKey(Class<?> cls, String key) {
@@ -136,7 +133,7 @@ public class Session {
 	public static void put(Class<?> ownerClass, String key, Object value) {
 		put(toKey(ownerClass, key), value);
 	}
-	
+
 	public static void putAsString(Class<?> ownerClass, Object key, Object value) {
 		put(toKey(ownerClass, key.toString()), value.toString());
 	}
@@ -172,7 +169,7 @@ public class Session {
 		properties.keySet().removeIf(k -> k == null || k.getClass() != String.class);
 		properties.values().removeIf(k -> k == null || k.getClass() != String.class);
 		properties.store(Files.newOutputStream(SESSION_FILE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)));
-		
+
 		LOGGER.config(() -> "SESSION SAVED ");
 	}
 }

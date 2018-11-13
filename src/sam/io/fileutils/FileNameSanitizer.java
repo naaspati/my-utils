@@ -7,7 +7,7 @@ import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
 
 public final class FileNameSanitizer {
-    public static final double VERSION = 1.22;
+    // VERSION = 1.22;
     private Charset charset;
     
     public FileNameSanitizer() {

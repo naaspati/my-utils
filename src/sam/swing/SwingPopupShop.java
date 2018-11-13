@@ -15,8 +15,8 @@ import javax.swing.PopupFactory;
 import javax.swing.Timer;
 import javax.swing.border.Border;
 
+//VERSION = 1.2;
 public final class SwingPopupShop {
-	public static final double VERSION = 1.2;
 
 	private static PopupFactory POPUP_FACTORY;
 	private static Dimension SCREEN_SIZE;

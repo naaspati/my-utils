@@ -80,7 +80,7 @@ public interface IntSerializer {
 			Utils.write(buffer, c);
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { int[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "WRITE { int[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 	}
  
 	public static void write(int[] value, OutputStream os) throws IOException {
@@ -118,7 +118,7 @@ public interface IntSerializer {
 			}
 		}
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { int[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "READ { int[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 		
 		return array;
 		

@@ -9,8 +9,9 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+//VERSION = 0.004;
 public class StringUtils {
-	public static final double VERSION = 0.004;
+	
 
 	public static boolean contains(String s, char c) {
 		return s.indexOf(c) >= 0;	

@@ -92,7 +92,7 @@ public interface LongSerializer {
 		}
 
 		int loops2 = loops;
-		LOGGER.fine(() -> "WRITE { long[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "WRITE { long[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 
 	} 
 	public static void write(long[] value, OutputStream os) throws IOException {
@@ -131,7 +131,7 @@ public interface LongSerializer {
 		}
 
 		int loops2 = loops;
-		LOGGER.fine(() -> "READ { long[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.finer(() -> "READ { long[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
 
 		return array;
 	} 
