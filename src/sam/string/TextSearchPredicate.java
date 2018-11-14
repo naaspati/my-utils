@@ -6,10 +6,7 @@ import static sam.string.StringUtils.containsAny;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
-
-import sam.logging.MyLoggerFactory;
 
 
 /**
@@ -31,7 +28,6 @@ public class TextSearchPredicate<E> {
 	private final Function<E, String> mapper;
 	private String currentSearchedText;
 	private Predicate<E> _filter = TRUE_ALL;
-	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearchPredicate.class.getSimpleName());
 	
 	public TextSearchPredicate(Function<E, String> mapper) {
 		this.mapper = mapper;
@@ -41,9 +37,7 @@ public class TextSearchPredicate<E> {
 		return mapper.apply(e);
 	}
 	public Predicate<E> createFilter(String searchKeyword){
-		_filter = filter0(searchKeyword);
-		LOGGER.fine(() -> "Filter created for: "+searchKeyword);
-		return _filter; 
+		return _filter = filter0(searchKeyword);
 	}
 	public Predicate<E> getFilter() {
 		return _filter;

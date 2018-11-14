@@ -95,13 +95,13 @@ public class TextSearch<E> {
 			return setAll(list, allData);
 		} else {
 			if(allDataChanged || preFilterChanged || list == null || !newSearchContainsOldSearch) {
-				LOGGER.fine(() -> "ALL DATA FILTER");
+				LOGGER.fine(() -> "\""+currentSearch+"\": FULL FILTER");
 				preFilterChanged = false;
 				allDataChanged = false;
 				return setAll(list, allData.stream().filter(filter).collect(Collectors.toList()));
 			} else {
 				list.removeIf(filter.negate());
-				LOGGER.fine(() -> String.format("\"%s\".contains(\"%s\")", currentSearch, oldSearch));
+				LOGGER.fine(() -> "\""+currentSearch+"\".contains(\""+oldSearch+"\")");
 				return list;
 			}
 		}

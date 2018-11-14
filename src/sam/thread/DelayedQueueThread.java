@@ -1,6 +1,8 @@
 package sam.thread;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +18,6 @@ public class DelayedQueueThread<E>  {
 
 	private static final Object CONTINUE = new Object();
 	private static final Object STOP = new Object();
-	private static final Object CLEAR = new Object();
 
 	private final Thread thread ;
 	private final int delay ;
@@ -48,12 +49,17 @@ public class DelayedQueueThread<E>  {
 	}
 
 	private class LOOP implements Runnable {
+
+		private List<DL> list = new ArrayList<>();
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run()  {
 			while(true) {
 				Object data; 
 				try {
+					queue.drainTo(list); //safe clearing the queue
+					list.clear();
 					data = queue.take().data;
 				} catch (InterruptedException e) {
 					data = ACTION.get();
@@ -61,16 +67,11 @@ public class DelayedQueueThread<E>  {
 						throw new RuntimeException(e);
 				}
 				if(data == CONTINUE) continue;
-				
-				queue.clear();
 				if(data == STOP) {
 					stopped.set(true);
 					return;
 				}
-				if(data == CLEAR) continue;
-
-				if(queue.isEmpty())
-					action.accept((E)data);
+				action.accept((E)data);
 			}
 		}
 	}
@@ -83,7 +84,7 @@ public class DelayedQueueThread<E>  {
 		interrupt(STOP);
 	}
 	public void clear() {
-		interrupt(CLEAR);
+		interrupt(CONTINUE);
 	}
 	public void add(E data) {
 		if(stopped.get()) throw new IllegalStateException("adding to a stopped search thread");
