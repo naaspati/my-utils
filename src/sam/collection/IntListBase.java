@@ -7,9 +7,6 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
-/**
- * copy of ArrayList
- */
 public abstract class IntListBase {
 	private static final int[] DEFAULT_ARRAY = new int[0];
 
@@ -48,7 +45,6 @@ public abstract class IntListBase {
 	}
 	public void ensureCapacity(int minCapacity) {
 		if(capacity() > minCapacity) return;
-		modified();
 		grow(minCapacity);
 	}
 	public int capacity() {

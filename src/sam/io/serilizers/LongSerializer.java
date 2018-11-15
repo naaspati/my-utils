@@ -22,11 +22,9 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
-import sam.reference.WeakAndLazy;
 
 public interface LongSerializer {
 	static final Logger LOGGER = MyLoggerFactory.logger(LongSerializer.class.getSimpleName());
-	WeakAndLazy<ByteBuffer> wbuffer = new WeakAndLazy<>(() -> ByteBuffer.allocate(BYTES));
 
 	public static void write(long value, Path path) throws IOException {
 		try(WritableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
@@ -34,11 +32,10 @@ public interface LongSerializer {
 		}
 	}
 	public static void write(long value, WritableByteChannel c) throws IOException {
-		ByteBuffer buffer = wbuffer.pop();
+		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
 		buffer.clear();
 		buffer.putLong(value);
 		Utils.write(buffer, c);
-		wbuffer.set(buffer);
 	} 
 	public static void write(long value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -49,13 +46,11 @@ public interface LongSerializer {
 		}
 	}
 	public static long read( ReadableByteChannel c) throws IOException {
-		ByteBuffer buffer = wbuffer.pop();
+		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
 		buffer.clear();
 		c.read(buffer);
 		buffer.flip();
-		long l =  buffer.getLong();
-		wbuffer.set(buffer);
-		return l;
+		return  buffer.getLong();
 	} 
 	public static long read( InputStream is) throws IOException {
 		return read(newChannel(is));

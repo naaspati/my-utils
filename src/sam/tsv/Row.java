@@ -34,17 +34,10 @@ public final class Row {
 
     String[] values;
     Tsv parent;
-    private Object userData;
 
     Row(String[] values, Tsv parent ) {
         this.values = values;
         this.parent = parent;
-    }
-    public Object getUserData() {
-        return userData;
-    }
-    public void setUserData(Object userData) {
-        this.userData = userData;
     }
     public String get(int index) {
         return index < values.length ? values[index] : null;

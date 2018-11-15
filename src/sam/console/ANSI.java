@@ -1,13 +1,14 @@
 package sam.console;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import sam.myutils.System2;
 
 //VERSION = 1.2;
 public final class ANSI {
-
-    private static boolean no_color = Boolean.valueOf(System2.lookup("sam.console.ANSI.no_color", "false"));
+    private static boolean no_color = Optional.ofNullable(System2.lookupAny("sam.console.ANSI.color", "ANSI.color", "ansi.color")).map(Boolean::valueOf).map(t -> !t).orElse(false);
+    
     public static void disable() {
     	no_color = true;
     }
@@ -224,16 +225,16 @@ public final class ANSI {
     /**
      * this method wraps given string in ansi color codes,
      * <br> dont supply 0(RESET)  
-     * @param string
+     * @param value
      * @param ansiCodes
      */
-    public static  String wrap(Object string, byte... ansiColorCodes){
-        if(no_color) return String.valueOf(string);
+    public static  String wrap(Object value, byte... ansiColorCodes){
+        if(no_color) return String.valueOf(value);
 
         StringBuilder b = new StringBuilder(ANSI_START);
         for (byte b1 : ansiColorCodes) b.append(b1).append(';');
         b.append(ANSI_START_CLOSE)
-        .append(string)
+        .append(value)
         .append("\u001b[0m");
 
         return b.toString();
@@ -383,6 +384,8 @@ public final class ANSI {
     public static String createUnColoredBanner(String text){
         return createBanner(text, 50, '#', -1, -1);
     }
+    
+    
     /**
      * 
      * @param text should be single line
@@ -392,7 +395,14 @@ public final class ANSI {
      * @param symbolColor FOREGROUND_{color} color to wrap the symbol (if u wish skip ansi coloring then pass this value -1)
      * @return
      */
-    public static String createBanner(String text, int length, char symbol, int textColor, int symbolColor){
+    public static String createBanner(String text, int length, char symbol, int textColor, int symbolColor) {
+    	if(no_color)
+    		return _createBanner(text, length, symbol, -1, -1);
+    	else
+    		return _createBanner(text, length, symbol, textColor, symbolColor);
+    }
+    private static String _createBanner(String text, int length, char symbol, int textColor, int symbolColor) {
+    	
         if(text == null)
             text = "null";
 

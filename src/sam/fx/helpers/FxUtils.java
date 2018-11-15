@@ -5,9 +5,6 @@ import java.util.function.Consumer;
 import javafx.beans.InvalidationListener;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 
 public interface FxUtils {
@@ -55,24 +52,8 @@ public interface FxUtils {
 	public static InvalidationListener invalidationListener(InvalidationListener invalidationListener) {
 		return invalidationListener;
 	}
-
-	/**
-	 * 
-	 * <pre>
-	 *   Pane p = new Pane();
-	 *   p.setMaxWidth(Double.MAX_VALUE);
-	 *   HBox.setHgrow(p, Priority.ALWAYS);
-	 *   return p;
-	 * </pre>
-	 * 
-	 * @return
-	 */
-	public static Pane longPaneHbox() {
-		Pane p = new Pane();
-		p.setMaxWidth(Double.MAX_VALUE);
-		HBox.setHgrow(p, Priority.ALWAYS);
-		return p;	
+	public static <E> E edit(E e, Consumer<E> edit) {
+		edit.accept(e);
+		return e;
 	}
-
-
 }

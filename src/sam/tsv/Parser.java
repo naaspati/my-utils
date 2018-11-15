@@ -6,8 +6,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Objects;
 
+import sam.myutils.MyUtilsCheck;
 import sam.string.StringUtils;
 
 
@@ -17,14 +19,23 @@ abstract class Parser extends Escaper {
     private String line;
     private String[] lineArray;
     
-    void parse(InputStream is, boolean firstRowIsColumnNames, Charset charset, String nullReplacement) throws IOException {
+    void parse(InputStream is, Charset charset, String nullReplacement, TsvParserOption...optionsA) throws IOException {
+    	EnumSet<TsvParserOption> options =EnumSet.noneOf(TsvParserOption.class);
+        if(MyUtilsCheck.isNotEmpty(optionsA)) {
+        	for (TsvParserOption t : optionsA) 
+				options.add(t);
+        }
+    	parse(is, charset, nullReplacement, options);
+    }
+    
+    void parse(InputStream is, Charset charset, String nullReplacement, EnumSet<TsvParserOption> options) throws IOException {
         this.nullReplacement = nullReplacement;
         lineNumber = 0;
         
         try(InputStreamReader isr = new InputStreamReader(is, charset);
                 BufferedReader reader = new BufferedReader(isr)) {
             
-            if(firstRowIsColumnNames) {
+            if(options.contains(TsvParserOption.FIRST_ROW_IS_COLUMN_NAME)) {
                 String firstLine = reader.readLine();
 
                 if(firstLine == null)

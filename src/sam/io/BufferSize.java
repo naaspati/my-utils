@@ -2,14 +2,9 @@ package sam.io;
 
 import static sam.myutils.System2.lookup;
 
-import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.util.Arrays;
 import java.util.Optional;
 
 import sam.logging.MyLoggerFactory;
-import sam.reference.ReferenceUtils;
 
 public final class BufferSize {
 	public static final int DEFAULT_BUFFER_SIZE = get0();

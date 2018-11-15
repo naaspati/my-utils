@@ -3,6 +3,7 @@ package sam.fx.developer.utils;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,13 +11,14 @@ import java.util.stream.Collectors;
 import javafx.application.Platform;
 import sam.io.fileutils.DirWatcher;
 
-public class CssLiveReload implements Runnable {
+public class CssLiveReload extends DirWatcher {
 	private final Collection<Path> filesToWatch;
 	private List<String> styleSheets;
-	private final DirWatcher watcher;
 	private final String cssDir;
 
 	public CssLiveReload(List<String> stylesheets, Path cssDir, Collection<Path> cssFilesFileNames) throws MalformedURLException {
+		super(cssDir, StandardWatchEventKinds.ENTRY_MODIFY);
+		
 		this.styleSheets = stylesheets;
 		this.filesToWatch = cssFilesFileNames;
 		String s = cssDir.toUri().toURL().toString();
@@ -24,23 +26,6 @@ public class CssLiveReload implements Runnable {
 			s = s.concat("/");
 		
 		this.cssDir = s;
-		
-		watcher = new DirWatcher(cssDir, this::onupdate, this::onError, StandardWatchEventKinds.ENTRY_MODIFY);
-	}
-	
-	private boolean onError(Throwable t) {
-		t.printStackTrace();
-		return false;
-	}
-	private void onupdate(Path path){
-		if(!filesToWatch.contains(path))
-			return;
-		String url = cssDir+path;
-		
-		Platform.runLater(() -> styleSheets.remove(url));
-		Platform.runLater(() -> styleSheets.add(url));
-		
-		System.out.println("stylesheet modified: "+path.getFileName());
 	}
 
 	@Override
@@ -55,7 +40,28 @@ public class CssLiveReload implements Runnable {
 		
 		System.out.println("watching: \n   dir:"+cssDir);
 		System.out.println("   files: "+filesToWatch.stream().map(Path::toString).collect(Collectors.joining(", ")));
-		watcher.run();
+		super.run();
+	}
+
+	@Override
+	protected void failed(Exception e) {
+		e.printStackTrace();
+	}
+	@Override
+	protected boolean onErrorContinue(Exception e) {
+		e.printStackTrace();
+		return true;
+	}
+	@Override
+	protected void onEvent(Path path, WatchEvent<?> we) {
+		if(!filesToWatch.contains(path))
+			return;
+		String url = cssDir+path;
+		
+		Platform.runLater(() -> styleSheets.remove(url));
+		Platform.runLater(() -> styleSheets.add(url));
+		
+		System.out.println("stylesheet modified: "+path.getFileName());
 	}
 
 }

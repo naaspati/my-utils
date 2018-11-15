@@ -5,5 +5,9 @@ public class TsvException extends RuntimeException {
 	public TsvException(String string) {
 		super(string);
 	}
+	public TsvException(String string, Exception e) {
+		super(string, e);
+	}
+	
 
 }

@@ -40,18 +40,18 @@ public class Builder {
     public Tsv build() {
         return new Tsv(collection, columnNames, charset, nullReplaceMent);
     }
-    public Tsv parse(Path path, boolean firstRowIsColumnNames) throws IOException {
+    public Tsv parse(Path path) throws IOException {
         Objects.requireNonNull(path);
 
         try(InputStream is = Files.newInputStream(path)) {
-            Tsv tsv = build().parse(is, firstRowIsColumnNames);
+            Tsv tsv = build().parse(is);
 
             tsv.setPath(path);
             return tsv;
         }
     }
-    public Tsv parse(InputStream is, boolean firstRowIsColumnNames) throws IOException {
+    public Tsv parse(InputStream is) throws IOException {
         Objects.requireNonNull(is);
-        return build().parse(is, firstRowIsColumnNames);
+        return build().parse(is);
     }
 }

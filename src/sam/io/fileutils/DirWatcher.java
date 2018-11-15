@@ -8,30 +8,24 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 @SuppressWarnings("rawtypes")
-public class DirWatcher implements Runnable {
-	private final Path path;
-	private final Consumer<Path> onupdate;
-	private final Function<Throwable, Boolean> onError;
-	private final Kind[] watchTypes;
+public abstract class DirWatcher implements Runnable {
+	public final Path dir;
+	private Kind[] watchTypes;
 	
-    public DirWatcher(Path path, Consumer<Path> onupdate, Function<Throwable, Boolean> onError, Kind...watchTypes) {
-		this.path = path;
-		this.onupdate = onupdate;
-		this.onError = onError;
+    public DirWatcher(Path dir, Kind...watchTypes) {
+    	if(!Files.isDirectory(dir))
+            throw new IllegalArgumentException("path can only be a directory");
+    	
+		this.dir = dir;
 		this.watchTypes = watchTypes;
 	}
-
 	public void run() {
-        if(!Files.isDirectory(path))
-            throw new IllegalArgumentException("path can only be a directory");
-
         try {
             WatchService wa = FileSystems.getDefault().newWatchService();
-            WatchKey firstKey = path.register(wa, watchTypes);
+            WatchKey firstKey = dir.register(wa, watchTypes);
+            watchTypes = null;
 
             while (true) {
                 try {
@@ -52,17 +46,32 @@ public class DirWatcher implements Runnable {
                         if (we.kind() == StandardWatchEventKinds.OVERFLOW)
                             continue;
 
-                        onupdate.accept((Path)we.context());
+                        onEvent((Path)we.context(), we);
                     }
                     if (!key2.reset())
                         return;
                 } catch (Exception e) {
-                    if(!onError.apply(e))
+                    if(!onErrorContinue(e))
                         return;
                 }
             }
         } catch (Exception e) {
-            onError.apply(e);
+        	failed(e);
         }
     }
+	
+	/**
+	 * process failed completely
+	 * @param e
+	 */
+	protected abstract void failed(Exception e);
+	
+	/**
+	 * possibly error while polling 
+	 * @param e
+	 * @return return return if you still want to continue; 
+	 */
+	protected abstract boolean onErrorContinue(Exception e);
+	
+	protected abstract void onEvent(Path context, WatchEvent<?> we);
 }

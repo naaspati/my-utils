@@ -1,5 +1,9 @@
 package sam.fx.alert;
 
+import static javafx.scene.control.ButtonType.NO;
+import static javafx.scene.control.ButtonType.OK;
+import static javafx.scene.control.ButtonType.YES;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -42,7 +46,7 @@ public final class FxAlert {
 
 		AlertBuilder alert = alertBuilder(AlertType.ERROR)
 				.content(text)
-				.buttons(ButtonType.OK)
+				.buttons(OK)
 				.header(header);
 
 		if(error == null) {}
@@ -66,7 +70,7 @@ public final class FxAlert {
 		
 		AlertBuilder alert = alertBuilder(alertType)
 				.content(text)
-				.buttons(ButtonType.OK)
+				.buttons(OK)
 				.header(header);
 
 		if(blockingModality)
@@ -88,11 +92,11 @@ public final class FxAlert {
 
 		AlertBuilder alert = alertBuilder(AlertType.CONFIRMATION)
 				.content(text)
-				.buttons(ButtonType.YES, ButtonType.NO)
+				.buttons(YES, NO)
 				.header(header);
 
 		Optional<ButtonType> r = alert.showAndWait();
-		return r.isPresent() && r.get() == ButtonType.YES;
+		return r.isPresent() && r.get() == YES;
 	}
 
 	public static  Alert showConfirmDialog(String title, Object header, Object content) {

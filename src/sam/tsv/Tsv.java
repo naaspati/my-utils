@@ -35,12 +35,9 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
      * @throws IOException
      */
     public static Tsv parse(Path path) throws IOException {
-        return builder().parse(path, true);
+        return builder().parse(path);
     }
-    public static Tsv parse(InputStream is) throws IOException {
-        return builder().parse(is, true);
-    }
-
+    
     Charset charset;
     Path path;
     String nullReplacement;
@@ -74,7 +71,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
      * 
      * 
      */  
-    public Tsv parse(InputStream is, boolean firstRowIsColumnNames) throws IOException {
+    public Tsv parse(InputStream is) throws IOException {
         new Parser() {
 
             @Override
@@ -87,7 +84,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
             public void addRow(String[] row) {
                 Tsv.this.addRow(new Row(row, Tsv.this));
             }
-        }.parse(is, firstRowIsColumnNames, charset, nullReplacement);
+        }.parse(is, charset, nullReplacement, TsvParserOption.FIRST_ROW_IS_COLUMN_NAME);
         return this;
     }
     /**

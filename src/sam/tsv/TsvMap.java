@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class TsvMap<K, V> implements Map<K, V> {
             void addRow(String[] row) {
                 map.put(keyConverter.fromString(row[0]), valueConverter.fromString(row[1]));
             }
-        }.parse(is, firstRowIsColumnNames, config.getCharset(), null);
+        }.parse(is, config.getCharset(), null, firstRowIsColumnNames ? EnumSet.of(TsvParserOption.FIRST_ROW_IS_COLUMN_NAME) : EnumSet.noneOf(TsvParserOption.class));
 
         keyColumnName = s[0];
         valueColumnName = s[1];
