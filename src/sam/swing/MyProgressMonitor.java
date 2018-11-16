@@ -62,8 +62,8 @@ public class MyProgressMonitor {
 	}
 	
 	/**
-	 * this will close the program if set true, and dialog is closed manually by user, (disposing dialog does not close the program)
-	 * @param b
+	 *  this will close the program if set true, and dialog is closed manually by user, (disposing dialog does not close the program)
+	 * @param operation
 	 */
 	public void setDefaultCloseOperation(int operation){
 			dialog.setDefaultCloseOperation(operation);
@@ -139,7 +139,7 @@ public class MyProgressMonitor {
 	}
 	
 	/**
-	 * to reset {@link #frame} (<b>dialog.setTitle(title);</b>)  and {@link #progressBar} (<b>progressBar.setValue(0); progressBar.setString(title);</b>)
+	 * to reset {@link #dialog} (<b>dialog.setTitle(title);</b>)  and {@link #progressBar} (<b>progressBar.setValue(0); progressBar.setString(title);</b>)
 	 * @param title
 	 */
 	public void setReset(String title){

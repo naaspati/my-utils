@@ -9,8 +9,8 @@ public interface MyUtilsExtra {
 	/**
 	 * return ifTrue ? than : otherWise;
 	 * @param ifTrue 
-	 * @param expected
-	 * @param other
+	 * @param than
+	 * @param otherwise
 	 * @return
 	 */
 	public static <E> E elvis(boolean ifTrue, E than, E otherwise) {

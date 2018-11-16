@@ -38,10 +38,7 @@ public class SQLiteDB extends JDBCHelper {
      * 
      * @param dbPath can be a file, path, string, url
      * @param prop
-     * @param createDefaultStatement
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws ClassNotFoundException
+     * @param create
      * @throws SQLException
      */
     public SQLiteDB(Path dbPath, Properties prop, boolean create) throws SQLException {

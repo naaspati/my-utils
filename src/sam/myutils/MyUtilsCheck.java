@@ -20,8 +20,8 @@ public interface MyUtilsCheck {
 	}
 	/**
 	 * 
-	 * @param condition if not true, throw new IllegalArgumentException(msg);
-	 * @param msg
+	 * @param ifNotTrueThrow if not true, throw new IllegalArgumentException(msg);
+	 * @param msgSupplier
 	 */
 	public static void checkArgument(boolean ifNotTrueThrow, Supplier<String> msgSupplier) {
 		if(!ifNotTrueThrow)
@@ -73,7 +73,7 @@ public interface MyUtilsCheck {
 	 * 
 	 * @param value
 	 * @param cls
-	 * @return value != null && value.getClass() == cls
+	 * @return value != null &amp;&amp; value.getClass() == cls
 	 */
 	public static boolean isOfType(Object value, @SuppressWarnings("rawtypes") Class cls) {
 		return value != null && value.getClass() == cls;

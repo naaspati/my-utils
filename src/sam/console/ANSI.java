@@ -40,7 +40,7 @@ public final class ANSI {
     /**6 Blink: Rapid MS�DOS SYS? 150+ per minute? not widely supported*/
     public static  final byte BLINK_RAPID = 6;
 
-    /**Image: Negative inverse or reverse swap foreground and background {@link "https://en.wikipedia.org/wiki/Reverse_video"}*/
+    /**Image: Negative inverse or reverse swap foreground and background https://en.wikipedia.org/wiki/Reverse_video*/
     public static  final byte  INVERSE_ON = 7;
 
     /**8 Conceal Not widely supported.*/
@@ -200,34 +200,10 @@ public final class ANSI {
     /**Set background White, high byteensity aixterm (not in standard) */
     public static  final byte HIGH_INTENSITY_BACKGROUND_WHITE = 107;
 
-    /**
-     * "\u001b["
-     * <br><br>
-     * e.g. <b><i> ANSI_START</b></i>  </b></i>  +  <b><i> FOREGROUND_BLACK</b></i>  </b></i>  +  <b><i> "\u001b[0m"_START</b></i>  </b></i>  +  <b>normal text</b></b></i>  </b></i>  +  <b><i> "\u001b[0m"      
-     * 
-     */
     public static  final String ANSI_START = "\u001b[";
-    /**
-     * "\u001b[0m"_START = 'm'<br> when color codes added to "\u001b[0m"_START is added before adding text 
-     * <br><br>
-     * e.g. <b><i> ANSI_START</b></i>  </b></i>  +  <b><i> FOREGROUND_BLACK</b></i>  </b></i>  +  <b><i> "\u001b[0m"_START</b></i>  </b></i>  +  <b>normal text</b></b></i>  </b></i>  +  <b><i> "\u001b[0m"      
-     * 
-     *   
-     */
     public static  final char ANSI_START_CLOSE = 'm'; 
-    /**
-     * "\u001b[0m"
-     *  <br><br>
-     * e.g. <b><i> ANSI_START</b></i>  </b></i>  +  <b><i> FOREGROUND_BLACK</b></i>  </b></i>  +  <b><i> "\u001b[0m"_START</b></i>  </b></i>  +  <b>normal text</b></b></i>  </b></i>  +  <b><i> "\u001b[0m"	
-     */
     public static  final String ANSI_CLOSE = "\u001b[0m";
 
-    /**
-     * this method wraps given string in ansi color codes,
-     * <br> dont supply 0(RESET)  
-     * @param value
-     * @param ansiCodes
-     */
     public static  String wrap(Object value, byte... ansiColorCodes){
         if(no_color) return String.valueOf(value);
 
@@ -249,42 +225,42 @@ public final class ANSI {
         return sb.append(prefix).append(value).append( "\u001b[0m");
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_BLACK}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#BLACK}*/
     public static  String black(Object obj){
         return wrap("\u001b[30m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_RED}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#RED}*/
     public static  String red(Object obj){
         return wrap("\u001b[31m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_GREEN}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#GREEN}*/
     public static  String green(Object obj){
         return wrap("\u001b[32m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_YELLOW}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#YELLOW}*/
     public static  String yellow(Object obj){
         return wrap("\u001b[33m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_BLUE}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#BLUE}*/
     public static  String blue(Object obj){
         return wrap("\u001b[34m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_MAGENTA}*/   
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#MAGENTA}*/   
     public static  String magenta(Object obj){
         return wrap("\u001b[35m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_CYAN}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#CYAN}*/
     public static  String cyan(Object obj){
         return wrap("\u001b[36m", obj);
     }
 
-    /**equivalent to {@link #wrap(String, byte...)} with byte = {@link #FOREGROUND_WHITE}*/
+    /**equivalent to {@link #wrap(Object, byte...)} with byte = {@link FOREGROUND#WHITE}*/
     public static  String white(Object obj){
         return wrap("\u001b[37m", obj);
     }
@@ -362,9 +338,10 @@ public final class ANSI {
     /**
      * create banner with<br>
      * 
-     * calls with {@link #createBanner(String str, length = 50, symbol = '#', textColor = FOREGROUND_YELLOW, symbolColor =  = FOREGROUND_BLUE)}
+     * calls {@link #createBanner(String, int, char, int, int)} <br>
+     * as createBanner(String str, length = 50, symbol = '#', textColor = FOREGROUND_YELLOW, symbolColor =  = FOREGROUND_BLUE)
      * 
-     * @param str
+     * @param text
      * @return
      */
     public static String createBanner(String text){
@@ -384,7 +361,6 @@ public final class ANSI {
     public static String createUnColoredBanner(String text){
         return createBanner(text, 50, '#', -1, -1);
     }
-    
     
     /**
      * 

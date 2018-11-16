@@ -38,7 +38,8 @@ public final class SwingUtils {
 
 
 	/**
-	 * calls {@link #showErrorDialog(null, CharSequence, Exception)}
+	 * calls {@link #showErrorDialog(Component, CharSequence, Exception)}
+	 * with Component = null <br>
 	 * @param msg
 	 * @param e
 	 * @return

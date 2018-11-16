@@ -114,7 +114,7 @@ public class ReferenceList<T>  {
 	}
 
 	/**
-     * poll -> consume -> return to store
+     * poll -&gt; consume -&gt; return to store
      * @param consumer
      */
     public void cosume(Consumer<T> consumer) {

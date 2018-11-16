@@ -28,7 +28,7 @@ public class DelayedQueueThread<E>  {
 	private final Comparator<DL> comparator; 
 
 	/**
-	 * order newest -> oldest
+	 * order newest -&gt; oldest
 	 * @param delay
 	 * @param action
 	 */

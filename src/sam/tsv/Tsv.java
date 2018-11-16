@@ -63,9 +63,6 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
     /**
      * read a file and replace any existing data 
      * 
-     * @param path
-     * @param firstRowIsColumnNames
-     * @param options
      * @return
      * @throws IOException
      * 

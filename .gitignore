@@ -9,7 +9,7 @@
 src/main/resources/backups/
 src/main/resources/backup_setting/
 /logs/
-
+/src/sam/manga/mangarock/
 
 *.class
 
