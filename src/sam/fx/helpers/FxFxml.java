@@ -14,7 +14,7 @@ import javafx.util.Callback;
 import sam.logging.MyLoggerFactory;
 
 public final class FxFxml implements BuilderFactory  {
-	private static final Logger LOGGER = MyLoggerFactory.logger(FxFxml.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(FxFxml.class);
 
 	private static String FXML_DIR;
 	public static void setFxmlDir(URL fxml_dir) {

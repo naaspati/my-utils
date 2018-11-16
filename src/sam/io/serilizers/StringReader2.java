@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 import sam.logging.MyLoggerFactory;
 
 public class StringReader2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(StringReader2.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(StringReader2.class);
 	
 	public static ReaderConfig reader() {
 		return new ReaderConfig();

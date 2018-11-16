@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 import sam.logging.MyLoggerFactory;
 
 public final class FileOpener {
-	private static final Logger LOGGER = MyLoggerFactory.logger(FileOpener.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(FileOpener.class);
 	
 	public static void openFile(File file) throws IOException{
 		LOGGER.fine(() -> "Open File: "+file);

@@ -12,7 +12,6 @@ import java.nio.channels.FileLock;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -95,8 +94,8 @@ public interface FilesUtilsIO {
 		}
 		return file.delete();
 	}
-	public static FileLock createFileLock(String lockName) throws IOException {
-		FileChannel c = FileChannel.open(Paths.get(lockName), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+	public static FileLock createFileLock(Path lockFile) throws IOException {
+		FileChannel c = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
 		FileLock fl =  c.tryLock();
 		c.write(ByteBuffer.wrap(new byte[]{1}));
 		return fl;

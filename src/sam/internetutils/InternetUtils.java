@@ -29,7 +29,7 @@ import sam.reference.WeakList;
 public final class InternetUtils {
 	
 
-	final Logger logger = MyLoggerFactory.logger(InternetUtils.class.getSimpleName());
+	final Logger logger = MyLoggerFactory.logger(InternetUtils.class);
 	public  static final int DEFAULT_CONNECT_TIMEOUT;
 	public  static final int DEFAULT_READ_TIMEOUT;
 	public  static final String DEFAULT_USER_AGENT;

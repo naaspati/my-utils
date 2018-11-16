@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 import sam.logging.MyLoggerFactory;
 
 public class StringWriter2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(StringWriter2.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(StringWriter2.class);
 
 	public StringWriter2() {}
 

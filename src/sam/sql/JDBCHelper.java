@@ -22,7 +22,7 @@ import sam.logging.MyLoggerFactory;
 public abstract class JDBCHelper implements AutoCloseable {
 	private Statement defaultStatement;
 	private final Connection connection;
-	private final Logger LOGGER = MyLoggerFactory.logger(getClass().getSimpleName());
+	private final Logger LOGGER = MyLoggerFactory.logger(getClass());
 
 	protected JDBCHelper(Connection connection) {
 		this.connection = connection;

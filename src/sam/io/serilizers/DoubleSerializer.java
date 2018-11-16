@@ -25,7 +25,7 @@ import sam.logging.MyLoggerFactory;
 import sam.reference.WeakAndLazy;
 
 public interface DoubleSerializer {
-	Logger LOGGER = MyLoggerFactory.logger(DoubleSerializer.class.getSimpleName());
+	Logger LOGGER = MyLoggerFactory.logger(DoubleSerializer.class);
 	WeakAndLazy<ByteBuffer> wbuffer = new WeakAndLazy<>(() -> ByteBuffer.allocate(BYTES));
 
 	public static void write(double value, Path path) throws IOException {

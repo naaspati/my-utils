@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 import sam.logging.MyLoggerFactory;
 
 public final class System2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(System2.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(System2.class);
 
 	public static String lookup(Class<?> cls, String fieldName, String defaultValue) {
 		return lookup(cls.getCanonicalName()+"."+fieldName, defaultValue);

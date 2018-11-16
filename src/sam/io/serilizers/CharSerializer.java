@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import sam.logging.MyLoggerFactory;
 
 public interface CharSerializer {
-	static final Logger LOGGER = MyLoggerFactory.logger(CharSerializer.class.getSimpleName());
+	static final Logger LOGGER = MyLoggerFactory.logger(CharSerializer.class);
 
 	public static void write(char value, Path path) throws IOException {
 		try(WritableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {

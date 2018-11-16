@@ -22,7 +22,7 @@ import sam.logging.MyLoggerFactory;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class TextSearch<E> {
-	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearch.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearch.class);
 	
 	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
 	public static final Predicate FALSE_ALL = TextSearchPredicate.FALSE_ALL;

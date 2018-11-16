@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import sam.logging.MyLoggerFactory;
 
 public class Properties2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(Properties2.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(Properties2.class);
 
 	private final Properties properties = new Properties();
 	private final HashMap<String, String> parsed = new HashMap<>();

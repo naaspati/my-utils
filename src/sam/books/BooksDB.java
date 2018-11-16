@@ -56,7 +56,7 @@ public class BooksDB extends BooksDBMinimal {
 		Map<Integer, String> bookIdFileNameMap = collectToMap(qm().select(BOOK_ID,FILE_NAME).from(TABLE_NAME).where(w -> w.in(BOOK_ID, bookIdPathMap.keySet(), false)).build(), rs -> rs.getInt(BOOK_ID), rs -> rs.getString(FILE_NAME));
 		
 		try {
-			Logger logger = MyLoggerFactory.logger(getClass().getSimpleName()); 
+			Logger logger = MyLoggerFactory.logger(getClass()); 
 			
 			for (Entry<Integer, Path> entry : bookIdPathMap.entrySet()) {
 				Path path = Objects.requireNonNull(entry.getValue());

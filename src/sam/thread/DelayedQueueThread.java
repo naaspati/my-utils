@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import sam.logging.MyLoggerFactory;
 
 public class DelayedQueueThread<E>  {
-	private static final Logger LOGGER = MyLoggerFactory.logger(DelayedQueueThread.class.getSimpleName());
+	private static final Logger LOGGER = MyLoggerFactory.logger(DelayedQueueThread.class);
 
 	private static final Object CONTINUE = new Object();
 	private static final Object STOP = new Object();
