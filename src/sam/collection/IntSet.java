@@ -3,22 +3,24 @@ package sam.collection;
 import java.util.Arrays;
 
 public class IntSet extends IntListBase {
-	public IntSet() {
-		super();
-	}
+	public IntSet() {}
+	
 	public IntSet(int initialCapacity) {
 		super(initialCapacity);
 	}
 	public IntSet(int[] source, int from, int to) {
-		super(source, from, to);
-		sort();
+		if(from > to)
+			throw new IllegalArgumentException();
+		if(from == to)
+			data = DEFAULT_ARRAY;
+		else {
+			ensureCapacity(to - from);
+			for (int i = from; i < to; i++) 
+				add(source[i]);
+		}
 	}
 	public IntSet(int[] source) {
-		super(source);
-		sort();
-	}
-	private void sort() {
-		Arrays.sort(data, 0, size);
+		this(source, 0, source.length);
 	}
 	@Override
 	public int indexOf(int value) {

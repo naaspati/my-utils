@@ -8,11 +8,11 @@ import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
 public abstract class IntListBase {
-	private static final int[] DEFAULT_ARRAY = new int[0];
+	static final int[] DEFAULT_ARRAY = new int[0];
 
 	int modCount;
 
-	int[] data;
+	int[] data = DEFAULT_ARRAY;
 	int size;
 
 	public IntListBase() {
@@ -22,7 +22,12 @@ public abstract class IntListBase {
 		init(Arrays.copyOf(source, source.length));
 	}
 	public IntListBase(int[] source, int from, int to) {
-		init(Arrays.copyOfRange(source, from, to));
+		if(from > to)
+			throw new IllegalArgumentException();
+		if(from == to)
+			data = DEFAULT_ARRAY;
+		else
+			init(Arrays.copyOfRange(source, from, to));
 	}
 	public IntListBase(int initialCapacity) {
 		data = new int[initialCapacity];
