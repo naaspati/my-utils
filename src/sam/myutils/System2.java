@@ -30,6 +30,20 @@ public final class System2 {
 			LOGGER.fine(() -> key+"="+s2);
 		}
 	}
+	public static boolean lookupBoolean(String key) {
+		return lookupBoolean(key, false);
+	}
+	public static boolean lookupBoolean(String key, boolean defaultValue) {
+		String value = lookup(key, null);
+		if(value == null)
+			return defaultValue;
+		switch (value.trim().toLowerCase()) {
+			case "true": return true;
+			case "yes": return true;
+			case "on": return true;
+			default: return false;
+		}
+	}
 	public static String lookup(String key) { return lookup(key, null);}
 	public static String lookupAny(String... keys) {
 		String s = null;
@@ -41,13 +55,13 @@ public final class System2 {
 				s = getProperty(key);
 				if(s != null) return s;
 			}
-			
+
 			for (String key : keys) {
 				k = key;
 				s = getenv(key);
 				if(s != null) return s;
 			}
-			
+
 		} finally {
 			if(s == null)
 				LOGGER.fine(() -> "NO VALUE found for any: "+Arrays.toString(keys));
@@ -58,4 +72,5 @@ public final class System2 {
 		}
 		return null;
 	}
+
 }
