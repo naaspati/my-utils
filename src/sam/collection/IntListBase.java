@@ -7,55 +7,64 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
-public abstract class IntListBase {
+abstract class IntListBase implements IntCollection {
 	static final int[] DEFAULT_ARRAY = new int[0];
 
 	int modCount;
 
-	int[] data = DEFAULT_ARRAY;
-	int size;
+	private int[] data = DEFAULT_ARRAY;
+	private int size;
 
-	public IntListBase() {
+	IntListBase() {
 		data = DEFAULT_ARRAY;
 	}
-	public IntListBase(int[] source) {
+	IntListBase(int[] source) {
 		init(Arrays.copyOf(source, source.length));
 	}
-	public IntListBase(int[] source, int from, int to) {
+	IntListBase(int[] source, int from, int to) {
 		if(from > to)
 			throw new IllegalArgumentException();
 		if(from == to)
-			data = DEFAULT_ARRAY;
+			setData(DEFAULT_ARRAY);
 		else
 			init(Arrays.copyOfRange(source, from, to));
 	}
-	public IntListBase(int initialCapacity) {
-		data = new int[initialCapacity];
+	private void setData(int[] data) {
+		this.data = data;
 		modified();
 	}
-	private void init(int[] data) {
-		this.data = data;
-		this.size = data.length;
-		modified();
+	IntListBase(int initialCapacity) {
+		setData(new int[initialCapacity]);
+	}
+	protected void init(int[] data) {
+		init(data, data.length);
+	}
+	protected void init(int[] data, int size) {
+		setData(data);
+		this.size = size;
 	}
 	private void modified() {
 		modCount++;
 	}
 	private void move(int srcPos, int destPos, int length) {
 		System.arraycopy(data, srcPos, data, destPos, length);
+		onMove(srcPos, destPos, length);
 	}
-	public void trimToSize() {
-		modified();
-		data = Arrays.copyOf(data, size);
+	void onMove(int srcPos, int destPos, int length) {
 	}
-	public void ensureCapacity(int minCapacity) {
+	void trimToSize() {
+		setData(size == 0 ? DEFAULT_ARRAY : Arrays.copyOf(data, size));
+		onDataResize();
+	}
+	void ensureCapacity(int minCapacity) {
 		if(capacity() > minCapacity) return;
 		grow(minCapacity);
+		if(capacity() < minCapacity) throw new IllegalStateException("bad grow() implementation"); 
 	}
-	public int capacity() {
+	int capacity() {
 		return data.length;
 	}
-	private void grow(int minCapacity) {
+	protected void grow(int minCapacity) {
 		if(minCapacity < 0) throw new IllegalArgumentException(String.valueOf(minCapacity));
 
 		modified();
@@ -68,18 +77,22 @@ public abstract class IntListBase {
 			if(capacity < 0)
 				throw new IllegalStateException("capacity larger than > int.MAX_VALUE");
 		}
-		data = Arrays.copyOf(data, capacity);
+		setData(Arrays.copyOf(data, capacity));
+		onDataResize();
 	}
-	public int size() {
+	protected void onDataResize() {
+		
+	}
+	int size() {
 		return size;
 	}
-	public boolean isEmpty() {
+	boolean isEmpty() {
 		return size == 0;
 	}
-	public boolean contains(int value) {
+	boolean contains(int value) {
 		return indexOf(value) >= 0;
 	}
-	public int indexOf(int value) {
+	int indexOf(int value) {
 		for (int i = 0; i < size; i++)
 			if(data[i] == value) return i;
 		return -1;
@@ -91,10 +104,10 @@ public abstract class IntListBase {
 
 		return -1;
 	}
-	public int[] toArray() {
+	int[] toArray() {
 		return Arrays.copyOfRange(data, 0, size);
 	}
-	public int get(int index) {
+	int get(int index) {
 		checkIndex(index);
 		return data[index];
 	}
@@ -107,7 +120,7 @@ public abstract class IntListBase {
 		modified();
 		return data[index] = element;
 	}
-	public boolean add(int value) {
+	boolean add(int value) {
 		ensureCapacity(size+1);
 		modified();
 		data[size++] = value;
@@ -128,28 +141,28 @@ public abstract class IntListBase {
 		size--;
 		return value;
 	}
-	public boolean remove(int value) {
+	boolean remove(int value) {
 		int index = indexOf(value);
 		if(index < 0) return false;
 		removeIndex(index);
 		return true;
 	}
-	public void clear() {
+	void clear() {
 		size = 0;
 	}
-	public boolean addAll(IntListBase list) {
-		Objects.requireNonNull(list);
-		if(list.size() == 0) return false;
-		ensureCapacity(size+list.size());
-
+	boolean addAll(IntCollection list) {
+		IntListBase list2 = (IntListBase) list.toIntListBase();
+		Objects.requireNonNull(list2);
+		if(list2.size() == 0) return false;
+		ensureCapacity(size+list2.size());
 		modified();
-		System.arraycopy(list.data, 0, data, size, list.size());
-		size += list.size();
+		System.arraycopy(list2.data, 0, data, size, list2.size());
+		size += list2.size();
 
 		return true;
 
 	}
-	public boolean addAll(int... c) {
+	boolean addAll(int... c) {
 		Objects.requireNonNull(c);
 		if(c.length == 0) return false;
 		ensureCapacity(size+c.length);
@@ -174,8 +187,7 @@ public abstract class IntListBase {
 		size = newsize;
 		return true;
 	}
-
-	public boolean removeAll(int... c) {
+	boolean removeAll(int... c) {
 		Objects.requireNonNull(c);
 		if(c.length == 0) return false;
 		if(c.length == 1)
@@ -186,7 +198,6 @@ public abstract class IntListBase {
 		Arrays.sort(copy);
 		return removeIf(i -> Arrays.binarySearch(copy, i) >= 0);
 	}
-
 	private void checkModified(int m) {
 		if(modCount != m)
 			throw new ConcurrentModificationException();		
@@ -196,19 +207,19 @@ public abstract class IntListBase {
 	 * TODO
 	 * WORKING PERFECTLY, no intend to use
 	 * 
-	 * public Iterator<Integer> iterator() {
+	 * Iterator<Integer> iterator() {
 		return new Iterator<Integer>() {
 			int m = modCount;
 			int index = 0;
 
 			@Override
-			public Integer next() {
+			Integer next() {
 				checkModified(m);
 				return data[index++];
 			}
 
 			@Override
-			public boolean hasNext() {
+			boolean hasNext() {
 				checkModified(m);
 				return index < size;
 			}
@@ -216,9 +227,7 @@ public abstract class IntListBase {
 	}
 	 */
 
-
-
-	public int[] subList(int fromIndex, int toIndex) {
+	int[] subList(int fromIndex, int toIndex) {
 		checkIndex(fromIndex);
 		if(fromIndex == toIndex)
 			return new int[]{get(fromIndex)};
@@ -230,7 +239,7 @@ public abstract class IntListBase {
 
 		return Arrays.copyOfRange(data, fromIndex, toIndex);
 	}
-	public void forEach(IntConsumer action) {
+	void forEach(IntConsumer action) {
 		if(size == 0) return;
 
 		int m = modCount;
@@ -239,7 +248,7 @@ public abstract class IntListBase {
 			action.accept(data[i]);
 		}
 	}
-	public boolean removeIf(IntPredicate filter) {
+	boolean removeIf(IntPredicate filter) {
 		int oldsize = size;
 		modified();
 		int m = modCount;
@@ -276,5 +285,12 @@ public abstract class IntListBase {
 		sb.setLength(sb.length() - 2);
 		sb.append(']');
 		return sb.toString();
+	}
+	int binarySearch(int value) {
+		return Arrays.binarySearch(data, 0, size, value);
+	}
+	@Override
+	public Object toIntListBase() {
+		return this;
 	}
 }

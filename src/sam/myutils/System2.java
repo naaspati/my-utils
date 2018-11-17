@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
+import sam.string.StringUtils;
 
 public final class System2 {
 	private static final Logger LOGGER = MyLoggerFactory.logger(System2.class);
@@ -27,7 +28,7 @@ public final class System2 {
 			return s = defaultValue;
 		} finally {
 			String s2 = s;
-			LOGGER.fine(() -> key+"="+s2);
+			LOGGER.fine(() -> key.concat(s2 == null ? "=" : "=".concat(s2)));
 		}
 	}
 	public static boolean lookupBoolean(String key) {
@@ -37,11 +38,23 @@ public final class System2 {
 		String value = lookup(key, null);
 		if(value == null)
 			return defaultValue;
+
+		String s = value.trim().toLowerCase();
+		if(s.isEmpty()) return defaultValue;
+
 		switch (value.trim().toLowerCase()) {
 			case "true": return true;
+			case "false": return false;
+
 			case "yes": return true;
+			case "no": return false;
+
 			case "on": return true;
-			default: return false;
+			case "off": return false;
+			
+			default:
+				LOGGER.warning("Unknown boolean value: "+value);
+				return defaultValue;
 		}
 	}
 	public static String lookup(String key) { return lookup(key, null);}

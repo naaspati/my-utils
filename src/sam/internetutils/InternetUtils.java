@@ -47,8 +47,7 @@ public final class InternetUtils {
 	private static Properties2 config0() {
 		try {
 			Properties2 p = new Properties2(InternetUtils.class.getResourceAsStream("1509532146836-internet-utils.properties"));
-			p.setSystemEnvLooup(true);
-			p.setSystemPropertyLooup(true);
+			p.setSystemLookup(true, true);
 			return p;
 		} catch (IOException e) {
 			throw new RuntimeException(e);

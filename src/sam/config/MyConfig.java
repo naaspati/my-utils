@@ -15,8 +15,7 @@ public final class MyConfig {
 	static {
 		try(InputStream is = MyConfig.class.getResourceAsStream("1509527940769-my-config.properties")) {
 			Properties2 c = new Properties2(is);
-			c.setSystemEnvLooup(true);
-			c.setSystemPropertyLooup(true);
+			c.setSystemLookup(true, true);
 
 			COMMONS_DIR = c.get("COMMONS_DIR");
 			MANGA_DIR = c.get("MANGA_DIR");

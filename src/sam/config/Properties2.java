@@ -15,21 +15,17 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import sam.logging.MyLoggerFactory;
-
 public class Properties2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(Properties2.class);
+	private static final Logger LOGGER = Logger.getLogger(Properties2.class.getName()) ;
 
 	private final Properties properties = new Properties();
 	private final HashMap<String, String> parsed = new HashMap<>();
-	private boolean systemEnvLooup;
-	private boolean systemPropertyLooup;
+	private boolean envLooup;
+	private boolean propertyLooup;
 
-	public void setSystemEnvLooup(boolean systemEnvLooup) {
-		this.systemEnvLooup = systemEnvLooup;
-	}
-	public void setSystemPropertyLooup(boolean systemPropertyLooup) {
-		this.systemPropertyLooup = systemPropertyLooup;
+	public void setSystemLookup(boolean envLooup, boolean propertyLooup) {
+		this.envLooup = envLooup;
+		this.propertyLooup = propertyLooup;
 	}
 	public Properties2(InputStream inStream) throws IOException {
 		properties.load(inStream);
@@ -71,7 +67,11 @@ public class Properties2 {
 	}
 	public String get(String key) {
 		String s = get0(key);
-		LOGGER.fine(() -> key+"="+s);
+		// System.out.println("--"+key.concat(s == null ? "=" : "=".concat(s)));
+		if(s == null)
+			LOGGER.warning("value not found for key: "+key);
+		else 
+			LOGGER.fine(() -> key.concat(s == null ? "=" : "=".concat(s)));
 		return s;
 	}
 	private  String get0(String key) {
@@ -80,14 +80,14 @@ public class Properties2 {
 		if(value != null)
 			return value;
 
-		if(systemPropertyLooup)
+		if(propertyLooup)
 			value = System.getProperty(key);
-		if(value == null && systemEnvLooup)
+		if(value == null && envLooup)
 			value = System.getenv(key);
-		
+
 		if(value == null) 
 			value = properties.getProperty(key);
-		
+
 		int start = 0;
 		if(value == null || (start = value.indexOf('%')) < 0) {
 			parsed.put(key, value);
@@ -129,7 +129,7 @@ public class Properties2 {
 	public <E> E get(String key, Function<String, E> mapper) {
 		return mapper.apply(get(key));
 	}
-	
+
 	public Set<String> keys() {
 		return properties.keySet().stream().map(String::valueOf).collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
 	}
