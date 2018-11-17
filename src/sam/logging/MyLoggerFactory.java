@@ -13,23 +13,6 @@ public final class MyLoggerFactory {
 	private static final boolean loggernameSimple;
 
 	static {
-		/*
-		 		String key = "java.util.logging.config.file";
-		String file = System.getProperty(key);
-
-		if(file == null) {
-			Predicate<String> t = k -> {
-				String s = lookup(k);
-				if(s != null)
-					System.setProperty(key, s);
-				return s != null;
-			};
-			boolean b = t.test(key);
-			b = b || t.test("logging.config.file");
-			b = b || t.test("sam.logging.file");
-		}
-		 */
-
 		String s2 = LogManager.getLogManager().getProperty("sam.logging.loggerName.format");
 		boolean  result = false;
 		if(s2 != null) {
@@ -41,19 +24,12 @@ public final class MyLoggerFactory {
 					result = false;
 					break;
 				default:
-					Logger.getLogger(MyLoggerFactory.class.getCanonicalName()).severe("unknown value for \"sam.logging.loggerName.format\": "+s2+", settting to: full");
+					Logger.getLogger(MyLoggerFactory.class.getName()).severe("unknown value for \"sam.logging.loggerName.format\": "+s2+", settting to: full");
 					result = false;
 					break;
 			}
 		}
 		loggernameSimple = result;
-
-		/*
-		 		if(file == null)
-			logger(MyLoggerFactory.class).fine("java.util.logging.config.file="+System.getProperty(key));
-		 */
-
-
 		logger(MyLoggerFactory.class).config(() -> "----------- DateTime: "+LocalDateTime.now()+" ----------");
 	}
 	@SuppressWarnings("unused")
@@ -70,6 +46,8 @@ public final class MyLoggerFactory {
 	public static Logger logger(@SuppressWarnings("rawtypes") Class cls) {
 		return Logger.getLogger(loggernameSimple ? cls.getSimpleName() : cls.getCanonicalName()); 
 	}
+	
+	@Deprecated
 	public static Logger logger(String loggerName) {
 		return Logger.getLogger(loggerName); 
 	}

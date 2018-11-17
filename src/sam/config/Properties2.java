@@ -66,15 +66,15 @@ public class Properties2 {
 		return parsed.containsKey(key);
 	}
 	public String get(String key) {
-		String s = get0(key);
-		// System.out.println("--"+key.concat(s == null ? "=" : "=".concat(s)));
+		String s = find(key);
+		
 		if(s == null)
 			LOGGER.warning("value not found for key: "+key);
 		else 
 			LOGGER.fine(() -> key.concat(s == null ? "=" : "=".concat(s)));
 		return s;
 	}
-	private  String get0(String key) {
+	private  String find(String key) {
 		String value = parsed.get(key);
 
 		if(value != null)
@@ -106,7 +106,7 @@ public class Properties2 {
 			if(end == start + 1)
 				sb.append('%');
 			else
-				sb.append(get(value.substring(start + 1, end)));
+				sb.append(find(value.substring(start + 1, end)));
 
 			start = value.indexOf('%', end + 1);
 			if(start > 0)

@@ -6,12 +6,12 @@ import static java.lang.System.getenv;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-
-import sam.logging.MyLoggerFactory;
+import java.util.logging.Logger;
 
 public final class LoadConfig {
 	public static void load() throws URISyntaxException, IOException {
@@ -24,14 +24,16 @@ public final class LoadConfig {
 		Path p = Paths.get(s);
 		if(Files.notExists(p)) {
 			p = null;
-			InputStream u = ClassLoader.getSystemResourceAsStream(".config.properties");
+			URL u = ClassLoader.getSystemResource(".config.properties");
 			if(u != null) {
-				load(u);
+				Logger.getLogger(LoadConfig.class.getName()).fine("config_file: "+u);
+				load(u.openStream());
 				return;
 			} else {
-				MyLoggerFactory.logger(LoadConfig.class).warning("\".config.properties\" not found");
+				Logger.getLogger(LoadConfig.class.getName()).warning("\".config.properties\" not found");
 			}
 		} else {
+			Logger.getLogger(LoadConfig.class.getName()).fine("config_file: "+p);
 			load(Files.newInputStream(p));
 		}
 	}
