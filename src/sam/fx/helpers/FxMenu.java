@@ -67,7 +67,7 @@ public interface FxMenu {
 				})
 				.toArray(RadioMenuItem[]::new);
 
-		FxToggleGroup.toggleGroup(null, rbtns);
+		FxButton.toggleGroup(null, rbtns);
 
 		return new Menu(menuName, null, rbtns);
 	}
