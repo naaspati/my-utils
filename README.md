@@ -5,3 +5,4 @@ ___
 
 * [ANSI](help/ansi.md) Ansi Console Color Helper  
 * [Serializers](help/serilizers.md) Helpers for serializing  Primitive/Objects 
+* [String](help/string.md) 
