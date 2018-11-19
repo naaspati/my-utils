@@ -1,4 +1,3 @@
-sam.console.ANSI
-[file](/src/sam/console/ANSI.java)
+[sam.console.ANSI](/src/sam/console/ANSI.java)
 
 
