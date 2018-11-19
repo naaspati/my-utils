@@ -31,10 +31,17 @@ class IntSetBase extends IntListBase {
 	int indexOf(int value) {
 		return binarySearch(value);
 	}
+	
 	@Override
 	boolean add(int value) {
 		if(size() == 0)
 			return super.add(value);
+		else if(value == max())
+			return false;
+		else if(value > max()) {
+			super.add(value);
+			return true;
+		}
 		
 		int n = indexOf(value);
 		if(n >= 0) return false;
@@ -45,6 +52,13 @@ class IntSetBase extends IntListBase {
 			super.add(n, value);
 		return true;
 	}
+	public int max() {
+		return get(size() - 1);
+	}
+	public int min() {
+		return get(0);
+	}
+
 	@Override
 	boolean remove(int value) {
 		int n = indexOf(value);

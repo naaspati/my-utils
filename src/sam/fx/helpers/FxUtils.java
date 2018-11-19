@@ -1,11 +1,14 @@
 package sam.fx.helpers;
 
+import java.io.File;
 import java.util.function.Consumer;
 
 import javafx.beans.InvalidationListener;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import sam.myutils.MyUtilsCheck;
 
 public interface FxUtils {
 	// VERSION = 1.02;
@@ -55,5 +58,18 @@ public interface FxUtils {
 	public static <E> E edit(E e, Consumer<E> edit) {
 		edit.accept(e);
 		return e;
+	}
+	public static FileChooser fileChooser(File expectedDir, String expectedName, String title, Consumer<FileChooser> editor) {
+		FileChooser fc = new FileChooser();
+
+		if (MyUtilsCheck.exists(expectedDir))
+			fc.setInitialDirectory(expectedDir);
+		if(expectedName != null)
+			fc.setInitialFileName(expectedName);
+		
+		fc.setTitle(title);
+		if(editor != null)
+			editor.accept(fc);
+		return fc;
 	}
 }

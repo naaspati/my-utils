@@ -28,6 +28,10 @@ public interface Iterables {
 		Objects.requireNonNull(values);
 		return of(Iterators.of(values));
 	}
+	public static <E> Iterable<E> of(E[] values, int from, int to) {
+		Objects.requireNonNull(values);
+		return of(Iterators.of(values, from, to));
+	}
 	public static <E, F> Iterable<F> map(Iterable<E> itr, Function<E, F> mapper) {
 		Objects.requireNonNull(itr);
 		Objects.requireNonNull(mapper);

@@ -48,16 +48,16 @@ abstract class IntListBase implements IntCollection {
 	}
 	private void move(int srcPos, int destPos, int length) {
 		System.arraycopy(data, srcPos, data, destPos, length);
-		onMove(srcPos, destPos, length);
+		afterMove(srcPos, destPos, length);
 	}
-	void onMove(int srcPos, int destPos, int length) {
+	void afterMove(int srcPos, int destPos, int length) {
 	}
 	void trimToSize() {
 		setData(size == 0 ? DEFAULT_ARRAY : Arrays.copyOf(data, size));
-		onDataResize();
+		afterDataResize();
 	}
 	void ensureCapacity(int minCapacity) {
-		if(capacity() > minCapacity) return;
+		if(capacity() >= minCapacity) return;
 		grow(minCapacity);
 		if(capacity() < minCapacity) throw new IllegalStateException("bad grow() implementation"); 
 	}
@@ -78,9 +78,9 @@ abstract class IntListBase implements IntCollection {
 				throw new IllegalStateException("capacity larger than > int.MAX_VALUE");
 		}
 		setData(Arrays.copyOf(data, capacity));
-		onDataResize();
+		afterDataResize();
 	}
-	protected void onDataResize() {
+	protected void afterDataResize() {
 		
 	}
 	int size() {
@@ -93,6 +93,8 @@ abstract class IntListBase implements IntCollection {
 		return indexOf(value) >= 0;
 	}
 	int indexOf(int value) {
+		if(size == 0) return -1;
+		
 		for (int i = 0; i < size; i++)
 			if(data[i] == value) return i;
 		return -1;
@@ -287,10 +289,27 @@ abstract class IntListBase implements IntCollection {
 		return sb.toString();
 	}
 	int binarySearch(int value) {
+		if(size == 0) return -1;
 		return Arrays.binarySearch(data, 0, size, value);
 	}
 	@Override
 	public Object toIntListBase() {
 		return this;
 	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null || getClass() != obj.getClass()) return false;
+		
+		IntListBase other = (IntListBase) obj;
+		if (data == other.data) return true;
+		if(size != other.size ) return false;
+		
+		for (int i = 0; i < size; i++) {
+			if(data[i] != other.data[i])
+				return false;
+		}
+		return true;
+	}
+	
 }

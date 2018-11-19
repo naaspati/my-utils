@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -79,7 +80,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 	 */
 	public <E> E executeQuery(String sql, SqlFunction<ResultSet, E> action) throws SQLException {
 		try(ResultSet rs = query(sql)) {
-			return action.accept(rs);
+			return action.apply(rs);
 		}
 	}
 	public void iterate(String sql, SqlConsumer<ResultSet> action) throws SQLException {
@@ -101,7 +102,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 	}
 	public static <C extends Collection<E>, E> C collect(ResultSet rs0,C sink, SqlFunction<ResultSet, E> mapper) throws SQLException {
 		try(ResultSet rs = rs0) {
-			while(rs.next()) sink.add(mapper.accept(rs));
+			while(rs.next()) sink.add(mapper.apply(rs));
 		}
 		return sink;
 	}
@@ -118,11 +119,33 @@ public abstract class JDBCHelper implements AutoCloseable {
 	}
 	public static <M extends Map<K, V>, K, V>  M collect(ResultSet rs0,M sink, SqlFunction<ResultSet, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
 		try(ResultSet rs = rs0) {
-			while(rs.next()) sink.put(keymapper.accept(rs), valuemapper.accept(rs));
+			while(rs.next()) sink.put(keymapper.apply(rs), valuemapper.apply(rs));
 		}
 		return sink;
 	}
 
+	public <K, V>  HashMap<K, V> collectToMap2(String sql, Function<V, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
+		return collect2(query(sql), new HashMap<>(), keymapper, valuemapper);
+	}
+	public static <K, V>  HashMap<K, V> collectToMap2(ResultSet rs, Function<V, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
+		return collect2(rs, new HashMap<>(), keymapper, valuemapper);
+	}
+
+	public <M extends Map<K, V>, K, V>  M collect2(String sql,M sink, Function<V, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
+		return collect2(query(sql), sink, keymapper, valuemapper);
+	}
+	public static <M extends Map<K, V>, K, V>  M collect2(ResultSet rs0,M sink, Function<V, K> keymapper, SqlFunction<ResultSet, V> valuemapper) throws SQLException {
+		try(ResultSet rs = rs0) {
+			while(rs.next()) {
+				V v = valuemapper.apply(rs);
+				sink.put(keymapper.apply(v), v);
+			}
+		}
+		return sink;
+	}
+
+
+	
 	public <E> Stream<E> stream(String sql, SqlFunction<ResultSet, E> mapper, Consumer<SQLException> onError) throws SQLException {
 		return stream(query(sql), mapper, onError);
 	}
@@ -155,7 +178,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 			public E next() {
 				next = null;
 				try {
-					return mapper.accept(rs);
+					return mapper.apply(rs);
 				} catch (SQLException e) {
 					onError.accept(e);
 					next = false;
@@ -198,10 +221,10 @@ public abstract class JDBCHelper implements AutoCloseable {
 	public <E> E prepareStatementBlock(String sql, SqlFunction<PreparedStatement, E> action) throws SQLException {
 		LOGGER.fine(() -> "PreparedStatement: "+sql);
 		try(PreparedStatement s = connection.prepareStatement(sql)) {
-			return action.accept(s);   
+			return action.apply(s);   
 		}
 	}
 	public <E> E findFirst(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException{
-		return executeQuery(sql, rs -> rs.next() ? mapper.accept(rs) : null); 
+		return executeQuery(sql, rs -> rs.next() ? mapper.apply(rs) : null); 
 	}
 }

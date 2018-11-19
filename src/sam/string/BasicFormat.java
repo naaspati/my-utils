@@ -85,10 +85,14 @@ public class BasicFormat {
 			weakSB = new WeakReference<StringBuilder>(sb);
 		}
 	}
-
+	
+	public static String format(String format, Object...args){
+		return new BasicFormat(format).format(args);
+	}
+	
 	private WeakReference<StringBuilder> weakSB = new WeakReference<>(null);
 	
-	private synchronized StringBuilder sb(){
+	private StringBuilder sb(){
 		StringBuilder sb = weakSB.get();
 		if(sb != null) 
 			weakSB = new WeakReference<>(null);
@@ -97,8 +101,24 @@ public class BasicFormat {
 		
 		return sb;
 	}
-	
-
+	public StringBuilder format(StringBuilder sb, Object...args) {
+		int index = 0;
+		Entry ee = null;
+		try {
+			for (Entry e : entries) {
+				ee = e;
+				if(e.pointer < 0)
+					sb.append(arg(args, e.pointer, index++));
+				else if(e.pointer != Integer.MAX_VALUE)
+					sb.append(arg(args, e.pointer, Integer.MAX_VALUE));
+				else
+					sb.append(e.string);
+			}
+		} catch (IndexOutOfBoundsException e2) {
+			throw new RuntimeException("index: "+ (ee.pointer == -1 ? (index-1) : ee.pointer), e2);  
+		}
+		return sb;
+	}
 	public String format(Object...args) {
 		if(entries.length == 0) return "";
 		if(entries.length == 1) {
@@ -110,29 +130,10 @@ public class BasicFormat {
 		}
 		
 		StringBuilder sb = sb();
-
-		try {
-			sb.setLength(0);
-			int index = 0;
-			Entry ee = null;
-			try {
-				for (Entry e : entries) {
-					ee = e;
-					if(e.pointer < 0)
-						sb.append(arg(args, e.pointer, index++));
-					else if(e.pointer != Integer.MAX_VALUE)
-						sb.append(arg(args, e.pointer, Integer.MAX_VALUE));
-					else
-						sb.append(e.string);
-				}
-			} catch (IndexOutOfBoundsException e2) {
-				throw new RuntimeException("index: "+ (ee.pointer == -1 ? (index-1) : ee.pointer), e2);  
-			}
-			return sb.toString();
-		} finally {
-			weakSB = new WeakReference<StringBuilder>(sb);
-		}
-
+		sb.setLength(0);
+		String s = format(sb, args).toString();
+		weakSB = new WeakReference<StringBuilder>(sb);
+		return s;
 	}
 	private String arg(Object[] args, int pointer, int index) {
 		if(pointer < 0)

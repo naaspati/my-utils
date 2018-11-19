@@ -6,6 +6,11 @@ import java.util.Optional;
 import sam.myutils.System2;
 
 //VERSION = 1.2;
+/**
+ * String to ANSI Colored String
+ * @author Sameer
+ *
+ */
 public final class ANSI {
     private static boolean no_color = Optional.ofNullable(System2.lookupAny("sam.console.ANSI.color", "ANSI.color", "ansi.color")).map(Boolean::valueOf).map(t -> !t).orElse(false);
     

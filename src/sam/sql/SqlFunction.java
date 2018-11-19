@@ -4,5 +4,5 @@ import java.sql.SQLException;
 
 @FunctionalInterface
 public interface SqlFunction<T,E> {
-  public E accept(T t) throws SQLException;
+  public E apply(T t) throws SQLException;
 }

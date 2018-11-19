@@ -49,11 +49,15 @@ public interface Iterators {
 		};
 	}
 	public static <E> Iterator<E> of(E[] values){
+		return of(values, 0, values.length);
+	}
+	public static <E> Iterator<E> of(E[] values, int from, int to){
 		Objects.requireNonNull(values);
 
 		if(values.length == 0) return empty();
 
-		return new Iterator3<E>(values.length) {
+		return new Iterator3<E>(from, to) {
+			
 			@Override
 			public E at(int index) {
 				return values[index];
