@@ -18,13 +18,13 @@ interface Rows {
         return (Tsv)this;
     }
     default Row addRow(String...values){
-        Row row = new Row(Arrays.copyOf(values, tsv().columnNames.size()), tsv());
+        Row row = new Row(Arrays.copyOf(values, tsv().columns.size()), tsv());
         tsv().rows.add(row);
         return row;
     }
     default Row addRow(Row row){
-        if(tsv() != row.parent)
-            return addRow(row.values);
+        if(tsv() != row.getTsv())
+            return addRow(row.values());
 
         tsv().rows.add(row);
         return row;
@@ -36,19 +36,18 @@ interface Rows {
      * @throws IllegalStateException if firstRowIsHeader = false
      */
     default Row addRow(Map<String, String> columnNameValueMap){
-        String[] str = new String[ tsv().columnNames.size()];
-
-        columnNameValueMap.forEach((key, value) -> str[tsv().indexOfColumn(key)] = value);
+        String[] str = new String[ tsv().columns.size()];
+        columnNameValueMap.forEach((key, value) -> str[tsv().getColumn(key).index] = value);
 
         Row row = new Row(str, tsv());
         tsv().rows.add(row);
         return row;
     }
     default Row addRow(RowCell...rowCells){
-        String[] str = new String[tsv().columnNames.size()];
+        String[] str = new String[tsv().columns.size()];
 
         for (RowCell cv : rowCells)
-            str[tsv().indexOfColumn(cv.columnName)] = cv.value;
+            str[tsv().getColumn(cv.columnName).index] = cv.value;
         
         Row row = new Row(str, tsv());
         tsv().rows.add(row);
@@ -108,8 +107,8 @@ interface Rows {
      * @param value
      * @return
      */
-    default Row getWhere(String columName, String value){
-        return getWhere(tsv().indexOfColumn(columName), value);
+    default Row getWhere(Column colum, String value){
+        return getWhere(colum.index, value);
     }
     
     /**
@@ -164,8 +163,8 @@ interface Rows {
      * @param columnName of columnNumber 
      * @param value to compare with cell
      */
-    default void removeFirstWhere(String columnName, String value){
-        removeFirstWhere(tsv().indexOfColumn(columnName), value);
+    default void removeFirstWhere(Column col, String value){
+        removeFirstWhere(col.index, value);
     }
 
     /**
@@ -173,8 +172,8 @@ interface Rows {
      * @param columnName of columnNumber
      * @param values  
      */
-    default void removeWhere(String columnName, Collection<String> values){
-        removeWhere(tsv().indexOfColumn(columnName), values);
+    default void removeWhere(Column col, Collection<String> values){
+        removeWhere(col.index, values);
     }
     default void clear() {
         tsv().rows.clear();

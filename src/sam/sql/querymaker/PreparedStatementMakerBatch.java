@@ -1,6 +1,6 @@
 package sam.sql.querymaker;
 
-import static sam.myutils.MyUtilsCheck.isEmptyTrimmed;
+import static sam.myutils.Checker.isEmptyTrimmed;
 
 import java.io.InputStream;
 import java.io.Reader;

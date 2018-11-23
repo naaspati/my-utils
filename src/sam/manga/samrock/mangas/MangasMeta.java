@@ -20,5 +20,5 @@ public interface MangasMeta {
     String CHAPTER_ORDERING = "chapter_ordering";
     String BU_ID = "bu_id";
 
-    String TABLE_NAME = "Mangas";
+    String MANGAS_TABLE_NAME = "Mangas";
 }

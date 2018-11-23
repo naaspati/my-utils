@@ -56,6 +56,7 @@ public class Update extends QueryMakerBase {
     } 
     public Update placeholders(String...columnNames) {
         checkArray(columnNames);
+        count += columnNames.length;
         
         if(columnNames.length == 1)
         	sb.append(columnNames[0]).append("=?");

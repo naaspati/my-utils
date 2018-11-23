@@ -10,12 +10,10 @@ import static sam.manga.samrock.chapters.ChaptersMeta.READ;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public class Chapter implements Comparable<Chapter> {
+public class Chapter implements Comparable<Chapter>, ChapterWithId {
     private final int id;
-    private String name; //file name
+    private String filename; //file name
     private double number; // number
     private boolean read; // isRead ?
 
@@ -23,7 +21,7 @@ public class Chapter implements Comparable<Chapter> {
 
     public Chapter(ResultSet rs) throws SQLException {
         this.id = rs.getInt(CHAPTER_ID);
-        this.name = rs.getString(NAME);
+        this.filename = rs.getString(NAME);
         this.number = rs.getDouble(NUMBER);
         this.read = rs.getBoolean(READ);
     }
@@ -35,20 +33,22 @@ public class Chapter implements Comparable<Chapter> {
     public Chapter(double number, String fileName, boolean isRead) {
         this.id = -1;
         this.number = number;
-        this.name = fileName;
+        this.filename = fileName;
         this.read = isRead;
     }
     public Chapter(double number, String fileName) {
         this(number, fileName, false);
     }
+    @Override
     public String getFileName() {
-        return name;
+        return filename;
     }
     /**
      * chapter id
      * @return
      */
-    public int getId() {
+    @Override
+    public int getChapterId() {
         return id;
     }
     public void setNumber(double number) {
@@ -58,12 +58,12 @@ public class Chapter implements Comparable<Chapter> {
         numberModified = true;
     }
     public void setFileName(String name) {
-        if(Objects.equals(name, this.name))
+        if(Objects.equals(name, this.filename))
             return;
         Objects.requireNonNull(name);
 
         nameModified = true;
-        this.name = name;
+        this.filename = name;
     }
     public double getNumber() {
         return number;
@@ -102,7 +102,7 @@ public class Chapter implements Comparable<Chapter> {
     @Override
     public int compareTo(Chapter c) {
         if(this.number == c.number)
-            return this.name.compareTo(c.name);
+            return this.filename.compareTo(c.filename);
         else
             return this.number < c.number ? -1 : 1;
     }
@@ -123,28 +123,25 @@ public class Chapter implements Comparable<Chapter> {
         if(c == this)
             return true;
 
-        return this.id == c.id && this.id == -1 ? (this.number == c.number && this.name.equals(c.name)) : true;
-    }
-    private static Pattern pattern ;  
-    public static Double parseChapterNumber(String fileName) {
-        if(pattern == null)
-            pattern = Pattern.compile("(\\d+(?:\\.\\d+)?)");
-        
-        Matcher m = pattern.matcher(fileName);
-        if(m.find()) {
-            try {
-                return Double.parseDouble(m.group(1));
-            } catch (NumberFormatException e) {}
-        }
-        return null;
+        return this.id == c.id && this.id == -1 ? (this.number == c.number && this.filename.equals(c.filename)) : true;
     }
     @Override
     public String toString() {
-        return "Chapter [id=" + id + ", number=" + number + ", read=" + read +", name=" + name + "]";
+        return "Chapter [id=" + id + ", number=" + number + ", read=" + read +", name=" + filename + "]";
     }
     
     @Override
     public final int hashCode() {
     	return id;
     }
+    
+    private String _filename, title;
+
+	@Override
+	public String getTitle() {
+		if(_filename == filename)
+			return title;
+		_filename = filename;
+		return title = MinimalChapter.getTitleFromFileName(filename);
+	}
 }

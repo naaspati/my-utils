@@ -35,17 +35,14 @@ public class QueryMaker {
         return selectAll().from(tableName);
     }
     
-    //TODO update
     public Update update(String tableName) {
         return new Update(this, tableName);
     }
     
-    //TODO insert
     public Insert insertInto(String tableName) {
         return new Insert(getBuilder(), this, tableName);
     }
     
-    //TODO delete
     public Delete deleteFrom(String tableName) {
         return new Delete(getBuilder(), this).from(tableName);
     }

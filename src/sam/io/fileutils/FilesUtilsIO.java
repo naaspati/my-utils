@@ -1,7 +1,5 @@
 package sam.io.fileutils;
 
-import static sam.io.BufferSize.DEFAULT_BUFFER_SIZE;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,9 +15,11 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
 
+import sam.io.IOConstants;
 import sam.io.fileutils.FilesWalker.FileWalkResult;
 
 public interface FilesUtilsIO {
+	static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
 	/**
 	 * <pre>
 	 * return a HashMap(String -> Arraylist(Path))

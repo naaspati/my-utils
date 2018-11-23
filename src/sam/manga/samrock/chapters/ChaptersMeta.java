@@ -7,5 +7,5 @@ public interface ChaptersMeta {
     String NUMBER = "number";
     String READ = "read";
 
-    String TABLE_NAME = "Chapters";
+    String CHAPTERS_TABLE_NAME = "Chapters";
 }

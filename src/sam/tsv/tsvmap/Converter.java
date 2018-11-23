@@ -1,17 +1,35 @@
 package sam.tsv.tsvmap;
 
 @FunctionalInterface
-public interface Converter<V> {
-    /**
-     * return a converter which always return fromString(...) -> null
-     * @return
-     */
-    public static <V> Converter<V> defaultConverter() {
-        return v -> null;
-    }
+public interface Converter<T> {
+	Converter<Integer> INTEGER = new Converter<Integer>() {
+		@Override
+		public Integer fromString(String value) {
+			return Integer.valueOf(value);
+		}
+	};
+	Converter<Long> LONG = new Converter<Long>() {
+		@Override
+		public Long fromString(String value) {
+			return Long.valueOf(value);
+		}
+	};
+	Converter<Double> DOUBLE = new Converter<Double>() {
+		@Override
+		public Double fromString(String value) {
+			return Double.valueOf(value);
+		}
+	};
+	Converter<String> STRING = new Converter<String>() {
+		@Override
+		public String fromString(String value) {
+			return value;
+		}
+	};
+	
     
-    V fromString(String value);
-    default String toString(V value) {
+    T fromString(String value);
+    default String toString(T value) {
         return value == null ? null : value.toString();
     }
 }

@@ -1,9 +1,9 @@
 package sam.manga.samrock.chapters;
 
+import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTERS_TABLE_NAME;
 import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTER_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.NUMBER;
-import static sam.manga.samrock.chapters.ChaptersMeta.TABLE_NAME;
 import static sam.sql.querymaker.QueryMaker.qm;
 
 import java.sql.SQLException;
@@ -26,7 +26,7 @@ public class LastChapter  {
     	// select *, max(number) from Chapters where manga_id in(?,?...) group by manga_id 
     	
         Select select = qm()
-                .select("*", "max("+NUMBER+")").from(TABLE_NAME);
+                .select("*", "max("+NUMBER+")").from(CHAPTERS_TABLE_NAME);
         
         if(mangaIds != null)
             select.where(w -> w.in(MANGA_ID, mangaIds));
@@ -37,7 +37,7 @@ public class LastChapter  {
         return db.collectToMap(sql, rs -> rs.getInt(MANGA_ID), Chapter::new);
     }
     public Chapter byMangaId(int mangaId) throws SQLException {
-        return db.executeQuery(qm().select(CHAPTER_ID, NUMBER).from(TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), rs -> {
+        return db.executeQuery(qm().select(CHAPTER_ID, NUMBER).from(CHAPTERS_TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), rs -> {
             int id = 0;
             double number = 0;
             while(rs.next()) {
@@ -51,7 +51,7 @@ public class LastChapter  {
                 return null;
 
             int id2 = id;
-            return db.executeQuery(qm().selectAll().from(TABLE_NAME).where(w -> w.eq(CHAPTER_ID, id2)).build(), Chapter::new);
+            return db.executeQuery(qm().selectAll().from(CHAPTERS_TABLE_NAME).where(w -> w.eq(CHAPTER_ID, id2)).build(), Chapter::new);
         });
     }
 

@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class ReferenceList<T>  {
+public class ReferenceQueue<T>  {
 	private final Queue<Reference<T>> list;
     private final Supplier<T> valueGenerator;
 	private ReferenceType type;
@@ -20,11 +20,11 @@ public class ReferenceList<T>  {
      * a non-threadsafe
      * @param valueGenerator
      */
-    public ReferenceList(ReferenceType type, Supplier<T> valueGenerator) {
+    public ReferenceQueue(ReferenceType type, Supplier<T> valueGenerator) {
     	this(type, false, valueGenerator); 
 	}
     
-	public ReferenceList(ReferenceType type, boolean threadSafe, Supplier<T> valueGenerator) {
+	public ReferenceQueue(ReferenceType type, boolean threadSafe, Supplier<T> valueGenerator) {
     	this.valueGenerator = valueGenerator == null ? (() -> null) : valueGenerator;
     	this.type = type;
     	
@@ -44,7 +44,9 @@ public class ReferenceList<T>  {
         return list.add(type.get(value));
     }
     public boolean offer(T value) {
-       return add(value);
+    	if(value == null)
+    		return false;
+        return list.offer(type.get(value));
     }
     public boolean addIfAbsent(T value) {
         if(value == null || contains(value))

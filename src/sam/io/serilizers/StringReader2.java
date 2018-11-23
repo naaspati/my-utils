@@ -1,9 +1,10 @@
 package sam.io.serilizers;
-
 import static java.nio.charset.CodingErrorAction.REPORT;
 import static java.nio.file.StandardOpenOption.READ;
-import static sam.io.BufferSize.DEFAULT_BUFFER_SIZE;
-import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+import static sam.io.IOConstants.defaultBufferSize;
+import static sam.io.IOConstants.defaultCharset;
+import static sam.io.IOConstants.defaultOnMalformedInput;
+import static sam.io.IOConstants.defaultOnUnmappableCharacter;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,8 @@ import sam.logging.MyLoggerFactory;
 
 public class StringReader2 {
 	private static final Logger LOGGER = MyLoggerFactory.logger(StringReader2.class);
+	private static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
+	private static final Charset DEFAULT_CHARSET = defaultCharset();
 	
 	public static ReaderConfig reader() {
 		return new ReaderConfig();
@@ -69,8 +72,8 @@ public class StringReader2 {
 		private CharsetDecoder decoder() {
 			return charset()
 			.newDecoder()
-			.onMalformedInput(onMalformedInput == null ? REPORT : onMalformedInput)
-			.onUnmappableCharacter(onUnmappableCharacter == null ? REPORT : onUnmappableCharacter);
+			.onMalformedInput(onMalformedInput == null ? defaultOnMalformedInput() : onMalformedInput)
+			.onUnmappableCharacter(onUnmappableCharacter == null ? defaultOnUnmappableCharacter() : onUnmappableCharacter);
 		}
 		public ReadableByteChannel channel() throws IOException {
 			if(source instanceof ReadableByteChannel)
@@ -90,7 +93,7 @@ public class StringReader2 {
 		return getText0(path, Charset.forName(charset));
 	}
 	public static StringBuilder getText0(Path path) throws IOException {
-		return getText0(path, DEFAULT_CHARSET);
+		return getText0(path, defaultCharset());
 	}
 	
 	public static String getText(Path path, Charset charset) throws IOException {
@@ -100,7 +103,7 @@ public class StringReader2 {
 		return getText(path, Charset.forName(charset));
 	}
 	public static String getText(Path path) throws IOException {
-		return getText(path, DEFAULT_CHARSET);
+		return getText(path, defaultCharset());
 	}
 	
 	public static String getText(ReaderConfig config) throws IOException {
@@ -236,8 +239,9 @@ public class StringReader2 {
 		chars.clear();
 	}
 	private static void checkResult(ReaderConfig w, CoderResult c) throws CharacterCodingException {
-		if((c.isUnmappable() && w.onUnmappableCharacter == CodingErrorAction.REPORT) || (c.isMalformed() && w.onMalformedInput == CodingErrorAction.REPORT))
+		if((c.isUnmappable() && w.onUnmappableCharacter == REPORT) || (c.isMalformed() && w.onMalformedInput == REPORT))
 			c.throwException();
+		
 	}
 
 }

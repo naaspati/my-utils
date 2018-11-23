@@ -1,13 +1,14 @@
 package sam.books;
 
-import static sam.books.VersionMeta.*;
+import static sam.books.VersionMeta.BOOK_ID;
+import static sam.books.VersionMeta.TABLE_NAME;
+import static sam.books.VersionMeta.VERSION;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+
 import sam.sql.sqlite.SQLiteDB;
-import sam.collection.Iterable2;
 
 
 public class VersionImpl {

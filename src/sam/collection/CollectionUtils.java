@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import sam.myutils.MyUtilsCheck;
+import sam.myutils.Checker;
 
 public interface CollectionUtils {
 
@@ -21,7 +21,7 @@ public interface CollectionUtils {
 	}
 	@SuppressWarnings("unchecked")
 	public static <K,V, M extends Map<K,V>> M createMap(M sink,  Object...values) {
-		if(MyUtilsCheck.isEmpty(values))
+		if(Checker.isEmpty(values))
     		return sink;
 		
 		if(values.length%2 != 0)

@@ -16,7 +16,7 @@ import javafx.stage.Modality;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.Callback;
-import sam.myutils.MyUtilsCheck;
+import sam.myutils.Checker;
 
 //VERSION = 1.2;
 public final class AlertBuilder {
@@ -142,7 +142,7 @@ public final class AlertBuilder {
         .append("------------------ Stack Trace -------------------\r\n") 
         .append("--------------------------------------------------\n\n");
         
-        if(MyUtilsCheck.isEmpty(alert.getContentText()) && MyUtilsCheck.isNotEmpty(e.getMessage())) 
+        if(Checker.isEmpty(alert.getContentText()) && Checker.isNotEmpty(e.getMessage())) 
         	content(e.getClass().getSimpleName()+": "+e.getMessage());
 
         e.printStackTrace(pw);

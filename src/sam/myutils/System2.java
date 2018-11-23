@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
-import sam.string.StringUtils;
 
 public final class System2 {
 	private static final Logger LOGGER = MyLoggerFactory.logger(System2.class);

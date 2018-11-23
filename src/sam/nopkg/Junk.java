@@ -3,10 +3,13 @@ package sam.nopkg;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import sam.console.ANSI;
 import sam.myutils.MyUtilsBytes;
@@ -51,6 +54,14 @@ public interface Junk {
 		.append(" used Memory: ").append(f.apply(r.totalMemory() - r.freeMemory())).append('\n')
 		;
 		return sb.toString();
+	}
+	public static Stream<Method> getters(Class cls) {
+		return Stream.of(cls.getDeclaredMethods())
+				.filter(m -> m.getName().startsWith("get") && 
+						Modifier.isPublic(m.getModifiers()) && 
+						!Modifier.isStatic(m.getModifiers()) &&
+						m.getParameterCount() == 0
+						);
 	}
 
 }

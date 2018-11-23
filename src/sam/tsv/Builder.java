@@ -1,6 +1,6 @@
 package sam.tsv;
 
-import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+import static sam.io.IOConstants.defaultCharset;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,8 +14,7 @@ import java.util.Objects;
 public class Builder {
     private Collection<Row> collection = new LinkedList<>();
     private String[] columnNames;
-    private Charset charset = DEFAULT_CHARSET;
-    private String nullReplaceMent;
+    private Charset charset = defaultCharset();
 
     Builder() {}
 
@@ -31,20 +30,14 @@ public class Builder {
         this.charset = charset;
         return this;
     }
-
-    public Builder nullReplaceMent(String nullReplaceMent) {
-        this.nullReplaceMent = nullReplaceMent;
-        return this;
-    }
-
     public Tsv build() {
-        return new Tsv(collection, columnNames, charset, nullReplaceMent);
+        return new Tsv(collection, charset, columnNames);
     }
     public Tsv parse(Path path) throws IOException {
         Objects.requireNonNull(path);
 
         try(InputStream is = Files.newInputStream(path)) {
-            Tsv tsv = build().parse(is);
+            Tsv tsv = new Tsv(collection, charset, is);
 
             tsv.setPath(path);
             return tsv;
@@ -52,6 +45,6 @@ public class Builder {
     }
     public Tsv parse(InputStream is) throws IOException {
         Objects.requireNonNull(is);
-        return build().parse(is);
+        return new Tsv(collection, charset, is);
     }
 }

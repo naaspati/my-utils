@@ -22,13 +22,10 @@ import javax.activation.MimeTypeParseException;
 
 import sam.config.Properties2;
 import sam.logging.MyLoggerFactory;
-import sam.reference.WeakList;
+import sam.reference.WeakQueue;
 
 // VERSION = 1.24;
-// REQUIRED = 1509532146836-internet-utils.properties
 public final class InternetUtils {
-	
-
 	final Logger logger = MyLoggerFactory.logger(InternetUtils.class);
 	public  static final int DEFAULT_CONNECT_TIMEOUT;
 	public  static final int DEFAULT_READ_TIMEOUT;
@@ -42,7 +39,7 @@ public final class InternetUtils {
 	public  boolean SHOW_WARNINGS;
 	public  int BUFFER_SIZE;
 
-	private final WeakList<byte[]> buffers0;
+	private final WeakQueue<byte[]> buffers;
 	
 	private static Properties2 config0() {
 		try {
@@ -88,7 +85,7 @@ public final class InternetUtils {
 		return s != null ? Integer.parseInt(s) : defaultValue; 
 	}
 	public  InternetUtils(boolean threadSafe) {
-		buffers0 = !threadSafe ? null : new WeakList<>(true, () -> new byte[BUFFER_SIZE]);
+		buffers = new WeakQueue<>(threadSafe, () -> new byte[BUFFER_SIZE]);;
 		
 		Properties2 config = config();
 
@@ -113,23 +110,6 @@ public final class InternetUtils {
 	public  Path download(URL url, Path savePath) throws IOException {
 		return download(url, savePath, DEFAULT_LISTENER);
 	}
-
-	private byte[] buffer0;
-
-	private byte[] getBuffer() {
-		if(buffers0 != null)
-			return buffers0.poll();
-		if(buffer0 != null)
-			return buffer0;
-		buffer0 = new byte[BUFFER_SIZE];
-		return buffer0;
-	}
-
-	private void offerBuffer(byte[] b) {
-		if(buffers0 != null)
-			buffers0.add(b);
-	}
-
 
 	/**
 	 * download a file 
@@ -168,7 +148,7 @@ public final class InternetUtils {
 			return savePath;
 
 		Path temp = Files.createTempFile(savePath.getFileName().toString(), null);
-		byte[] bytes = getBuffer();
+		byte[] bytes = buffers.poll();
 		long conFileSize = con.getContentLengthLong();
 		listener.progress(0, conFileSize);
 
@@ -185,9 +165,8 @@ public final class InternetUtils {
 				listener.progress(totalRead, conFileSize);
 			}
 		} finally {
-			offerBuffer(bytes);
+			buffers.offer(bytes);
 		}
-
 		Files.move(temp, savePath, StandardCopyOption.REPLACE_EXISTING);
 		listener.compleated(url, savePath, totalRead);
 		return savePath;

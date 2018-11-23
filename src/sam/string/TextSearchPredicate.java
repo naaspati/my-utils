@@ -1,7 +1,7 @@
 package sam.string;
 
-import static sam.myutils.MyUtilsCheck.isEmpty;
-import static sam.myutils.MyUtilsCheck.isEmptyTrimmed;
+import static sam.myutils.Checker.isEmpty;
+import static sam.myutils.Checker.isEmptyTrimmed;
 import static sam.string.StringUtils.containsAny;
 
 import java.util.function.Function;

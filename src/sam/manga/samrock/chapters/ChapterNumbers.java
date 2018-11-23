@@ -1,8 +1,8 @@
 package sam.manga.samrock.chapters;
 
+import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTERS_TABLE_NAME;
 import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.NUMBER;
-import static sam.manga.samrock.chapters.ChaptersMeta.TABLE_NAME;
 import static sam.sql.querymaker.QueryMaker.qm;
 
 import java.sql.SQLException;
@@ -22,10 +22,10 @@ public class ChapterNumbers {
         this.db = db;
     }
     public Map<Integer, double[]> where(UnaryOperator<Where> wo) throws SQLException{
-        return result(qm().select(MANGA_ID, NUMBER).from(TABLE_NAME).where(w -> wo.apply(w)).build());
+        return result(qm().select(MANGA_ID, NUMBER).from(CHAPTERS_TABLE_NAME).where(w -> wo.apply(w)).build());
     }
     public Map<Integer, double[]> byMangaIds(Iterable<Integer> mangaIds) throws SQLException{
-        return result(qm().select(MANGA_ID, NUMBER).from(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds, false)).build());
+        return result(qm().select(MANGA_ID, NUMBER).from(CHAPTERS_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds, false)).build());
     }
     private Map<Integer, double[]> result(String sql) throws SQLException{
         Map<Integer, DoubleStream.Builder> map = new HashMap<>();

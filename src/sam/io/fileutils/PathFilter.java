@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,10 +30,11 @@ import java.util.function.Predicate;
  * @author Sameer
  *
  */
-public class PathFilter {
+public class PathFilter implements Predicate<Path> {
 	private Collection<Path> names = new HashSet<>();
 	private Predicate<Path> simple = p -> false;
 	private Predicate<Path> glob = p -> false;
+	private PathFilter invert;
 	
 	public PathFilter(Iterable<String> iterable) {
 		this(null, iterable);
@@ -40,11 +42,16 @@ public class PathFilter {
 	
 	public PathFilter(Path root, Iterable<String> iterable) {
 		String rootS = root == null ? null : root.toString();
+		ArrayList<String> invert = new ArrayList<>();
 		
 		for (String s : iterable) {
 			s = s.trim();
 			if(s.isEmpty() || s.charAt(0) == '#')
 				continue;
+			if(s.charAt(0) == '!') {
+				invert.add(s.substring(1));
+				continue;
+			}
 			
 			s = s.replace('/', '\\');
 			if(s.charAt(0) == '\\' && root != null)
@@ -73,14 +80,21 @@ public class PathFilter {
 		}
 		if(names.isEmpty())
 			names = Collections.emptySet();
+		if(!invert.isEmpty())
+			this.invert = new PathFilter(root, invert);
 	}
 	private Predicate<Path> glob(boolean globSyntex, boolean dircheck, String s) {
-		System.out.println(globSyntex ? s : "glob:"+s);
 		PathMatcher matcher = fs().getPathMatcher(globSyntex ? s : "glob:"+s);
 		
-		if(dircheck)
-			return p -> (matcher.matches(p) && isdir(p));
-		return matcher::matches;
+		if(contains(s, '\\')) {
+			if(dircheck)
+				return p -> (matcher.matches(p) && isdir(p));
+			return matcher::matches;
+		} else {
+			if(dircheck)
+				return p -> (matcher.matches(p.getFileName()) && isdir(p));
+			return  p -> matcher.matches(p.getFileName());
+		}
 	}
 	private Predicate<Path> endwith(boolean dircheck, Path sp) {
 		if(dircheck) 
@@ -103,7 +117,13 @@ public class PathFilter {
 		if(_fs != null) return _fs;
 		return _fs = FileSystems.getDefault();
 	}
-	public boolean check(Path path) {
-		return names.contains(path.getFileName()) || simple.test(path) || glob.test(path);
+	public boolean test(Path path) {
+		if(names.contains(path.getFileName()) || simple.test(path) || glob.test(path)) {
+			if(invert != null && invert.test(path))
+				return false;
+			
+			return true;
+		}
+		return false;
 	}
 }

@@ -3,9 +3,6 @@ package sam.string;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.MissingFormatArgumentException;
-import java.util.Objects;
-
-import sam.myutils.MyUtilsCheck;
 
 /**
  * a bare minimum Formatter
@@ -14,6 +11,13 @@ import sam.myutils.MyUtilsCheck;
  */
 public class BasicFormat {
 	private final Entry[] entries;
+	private final String rawText;
+	private final String format;
+
+	public static enum EscapeType {
+		// BRACKET,
+		SLASH
+	}
 
 	private class Entry {
 		private final String string;
@@ -42,66 +46,99 @@ public class BasicFormat {
 		}
 	}
 
+// 	public BasicFormat(String format, EscapeType type) {
 	public BasicFormat(String format) {
-		if(MyUtilsCheck.isEmptyTrimmed(format)) {
-			this.entries = new Entry[] {new Entry(format)}; 
-		} else {
-			ArrayList<Entry> list = new ArrayList<>();
-			boolean previousSlash = false;
-			int previous = -1; 
-			StringBuilder sb = sb();
-			
-			for (int i = 0; i < format.length(); i++) {
-				char c = format.charAt(i);
-				if(!previousSlash && (c == '{' || c == '}')) {
-					
-					if((previous == -1 && c == '}') || (previous != -1 && c == format.charAt(previous)))
-						throw new MissingFormatArgumentException((c == '{' ? "no } found for { at" : "no { found for } at")+previous) ;
+		this.format = format;
 
-					if(c == '}')
-						list.add(new Entry(i, sb.toString()));
-					else
-						list.add(new Entry(sb.toString()));
-					
-					sb.setLength(0);
-					previous = i;
-					continue;
-				} 
-				
-				if(previousSlash)
-					sb.setCharAt(sb.length() - 1, c);
-				else
-					sb.append(c);
-				
-				previousSlash =  c == '\\' && !previousSlash;
+		int n = format.indexOf('{');
+		if(n < 0) {
+			n = format.indexOf('}');
+			if(n >= 0)
+				throw new MissingFormatArgumentException("missing opening bracket for }, at "+n) ;
+
+			this.entries = null;
+			this.rawText = format;
+		} else {
+			Object o = slashScaped(format);// Objects.requireNonNull(type) == EscapeType.SLASH ? slashScaped(format) : bracketScaped(format);
+
+			if(o.getClass() ==String.class) {
+				rawText = (String) o;
+				entries = null;
+			} else {
+				rawText = null;
+				entries = (Entry[]) o;
 			}
-			
-			if(previous != format.length() - 1){
-				if(format.charAt(previous) == '{')
-					throw new MissingFormatArgumentException("no } found for { at" +previous) ;
-				list.add(new Entry(sb.toString()));
-			}
-			this.entries = list.toArray(new Entry[0]);
-			weakSB = new WeakReference<StringBuilder>(sb);
 		}
 	}
-	
+
+	@SuppressWarnings("unused")
+	private Entry[] bracketScaped(String format) {
+		return null;
+	}
+	private Object slashScaped(String format) {
+		ArrayList<Entry> list = new ArrayList<>();
+		boolean escape = false;
+		int previous = -1; 
+		StringBuilder sb = sb();
+
+		for (int i = 0; i < format.length(); i++) {
+			char c = format.charAt(i);
+			if(!escape && (c == '{' || c == '}')) {
+
+				if((previous == -1 && c == '}') || (previous != -1 && c == format.charAt(previous)))
+					throw new MissingFormatArgumentException((c == '{' ? "no } found for { at" : "no { found for } at")+previous+"  format: "+format) ;
+
+				if(c == '}')
+					list.add(new Entry(i, sb.toString()));
+				else
+					list.add(new Entry(sb.toString()));
+
+				sb.setLength(0);
+				previous = i;
+				continue;
+			} 
+
+			if(escape)
+				sb.setCharAt(sb.length() - 1, c);
+			else
+				sb.append(c);
+
+			escape =  c == '\\' && !escape;
+		}
+
+		if(previous != -1 && previous < format.length()){
+			if(format.charAt(previous) == '{')
+				throw new MissingFormatArgumentException("no } found for { at" +previous) ;
+			list.add(new Entry(sb.toString()));
+		}
+		weakSB = new WeakReference<StringBuilder>(sb);
+
+		if(list.isEmpty())
+			return format;
+		return list.toArray(new Entry[list.size()]);
+
+	}
+
 	public static String format(String format, Object...args){
 		return new BasicFormat(format).format(args);
 	}
-	
+
 	private WeakReference<StringBuilder> weakSB = new WeakReference<>(null);
-	
+
 	private StringBuilder sb(){
 		StringBuilder sb = weakSB.get();
 		if(sb != null) 
 			weakSB = new WeakReference<>(null);
 		else 
 			sb = new StringBuilder();
-		
+
 		return sb;
 	}
 	public StringBuilder format(StringBuilder sb, Object...args) {
+		if(rawText != null) {
+			sb.append(rawText);
+			return sb;
+		}
 		int index = 0;
 		Entry ee = null;
 		try {
@@ -120,15 +157,8 @@ public class BasicFormat {
 		return sb;
 	}
 	public String format(Object...args) {
-		if(entries.length == 0) return "";
-		if(entries.length == 1) {
-			if(entries[0].string != null)
-				return entries[0].string;
+		if(rawText != null) return rawText;
 
-			Objects.requireNonNull(args);
-			return arg(args, entries[0].pointer, 0);
-		}
-		
 		StringBuilder sb = sb();
 		sb.setLength(0);
 		String s = format(sb, args).toString();
@@ -140,6 +170,10 @@ public class BasicFormat {
 			return String.valueOf(args[index]);
 		return String.valueOf(args[pointer]);
 	}
+	@Override
+	public String toString() {
+		return format;
+	}
 
-	
+
 }

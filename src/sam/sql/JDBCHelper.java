@@ -44,6 +44,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 		connection.close();
 	}
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
+		LOGGER.fine(() -> "PreparedStatement("+sql+")");
 		return connection.prepareStatement(sql);
 	}
 	public int executeUpdate(String sql) throws SQLException {
@@ -219,8 +220,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 		}
 	}
 	public <E> E prepareStatementBlock(String sql, SqlFunction<PreparedStatement, E> action) throws SQLException {
-		LOGGER.fine(() -> "PreparedStatement: "+sql);
-		try(PreparedStatement s = connection.prepareStatement(sql)) {
+		try(PreparedStatement s = prepareStatement(sql)) {
 			return action.apply(s);   
 		}
 	}

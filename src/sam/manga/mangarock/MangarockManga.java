@@ -1,13 +1,37 @@
 package sam.manga.mangarock;
 
-import static sam.manga.mangarock.MangarockMangaMeta.*;
+import static sam.manga.mangarock.MangarockMangaMeta.ALIAS;
+import static sam.manga.mangarock.MangarockMangaMeta.ARTWORKS;
+import static sam.manga.mangarock.MangarockMangaMeta.AUTHOR;
+import static sam.manga.mangarock.MangarockMangaMeta.AUTHORS;
+import static sam.manga.mangarock.MangarockMangaMeta.CATEGORIES;
+import static sam.manga.mangarock.MangarockMangaMeta.CHARACTERS;
+import static sam.manga.mangarock.MangarockMangaMeta.COVER;
+import static sam.manga.mangarock.MangarockMangaMeta.DESCRIPTION;
+import static sam.manga.mangarock.MangarockMangaMeta.DIRECTION;
+import static sam.manga.mangarock.MangarockMangaMeta.EXTRA;
+import static sam.manga.mangarock.MangarockMangaMeta.GENRES;
+import static sam.manga.mangarock.MangarockMangaMeta.ID;
+import static sam.manga.mangarock.MangarockMangaMeta.LASTUPDATE;
+import static sam.manga.mangarock.MangarockMangaMeta.LAST_VIEW;
+import static sam.manga.mangarock.MangarockMangaMeta.MRS_SERIES;
+import static sam.manga.mangarock.MangarockMangaMeta.NAME;
+import static sam.manga.mangarock.MangarockMangaMeta.OID;
+import static sam.manga.mangarock.MangarockMangaMeta.RANK;
+import static sam.manga.mangarock.MangarockMangaMeta.REMOVED;
+import static sam.manga.mangarock.MangarockMangaMeta.SOURCE_ID;
+import static sam.manga.mangarock.MangarockMangaMeta.STATUS;
+import static sam.manga.mangarock.MangarockMangaMeta.TABLE_NAME;
+import static sam.manga.mangarock.MangarockMangaMeta.THUMBNAILURL;
+import static sam.manga.mangarock.MangarockMangaMeta.TOTALCHAPTERS;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import sam.sql.sqlite.SQLiteDB;
+
 import sam.collection.Iterable2;
+import sam.sql.sqlite.SQLiteDB;
 
 
 public class MangarockManga {

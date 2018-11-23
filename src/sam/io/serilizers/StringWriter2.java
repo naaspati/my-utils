@@ -6,8 +6,10 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
-import static sam.io.BufferSize.DEFAULT_BUFFER_SIZE;
-import static sam.io.DefaultCharset.DEFAULT_CHARSET;
+import static sam.io.IOConstants.defaultBufferSize;
+import static sam.io.IOConstants.defaultCharset;
+import static sam.io.IOConstants.defaultOnMalformedInput;
+import static sam.io.IOConstants.defaultOnUnmappableCharacter;
 import static sam.io.serilizers.Utils.write;
 
 import java.io.File;
@@ -30,9 +32,10 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
-
 public class StringWriter2 {
 	private static final Logger LOGGER = MyLoggerFactory.logger(StringWriter2.class);
+	private static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
+	private static final Charset DEFAULT_CHARSET = defaultCharset();
 
 	public StringWriter2() {}
 
@@ -81,8 +84,8 @@ public class StringWriter2 {
 		private CharsetEncoder encoder() {
 			return charset()
 					.newEncoder()
-					.onMalformedInput(onMalformedInput == null ? REPORT : onMalformedInput)
-					.onUnmappableCharacter(onUnmappableCharacter == null ? REPORT : onUnmappableCharacter);
+					.onMalformedInput(onMalformedInput == null ? defaultOnMalformedInput() : onMalformedInput)
+					.onUnmappableCharacter(onUnmappableCharacter == null ? defaultOnUnmappableCharacter() : onUnmappableCharacter);
 		}
 		public Charset charset() {
 			return (charset == null ? DEFAULT_CHARSET : charset);
@@ -169,7 +172,7 @@ public class StringWriter2 {
 		Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING); 
 	}
 	private static void checkResult(WriterConfig w, CoderResult c) throws CharacterCodingException {
-		if((c.isUnmappable() && w.onUnmappableCharacter == CodingErrorAction.REPORT) || (c.isMalformed() && w.onMalformedInput == CodingErrorAction.REPORT))
+		if((c.isUnmappable() && w.onUnmappableCharacter == REPORT) || (c.isMalformed() && w.onMalformedInput == REPORT))
 			c.throwException();
 	}
 }

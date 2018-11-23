@@ -1,8 +1,8 @@
 package sam.manga.samrock.mangas;
 
 import static sam.config.MyConfig.MANGA_DIR;
+import static sam.manga.samrock.mangas.MangasMeta.MANGAS_TABLE_NAME;
 import static sam.manga.samrock.mangas.MangasMeta.MANGA_ID;
-import static sam.manga.samrock.mangas.MangasMeta.TABLE_NAME;
 import static sam.sql.querymaker.QueryMaker.qm;
 
 import java.io.File;
@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 
 import sam.io.fileutils.FileNameSanitizer;
 import sam.manga.samrock.SamrockDB;
-import sam.myutils.MyUtilsCheck;
+import sam.myutils.Checker;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
 import sam.string.StringUtils;
@@ -31,7 +31,7 @@ public class MangaUtils {
 	 * @return
 	 */
 	public static int[] tagsToIntArray(String tags) {
-		if(MyUtilsCheck.isEmptyTrimmed(tags))
+		if(Checker.isEmptyTrimmed(tags))
 			return new int[0];
 		
 		int[] n = tagsToIntStream(tags).toArray();
@@ -39,10 +39,10 @@ public class MangaUtils {
 		return n;
 	}
 	public static IntStream tagsToIntStream(String tags) {
-		if(MyUtilsCheck.isEmptyTrimmed(tags))
+		if(Checker.isEmptyTrimmed(tags))
 			return IntStream.empty();
 		
-		return StringUtils.splitStream(tags, '.').map(String::trim).filter(MyUtilsCheck::isNotEmpty).mapToInt(Integer::parseInt);
+		return StringUtils.splitStream(tags, '.').map(String::trim).filter(Checker::isNotEmpty).mapToInt(Integer::parseInt);
 	} 
     private static FileNameSanitizer remover;
     /*
@@ -109,11 +109,11 @@ public class MangaUtils {
      * @throws SQLException
      */
     public void select(Collection<Integer> mangaIds, SqlConsumer<ResultSet> consumer, String...mangasMeta) throws SQLException {
-        String sql = qm().select(mangasMeta).from(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds, false)).build();
+        String sql = qm().select(mangasMeta).from(MANGAS_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds, false)).build();
         db.iterate(sql.toString(), consumer);
     }
     public void select(int[] mangaIds, SqlConsumer<ResultSet> consumer, String...mangasMeta) throws SQLException {
-        String sql = qm().select(mangasMeta).from(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build();
+        String sql = qm().select(mangasMeta).from(MANGAS_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build();
         db.iterate(sql.toString(), consumer);
     }
     /**
@@ -123,10 +123,10 @@ public class MangaUtils {
      * @throws SQLException
      */
     public void selectAll(SqlConsumer<ResultSet> consumer, String...mangasMeta) throws SQLException {
-        db.iterate(qm().select(mangasMeta).from(TABLE_NAME).build(), consumer);
+        db.iterate(qm().select(mangasMeta).from(MANGAS_TABLE_NAME).build(), consumer);
     }
     public <E> E select(int mangaId, SqlFunction<ResultSet, E> mapper, String...mangasMeta) throws SQLException {
-        return db.executeQuery(qm().select(mangasMeta).from(TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), mapper);
+        return db.executeQuery(qm().select(mangasMeta).from(MANGAS_TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), mapper);
     }
     
     private static WeakReference<String[]> dirList = new WeakReference<String[]>(null);

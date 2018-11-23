@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public interface MyUtilsCheck {
+public interface Checker {
 	/**
 	 * 
 	 * @param ifNotTrueThrow if not true, throw new IllegalArgumentException(msg);
@@ -97,5 +97,14 @@ public interface MyUtilsCheck {
 				return true;
 		}
 		return false;
+	}
+	public static void requireNonNull(String[] variableNames, Object...objects) {
+		String s = "";
+		for (int i = 0; i < objects.length; i++) {
+			if(objects[i] == null)
+				s += variableNames[i]+", ";
+		}
+		if(!s.isEmpty())
+			throw new NullPointerException(s.substring(0, s.length() - 2));
 	}
 }

@@ -1,6 +1,6 @@
 package sam.string;
 
-import static sam.myutils.MyUtilsCheck.isEmpty;
+import static sam.myutils.Checker.isEmpty;
 
 import java.util.Arrays;
 import java.util.Iterator;

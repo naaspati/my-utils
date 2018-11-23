@@ -6,9 +6,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import static sam.io.BufferSize.*;
+import sam.io.IOConstants;
+
 
 interface Utils {
+	static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
+	
 	public static int readInt(ReadableByteChannel c) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
 		c.read(buffer);

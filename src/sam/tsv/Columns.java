@@ -1,8 +1,9 @@
 package sam.tsv;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+
+import sam.myutils.Checker;
 
 interface Columns {
     default Tsv ctsv(){
@@ -10,63 +11,52 @@ interface Columns {
     }
     
     default void addColumnIfAbsent(String columnName) {
-        if(hasColumnNames() && !ctsv().columnNames.containsKey(columnName))
+        if(!ctsv().columns.containsKey(columnName))
             addColumn(columnName);
     } 
     default void addColumn(String columnName) {
-        if(!hasColumnNames() && !ctsv().isEmpty())
-            throw new TsvException("tsv has no column names, adding new column failed: "+columnName);
-        
         Objects.requireNonNull(columnName);
-        
-        Map<String, Integer> map = ctsv().columnNames;
+        Map<String, Column> map = ctsv().columns;
         
         if(map.containsKey(columnName))
-            throw new TsvException("duplicate column "+columnName+"("+map.get(columnName)+")");
-        map.put(columnName, map.size());
+            throw new TsvException("columnName already exists "+columnName+" ("+map.get(columnName)+")");
+        
+        Column col = new Column(columnName, map.size());
+        map.put(columnName, col);
     }
 
     default void addColumns(String... columnNames) {
-        if(columnNames == null || columnNames.length == 0)
+        if(Checker.isEmpty(columnNames))
             throw new TsvException("columnNames cannot be empty/null");
         
-        if(!hasColumnNames() && !ctsv().isEmpty())
-            throw new TsvException("tsv has no column names, adding new columns failed: "+Arrays.toString(columnNames));
-        
-        for (int i = 0; i < columnNames.length; i++) {
-            if(columnNames[i] == null)
-                throw new NullPointerException("columnNames["+i+"] == null");
-        }
-        
-        Map<String, Integer> map = ctsv().columnNames;
-        
-        for (String s : columnNames) {
-            if(map.containsKey(s))
-                throw new TsvException("duplicate column "+s+"("+map.get(s)+")");
-            map.put(s, map.size());
-        }
+        for (String s : columnNames) 
+			addColumn(s);
+    }
+    
+    default Column[] getColumns() {
+    	Map<String, Column> map = ctsv().columns;
+    	Column[] columns = new Column[map.size()];
+    	
+    	map.forEach((s,t) -> columns[t.index] = t);
+        return columns;
     }
     default String[] getColumnNames() {
-        if(ctsv().columnNames == null) return null;
-        String[] str = new String[ctsv().columnNames.size()];
-        ctsv().columnNames.forEach((name, index) -> str[index] = name);
-        return str;
+    	Map<String, Column> map = ctsv().columns;
+    	String[] columns = new String[map.size()];
+    	
+    	map.forEach((s,t) -> columns[t.index] = t.columnName);
+        return columns;
     }
-    default boolean hasColumnNames() {
-        return ctsv().columnNames != null;
+    default Column getColumnIfPresent(String columnName) {
+    	return ctsv().columns.get(columnName);
     }
-    default int indexOfColumn(String columnName) {
-        Integer index = ctsv().columnNames.get(columnName);
-
-        if(index == null)
+    default Column getColumn(String columnName) {
+        Column c = ctsv().columns.get(columnName);
+        if(c == null)
             throw new TsvException("column name not found: "+columnName);
-
-        return index;
+        return c;
     }
     default boolean containsColumn(String columnName) {
-        if(!hasColumnNames())
-            throw new TsvException("Tsv does'nt have column names");
-
-        return ctsv().columnNames.containsKey(columnName);
+        return ctsv().columns.containsKey(columnName);
     }
 }

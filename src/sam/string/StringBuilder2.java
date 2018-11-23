@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 import sam.console.ANSI;
-import sam.myutils.MyUtilsCheck;
+import sam.myutils.Checker;
 
 public class StringBuilder2 implements Appendable, CharSequence, Externalizable {
     private static final long serialVersionUID = -5771932955099124983L;
@@ -342,7 +342,7 @@ public class StringBuilder2 implements Appendable, CharSequence, Externalizable 
     }
     public void mark(int mark) {
         if(mark < 0)
-            MyUtilsCheck.checkArgument(mark >= 0, "mark cannot be less than 0");
+            Checker.checkArgument(mark >= 0, "mark cannot be less than 0");
         if(mark > sb.length())
             throw new IndexOutOfBoundsException("max mark value: "+sb.length());
         

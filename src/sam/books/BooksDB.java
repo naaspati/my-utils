@@ -30,6 +30,7 @@ import sam.logging.MyLoggerFactory;
 import sam.myutils.MyUtilsPath;
 import sam.string.BasicFormat;
 import sam.string.StringUtils;
+import sam.string.BasicFormat.EscapeType;
 
 public class BooksDB extends BooksDBMinimal {
 

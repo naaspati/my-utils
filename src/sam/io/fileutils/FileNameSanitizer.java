@@ -1,17 +1,17 @@
 package sam.io.fileutils;
 
-import static sam.io.DefaultCharset.DEFAULT_CHARSET;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
+
+import sam.io.IOConstants;
 
 public final class FileNameSanitizer {
     // VERSION = 1.22;
     private Charset charset;
     
     public FileNameSanitizer() {
-    	this(DEFAULT_CHARSET);
+    	this(IOConstants.defaultCharset());
 	}
     public FileNameSanitizer(Charset charset) {
 		this.charset = charset;
@@ -111,7 +111,7 @@ public final class FileNameSanitizer {
 
     
     public static String removeInvalidCharsFromFileName(String name) {
-    	return removeInvalidCharsFromFileName(name, DEFAULT_CHARSET);
+    	return removeInvalidCharsFromFileName(name, IOConstants.defaultCharset());
     }
     
     private static FileNameSanitizer remover;

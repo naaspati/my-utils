@@ -8,7 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import sam.myutils.MyUtilsCheck;
+import sam.myutils.Checker;
 
 public interface FxUtils {
 	// VERSION = 1.02;
@@ -62,7 +62,7 @@ public interface FxUtils {
 	public static FileChooser fileChooser(File expectedDir, String expectedName, String title, Consumer<FileChooser> editor) {
 		FileChooser fc = new FileChooser();
 
-		if (MyUtilsCheck.exists(expectedDir))
+		if (Checker.exists(expectedDir))
 			fc.setInitialDirectory(expectedDir);
 		if(expectedName != null)
 			fc.setInitialFileName(expectedName);
