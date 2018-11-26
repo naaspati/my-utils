@@ -12,7 +12,7 @@ public interface Iterators {
 
 	public static Iterator<Double> of(double[] values) {
 		Objects.requireNonNull(values);
-		return new Iterator3<Double>(values.length) {
+		return new ArrayIterator<Double>(values.length) {
 			@Override
 			public Double at(int index) {
 				return values[index];
@@ -22,7 +22,7 @@ public interface Iterators {
 	public static Iterator<Integer> of(int[] values) {
 		Objects.requireNonNull(values);
 
-		return new Iterator3<Integer>(values.length) {
+		return new ArrayIterator<Integer>(values.length) {
 			@Override
 			public Integer at(int index) {
 				return values[index];
@@ -32,7 +32,7 @@ public interface Iterators {
 	public static Iterator<Character> of(char[] values) {
 		Objects.requireNonNull(values);
 
-		return new Iterator3<Character>(values.length) {
+		return new ArrayIterator<Character>(values.length) {
 			@Override
 			public Character at(int index) {
 				return values[index];
@@ -41,7 +41,7 @@ public interface Iterators {
 	}
 
 	public static <E> Iterator<E> empty(){
-		return new Iterator3<E>(0) {
+		return new ArrayIterator<E>(0) {
 			@Override
 			public E at(int index) {
 				throw new IndexOutOfBoundsException();
@@ -56,7 +56,7 @@ public interface Iterators {
 
 		if(values.length == 0) return empty();
 
-		return new Iterator3<E>(from, to) {
+		return new ArrayIterator<E>(from, to) {
 			
 			@Override
 			public E at(int index) {
@@ -68,12 +68,12 @@ public interface Iterators {
 		Objects.requireNonNull(itr);
 		Objects.requireNonNull(mapper);
 
-		return new Iterator2<F>() {
+		return new IteratorWithSize<F>() {
 			@Override public boolean hasNext() { return itr.hasNext(); }
 			@Override public F next() { return mapper.apply(itr.next()); }
 			@Override
 			public int size() {
-				return Iterator2.size(itr);
+				return IteratorWithSize.size(itr);
 			}
 
 		};
@@ -84,7 +84,7 @@ public interface Iterators {
 		if(times == 0)
 			return Iterators.empty();
 
-		return new Iterator3<E>(times) {
+		return new ArrayIterator<E>(times) {
 			@Override
 			public E at(int index) {
 				return e;
@@ -93,7 +93,7 @@ public interface Iterators {
 	}
 
 	public static <E> Stream<E> stream(Iterator<E> iterator) {
-		int size = Iterator2.size(iterator);
+		int size = IteratorWithSize.size(iterator);
 		Spliterator<E> s;
 
 		if(size >= 0)

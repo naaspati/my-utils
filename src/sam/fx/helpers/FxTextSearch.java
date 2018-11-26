@@ -97,4 +97,8 @@ public class FxTextSearch<E> {
 		searchThread.stop();
 		searchThread = null;
 	}
+	public Predicate<E> getFilter() {
+		return search.getFilter();
+	}
+	
 }

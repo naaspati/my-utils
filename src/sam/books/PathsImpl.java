@@ -1,9 +1,5 @@
 package sam.books;
-import static sam.books.PathsMeta.MARKER;
-import static sam.books.PathsMeta.PATH;
-import static sam.books.PathsMeta.PATH_ID;
-import static sam.books.PathsMeta.TABLE_NAME;
-
+import static sam.books.BooksMeta.*;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,7 +35,7 @@ public class PathsImpl {
 		return fullpath != null ? fullpath : (fullpath = BooksDBMinimal.ROOT.resolve(path));
 	}
 	
-	private static final String SELECT_ALL = "SELECT * FROM "+TABLE_NAME;
+	private static final String SELECT_ALL = "SELECT * FROM "+PATH_TABLE_NAME;
 	public static List<PathsImpl> getAll(BooksDBMinimal db) throws SQLException{
 		return db.collectToList(SELECT_ALL, PathsImpl::new);
 	}

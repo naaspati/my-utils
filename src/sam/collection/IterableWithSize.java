@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 
-public class Iterable2<E> implements Iterable<E> {
-	public static <T> Iterable2<T> wrap(Iterable<T> iter) {
-		return new Iterable2<>(iter);
+public class IterableWithSize<E> implements Iterable<E> {
+	public static <T> IterableWithSize<T> wrap(Iterable<T> iter) {
+		return new IterableWithSize<>(iter);
 	}
 	
 	// private final Iterable<E> iterable;
@@ -14,11 +14,11 @@ public class Iterable2<E> implements Iterable<E> {
 	private final int size;
 
 	@SuppressWarnings("rawtypes")
-	public Iterable2(Iterable<E> iterable) {
+	public IterableWithSize(Iterable<E> iterable) {
 		Objects.requireNonNull(iterable);
 		
 		this.iterator = iterable.iterator();
-		int n = Iterator2.size(iterator);
+		int n = IteratorWithSize.size(iterator);
 		
 		if(n < 0 && iterable instanceof Collection)
 			n = ((Collection)iterable).size();

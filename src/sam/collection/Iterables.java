@@ -43,7 +43,7 @@ public interface Iterables {
 	public static <E>  Stream<E> stream(Iterable<E> itr) {
 		return Iterators.stream(itr.iterator());
 	}
-	public static <E> Iterable2<E> wrap(Iterable<E> iterable) {
-		return iterable == null ? null : iterable instanceof Iterable2 ? (Iterable2<E>) iterable : new Iterable2<>(iterable);
+	public static <E> IterableWithSize<E> wrap(Iterable<E> iterable) {
+		return iterable == null ? null : iterable instanceof IterableWithSize ? (IterableWithSize<E>) iterable : new IterableWithSize<>(iterable);
 	}   
 }

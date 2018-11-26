@@ -119,7 +119,7 @@ public class BasicFormat {
 
 	}
 
-	public static String format(String format, Object...args){
+	public static String formatStatic(String format, Object...args){
 		return new BasicFormat(format).format(args);
 	}
 

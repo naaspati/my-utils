@@ -15,7 +15,7 @@ import sam.console.ANSI;
 import sam.myutils.MyUtilsBytes;
 
 public interface Junk {
-	public static String print() throws UnsupportedEncodingException {
+	public static String systemInfo() throws UnsupportedEncodingException {
 		Set<String> ignore = new BufferedReader(new InputStreamReader(Junk.class.getResourceAsStream("1542051261555-ignore"), "utf-8"))
 				.lines()
 				.map(String::trim)

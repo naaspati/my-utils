@@ -5,9 +5,9 @@ import static sam.books.BookStatus.READ;
 import static sam.books.BookStatus.SKIPPED;
 import static sam.books.BookStatus.valueOf;
 import static sam.books.BooksMeta.BOOK_ID;
+import static sam.books.BooksMeta.BOOK_TABLE_NAME;
 import static sam.books.BooksMeta.FILE_NAME;
 import static sam.books.BooksMeta.STATUS;
-import static sam.books.BooksMeta.TABLE_NAME;
 import static sam.sql.querymaker.QueryMaker.qm;
 
 import java.io.File;
@@ -30,7 +30,6 @@ import sam.logging.MyLoggerFactory;
 import sam.myutils.MyUtilsPath;
 import sam.string.BasicFormat;
 import sam.string.StringUtils;
-import sam.string.BasicFormat.EscapeType;
 
 public class BooksDB extends BooksDBMinimal {
 
@@ -54,7 +53,7 @@ public class BooksDB extends BooksDBMinimal {
 		Exception exception = null;
 		
 		ArrayList<Path[]> moved = new ArrayList<>();
-		Map<Integer, String> bookIdFileNameMap = collectToMap(qm().select(BOOK_ID,FILE_NAME).from(TABLE_NAME).where(w -> w.in(BOOK_ID, bookIdPathMap.keySet(), false)).build(), rs -> rs.getInt(BOOK_ID), rs -> rs.getString(FILE_NAME));
+		Map<Integer, String> bookIdFileNameMap = collectToMap(qm().select(BOOK_ID,FILE_NAME).from(BOOK_TABLE_NAME).where(w -> w.in(BOOK_ID, bookIdPathMap.keySet(), false)).build(), rs -> rs.getInt(BOOK_ID), rs -> rs.getString(FILE_NAME));
 		
 		try {
 			Logger logger = MyLoggerFactory.logger(getClass()); 
@@ -89,7 +88,7 @@ public class BooksDB extends BooksDBMinimal {
 					logger.info(() -> "moved: "+ MyUtilsPath.subpath(path, ROOT)+" -> " + MyUtilsPath.subpath(p, ROOT));
 				}
 			} 
-			 n = executeUpdate(qm().update(TABLE_NAME).set(STATUS, newStatus, true).where(w -> w.in(BOOK_ID, bookIdFileNameMap.keySet(), false)).build());
+			 n = executeUpdate(qm().update(BOOK_TABLE_NAME).set(STATUS, newStatus, true).where(w -> w.in(BOOK_ID, bookIdFileNameMap.keySet(), false)).build());
 			 commit();
 		} catch (Exception e) {
 			exception = e;

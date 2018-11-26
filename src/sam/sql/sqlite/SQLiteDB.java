@@ -15,7 +15,7 @@ import sam.myutils.System2;
 import sam.sql.JDBCHelper;
 
 public class SQLiteDB extends JDBCHelper {
-    private final Object path;
+    private final Path path;
     
     private static Properties defaultProperties() {
 		return new Properties();
@@ -63,11 +63,16 @@ public class SQLiteDB extends JDBCHelper {
 		}
         
     }
-    public Object getPath() {
+    public Path getPath() {
         return path;
     }
     
-    public long getSequnceValue(String tableName) throws SQLException {
-    	return executeQuery("SELECT seq from sqlite_sequence where name='"+tableName+"'", rs -> rs.next() ? rs.getLong(1) : 0);
+    /**
+     * @param tableName
+     * @return
+     * @throws SQLException
+     */
+    public int getSequnceValue(String tableName) throws SQLException {
+    	return executeQuery("SELECT seq from sqlite_sequence where name='"+tableName+"'", rs -> rs.next() ? rs.getInt(1) : 0);
     } 
 }

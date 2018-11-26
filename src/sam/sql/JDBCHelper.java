@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import sam.logging.MyLoggerFactory;
+import sam.myutils.Checker;
 
 public abstract class JDBCHelper implements AutoCloseable {
 	private Statement defaultStatement;
@@ -226,5 +227,53 @@ public abstract class JDBCHelper implements AutoCloseable {
 	}
 	public <E> E findFirst(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException{
 		return executeQuery(sql, rs -> rs.next() ? mapper.apply(rs) : null); 
+	}
+	/**
+	 * closed sql with ");\n"
+	 * @param tableName
+	 * @param columnNames
+	 * @return
+	 * @throws SQLException
+	 */
+	public static String insertSQL(String tableName, String...columnNames) {
+		if(Checker.isEmpty(columnNames))
+			throw new IllegalArgumentException("no column names specified");
+		
+		StringBuilder sb = new StringBuilder().append("INSERT INTO ").append(tableName).append("(");
+		
+		for (String s : columnNames) 
+			sb.append(s).append(',');
+		
+		sb.setLength(sb.length() - 1);
+		sb.append(") VALUES(");
+		
+		for (int i = 0; i < columnNames.length; i++)
+			sb.append('?').append(',');			
+		
+		sb.setLength(sb.length() - 1);
+		sb.append(");\n");
+		
+		return sb.toString();
+	}
+	/**
+	 * not closed, can be appended
+	 * @param tableName
+	 * @param columnNames
+	 * @return
+	 * @throws SQLException
+	 */
+	public static StringBuilder selectSQL(String tableName, String...columnNames) {
+		if(Checker.isEmpty(columnNames))
+			throw new IllegalArgumentException("no column names specified");
+		
+		StringBuilder sb = new StringBuilder().append("SELECT ");
+		
+		for (String s : columnNames) 
+			sb.append(s).append(',');
+		sb.setLength(sb.length() - 1);
+		
+		sb.append(" FROM ").append(tableName);
+		
+		return sb;
 	}
 }

@@ -8,7 +8,7 @@ import static sam.books.BooksMeta.NAME;
 import static sam.books.BooksMeta.PAGE_COUNT;
 import static sam.books.BooksMeta.PATH_ID;
 import static sam.books.BooksMeta.STATUS;
-import static sam.books.BooksMeta.TABLE_NAME;
+import static sam.books.BooksMeta.*;
 import static sam.books.BooksMeta.URL;
 import static sam.books.BooksMeta.YEAR;
 
@@ -102,7 +102,7 @@ public class BookImpl {
 
 
 
-	public static final String SELECT_ALL  = "SELECT * FROM "+TABLE_NAME+ " NATURAL JOIN "+PathsMeta.TABLE_NAME; 
+	public static final String SELECT_ALL  = "SELECT * FROM "+BOOK_TABLE_NAME+ " NATURAL JOIN "+PATH_TABLE_NAME; 
 
 	public static List<BookImpl> getAll(BooksDB db) throws SQLException{
 		return db.collectToList(SELECT_ALL, BookImpl::new);

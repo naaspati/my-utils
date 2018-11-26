@@ -1,18 +1,18 @@
 package sam.collection;
 
-public abstract class Iterator3<E> implements Iterator2<E> {
+public abstract class ArrayIterator<E> implements IteratorWithSize<E> {
 	private int index = 0;
 	private final int to;
 	private final int size;
 	
-	public Iterator3(int from, int to) {
+	public ArrayIterator(int from, int to) {
 		this.index = from;
 		this.to = to;
 		this.size = to - from;
 	}
 	
 	public abstract E at(int index);
-	public Iterator3(int size) {
+	public ArrayIterator(int size) {
 		this.to = size;
 		this.size = size;
 	}
