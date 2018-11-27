@@ -6,7 +6,6 @@ import java.util.function.Predicate;
 
 import javafx.application.Platform;
 import sam.string.TextSearch;
-import sam.string.TextSearchPredicate;
 import sam.thread.DelayedQueueThread;
 
 
@@ -19,8 +18,8 @@ import sam.thread.DelayedQueueThread;
  */
 @SuppressWarnings({"rawtypes","unchecked"})
 public class FxTextSearch<E> {
-	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
-	public static final Predicate FALSE_ALL = TextSearchPredicate.FALSE_ALL;
+	public static final Predicate TRUE_ALL = TextSearch.TRUE_ALL;
+	public static final Predicate FALSE_ALL = TextSearch.FALSE_ALL;
 
 	public static <E> Predicate<E> trueAll() { return TRUE_ALL; }
 	public static <E> Predicate<E> falseAll(){ return FALSE_ALL; }
@@ -30,7 +29,7 @@ public class FxTextSearch<E> {
 	private TextSearch<E> search;
 	private Runnable onChange;
 	private final boolean lowerCaseSearchKey;
-	private static final String PRE_FILTER_CHANGE = new String(); 
+	private static final String JUST_NOTIFY = new String();
 
 	public FxTextSearch(Function<E, String> mapper, int searchDelay, boolean lowerCaseSearchKey) {
 		if(searchDelay < 0)
@@ -46,11 +45,18 @@ public class FxTextSearch<E> {
 	}
 	public void set(Predicate<E> preFilter) {
 		search.set(preFilter);
-		addSearch(PRE_FILTER_CHANGE);
+		addSearch(JUST_NOTIFY);
+	}
+	public void set(String searchKey) {
+		addSearch(searchKey);
+	}
+	public void set(Predicate<E> preFilter, String searchKey) {
+		search.set(preFilter);
+		addSearch(searchKey);
 	}
 	public void setAllData(Collection<E> allData) {
 		search.setAllData(allData);
-		Platform.runLater(this::notifyChange);
+		addSearch(JUST_NOTIFY);
 	}
 	public Collection<E> getAllData() {
 		return search.getAllData();
@@ -76,7 +82,7 @@ public class FxTextSearch<E> {
 	}
 	private void apply(String key) {
 		Platform.runLater(() -> {
-			if(key != PRE_FILTER_CHANGE)
+			if(key != JUST_NOTIFY)
 				search.set(!lowerCaseSearchKey || key == null ? key : key.toLowerCase());
 
 			notifyChange();

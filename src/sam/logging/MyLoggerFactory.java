@@ -38,7 +38,6 @@ public final class MyLoggerFactory {
 		simpleName = result;
 		logger(MyLoggerFactory.class).config(() -> "----------- DateTime: "+LocalDateTime.now()+" ----------");
 	}
-	@SuppressWarnings("unused")
 	private  static String lookup(String key) {
 		String s = getProperty(key);
 		if(s != null) return s;
