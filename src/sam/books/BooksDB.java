@@ -1,16 +1,12 @@
 package sam.books;
 
 import static sam.books.BookStatus.NONE;
-import static sam.books.BookStatus.READ;
-import static sam.books.BookStatus.SKIPPED;
-import static sam.books.BookStatus.valueOf;
 import static sam.books.BooksMeta.BOOK_ID;
 import static sam.books.BooksMeta.BOOK_TABLE_NAME;
 import static sam.books.BooksMeta.FILE_NAME;
 import static sam.books.BooksMeta.STATUS;
 import static sam.sql.querymaker.QueryMaker.qm;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
@@ -34,7 +30,7 @@ import sam.string.StringUtils;
 public class BooksDB extends BooksDBMinimal {
 
 	public BooksDB() throws  SQLException {
-		super(DB);
+		super(DB_PATH);
 	}
 	public BooksDB(Path dbpath) throws  SQLException {
 		super(dbpath);
@@ -108,44 +104,6 @@ public class BooksDB extends BooksDBMinimal {
 		return n;
 	}
 
-	public static Path findBook(Path expectedPath) {
-		if(Files.exists(expectedPath))
-			return expectedPath;
-		Path path = expectedPath.resolveSibling("_read_").resolve(expectedPath.getFileName());
-
-		if(Files.exists(path))
-			return path;
-
-		File[] dirs = expectedPath.getParent().toFile().listFiles(f -> f.isDirectory());
-
-		if(dirs == null || dirs.length == 0)
-			return null;
-
-		String name = expectedPath.getFileName().toString();
-
-		for (File file : dirs) {
-			File f = new File(file, name);
-			if(f.exists())
-				return f.toPath();
-		}
-		return null;
-	}
-	public static BookStatus getStatusFromDir(Path dir) {
-		Path name = dir.getFileName();
-		if(name.equals(READ.getPathName()))
-			return READ;
-		if(name.equals(SKIPPED.getPathName()))
-			return SKIPPED;
-
-		String s = name.toString();
-		if(s.charAt(0) == '_' && s.charAt(s.length() - 1) == '_')
-			return valueOf(s.substring(1, s.length() - 1).toUpperCase());
-
-		return NONE;
-	}
-	public static BookStatus getStatusFromFile(Path p) {
-		return getStatusFromDir(p.getParent()); 
-	} 
 	private static WeakReference<Pattern> pattern = new WeakReference<Pattern>(null); 
 	public static String createDirname(int book_id, String file_name) {
 		StringBuilder sb = StringUtils.joinToStringBuilder(book_id,"-",file_name);

@@ -5,7 +5,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
@@ -13,15 +12,20 @@ import sam.io.fileutils.DirWatcher;
 
 public class CssLiveReload extends DirWatcher {
 	private final Collection<Path> filesToWatch;
-	private List<String> styleSheets;
+	private Collection<String> styleSheets;
 	private final String cssDir;
 
-	public CssLiveReload(List<String> stylesheets, Path cssDir, Collection<Path> cssFilesFileNames) throws MalformedURLException {
+	public CssLiveReload(Collection<String> stylesheets, Path cssDir, Collection<Path> cssFilesFileNames) {
 		super(cssDir, StandardWatchEventKinds.ENTRY_MODIFY);
 		
 		this.styleSheets = stylesheets;
 		this.filesToWatch = cssFilesFileNames;
-		String s = cssDir.toUri().toURL().toString();
+		String s;
+		try {
+			s = cssDir.toUri().toURL().toString();
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 		if(s.charAt(s.length() - 1) != '/')
 			s = s.concat("/");
 		

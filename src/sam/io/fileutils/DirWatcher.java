@@ -21,7 +21,9 @@ public abstract class DirWatcher implements Runnable {
 		this.dir = dir;
 		this.watchTypes = watchTypes;
 	}
+    @Override
 	public void run() {
+    	System.out.println("here2");
         try {
             WatchService wa = FileSystems.getDefault().newWatchService();
             WatchKey firstKey = dir.register(wa, watchTypes);
