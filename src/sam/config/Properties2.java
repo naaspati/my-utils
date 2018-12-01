@@ -69,7 +69,7 @@ public class Properties2 {
 		String s = find(key);
 		
 		if(s == null)
-			LOGGER.warning("value not found for key: "+key);
+			LOGGER.config("value not found for key: "+key);
 		else 
 			LOGGER.fine(() -> key.concat(s == null ? "=" : "=".concat(s)));
 		return s;

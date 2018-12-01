@@ -1,7 +1,5 @@
 package sam.manga.samrock.chapters;
 
-import static sam.manga.samrock.mangas.MangasMeta.*;
-import static sam.sql.querymaker.QueryMaker.qm;
 import static sam.manga.samrock.chapters.ChapterUpdate.DELETE;
 import static sam.manga.samrock.chapters.ChapterUpdate.NEW_FROM_DATA;
 import static sam.manga.samrock.chapters.ChapterUpdate.NEW_PARSING_FILE;
@@ -12,6 +10,11 @@ import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.NAME;
 import static sam.manga.samrock.chapters.ChaptersMeta.NUMBER;
 import static sam.manga.samrock.chapters.ChaptersMeta.READ;
+import static sam.manga.samrock.mangas.MangasMeta.CHAP_COUNT_PC;
+import static sam.manga.samrock.mangas.MangasMeta.LAST_UPDATE_TIME;
+import static sam.manga.samrock.mangas.MangasMeta.MANGAS_TABLE_NAME;
+import static sam.manga.samrock.mangas.MangasMeta.READ_COUNT;
+import static sam.manga.samrock.mangas.MangasMeta.UNREAD_COUNT;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -41,21 +44,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import sam.collection.Iterables;
-import sam.io.fileutils.FileNameSanitizer;
 import sam.logging.MyLoggerFactory;
 import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MinimalManga;
+import sam.myutils.Checker;
 import sam.myutils.System2;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
 import sam.sql.querymaker.QueryMaker;
 import sam.string.BasicFormat;
-import sam.string.StringUtils;
 public class ChapterUtils {
 	private static final Logger LOGGER = MyLoggerFactory.logger(ChapterUtils.class);
-
 	private final SamrockDB db;
-	private static FileNameSanitizer remover;
 
 	public ChapterUtils(SamrockDB db) {
 		this.db = db;
@@ -67,45 +67,6 @@ public class ChapterUtils {
 	public ChapterNumbers chapterNumbers() throws SQLException{
 		return new ChapterNumbers(db);
 	}
-	public static String makeChapterFileName(double number, String chapterFileName, String mangaName) {
-		if (chapterFileName == null)
-			throw new NullPointerException("chapterName: " + chapterFileName);
-
-		final String numS = StringUtils.doubleToString(number);
-		if(chapterFileName == null || chapterFileName.trim().isEmpty())
-			return numS;
-
-		chapterFileName = Pattern.compile(mangaName.replaceFirst("(?i)Manh(?:w|u)a", ""), Pattern.LITERAL | Pattern.CASE_INSENSITIVE)
-				.matcher(chapterFileName)
-				.replaceFirst("")
-				.replace(numS, "");
-
-		char[] chars = (numS +" "+chapterFileName.trim()).toCharArray();
-
-		if ((chars[0] == 'C' || chars[0] == 'c') && (chars[1] == 'h' || chars[1] == 'H')
-				&& (chars[2] == 'a' || chars[2] == 'A') && (chars[3] == 'p' || chars[3] == 'P')
-				&& (chars[4] == 't' || chars[4] == 'T') && (chars[5] == 'e' || chars[5] == 'E')
-				&& (chars[6] == 'r' || chars[6] == 'R')) {
-			chars[0] = '\0';
-			chars[1] = '\0';
-			chars[2] = '\0';
-			chars[3] = '\0';
-			chars[4] = '\0';
-			chars[5] = '\0';
-			chars[6] = '\0';
-		}
-		if(remover == null)
-			remover = new FileNameSanitizer();
-
-		remover.removeUnmappableChars(chars);
-		remover.replaceWindowReservedChars(chars);
-		remover.remove_non_space_white_spaces(chars);
-		remover.removeNullChars(chars);
-		String str = remover.trimAndCreate(chars);
-
-		return str;
-	}
-
 	public void selectByMangaId(Collection<Integer> mangaIds, SqlConsumer<ResultSet> consumer, String...chaptersMeta) throws SQLException {
 		String sql = qm().select(chaptersMeta).from(CHAPTERS_TABLE_NAME).where(w -> w.in(ChaptersMeta.MANGA_ID, mangaIds)).build();
 		db.iterate(sql.toString(), consumer);
@@ -341,7 +302,7 @@ public class ChapterUtils {
 
 		if(walkSimple) {
 			String[] array = path.toFile().list();
-			if(array.length == 0)
+			if(Checker.isEmpty(array))
 				return Stream.empty();
 
 			return Arrays.stream(array)

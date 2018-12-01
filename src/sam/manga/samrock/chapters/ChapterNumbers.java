@@ -18,7 +18,7 @@ import sam.sql.querymaker.Where;
 public class ChapterNumbers {
     private final SamrockDB db;
     
-    ChapterNumbers(SamrockDB db) {
+    public ChapterNumbers(SamrockDB db) {
         this.db = db;
     }
     public Map<Integer, double[]> where(UnaryOperator<Where> wo) throws SQLException{

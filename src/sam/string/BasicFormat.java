@@ -3,6 +3,7 @@ package sam.string;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.MissingFormatArgumentException;
+import java.util.Objects;
 
 /**
  * a bare minimum Formatter
@@ -15,7 +16,7 @@ public class BasicFormat {
 	private final String format;
 
 	public static enum EscapeType {
-		// BRACKET,
+		BRACKET,
 		SLASH
 	}
 
@@ -47,9 +48,11 @@ public class BasicFormat {
 	}
 
 // 	public BasicFormat(String format, EscapeType type) {
-	public BasicFormat(String format) {
-		this.format = format;
-
+	
+	public BasicFormat(String format, EscapeType escapeType) { 
+		this.format = Objects.requireNonNull(format);
+		Objects.requireNonNull(escapeType);
+		
 		int n = format.indexOf('{');
 		if(n < 0) {
 			n = format.indexOf('}');
@@ -59,9 +62,13 @@ public class BasicFormat {
 			this.entries = null;
 			this.rawText = format;
 		} else {
-			Object o = slashScaped(format);// Objects.requireNonNull(type) == EscapeType.SLASH ? slashScaped(format) : bracketScaped(format);
-
-			if(o.getClass() ==String.class) {
+			Object o;
+			if(escapeType == EscapeType.SLASH)
+				o = slashScaped(format);
+			else
+				o = bracketScaped(format);
+			
+			if(o.getClass() == String.class) {
 				rawText = (String) o;
 				entries = null;
 			} else {
@@ -69,11 +76,21 @@ public class BasicFormat {
 				entries = (Entry[]) o;
 			}
 		}
+		
+		
+	} 
+	/**
+	 * equivalent to BasicFormat(format, EscapeType.SLASH)
+	 * 
+	 * @param format
+	 */
+	public BasicFormat(String format) {
+		this(format, EscapeType.SLASH);
 	}
 
-	@SuppressWarnings("unused")
 	private Entry[] bracketScaped(String format) {
-		return null;
+		throw new IllegalAccessError("not yet implemented");
+		// return null;
 	}
 	private Object slashScaped(String format) {
 		ArrayList<Entry> list = new ArrayList<>();
