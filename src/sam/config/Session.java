@@ -209,6 +209,8 @@ public class Session {
 		if(isString(key)) {
 			if(isString(value)) {
 				init();
+				if(stringmap0 == null)
+					stringmap0 = new HashMap<>();
 				Object prop = stringmap0.put((String)key, (String)value);
 				if(prop == null) {
 					init();
