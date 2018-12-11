@@ -19,7 +19,6 @@ import sam.io.IOConstants;
 import sam.io.fileutils.FilesWalker.FileWalkResult;
 
 public interface FilesUtilsIO {
-	static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
 	/**
 	 * <pre>
 	 * return a HashMap(String -> Arraylist(Path))
@@ -41,11 +40,13 @@ public interface FilesUtilsIO {
 	 * and return number of bytes read 
 	 */
 	public static long pipe(InputStream in, OutputStream out) throws IOException  {
+		int dbs = IOConstants.defaultBufferSize();
+		
 		int buffersize = in.available() + 5;
 		if(buffersize < 20)
 			buffersize = 20;
-		if(buffersize > DEFAULT_BUFFER_SIZE)
-			buffersize = DEFAULT_BUFFER_SIZE;
+		if(buffersize > dbs)
+			buffersize = dbs;
 
 		long nread = 0L;//number of bytes read
 		byte[] buf = new byte[buffersize];

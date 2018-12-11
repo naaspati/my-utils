@@ -10,10 +10,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.IntConsumer;
 
 public final class ObjectReader {
 
@@ -43,20 +44,19 @@ public final class ObjectReader {
 		}
 		public void iterate(IOExceptionConsumer<DataInputStream> consumer) throws  IOException {
 			Objects.requireNonNull(source, "source not set");
-			iterate0(this, consumer);
+			iterate0(this, null, consumer);
 		}
-		public <E> List<E> readList(IOExceptionFunction<DataInputStream, E> mapper) throws IOException {
+		@SuppressWarnings("rawtypes")
+		public <E> void readList(Collection<E> sink, IOExceptionFunction<DataInputStream, E> mapper) throws IOException {
 			Objects.requireNonNull(source, "source not set");
-			return iterate0(this, mapper);
+			iterate0(this, size -> {
+				if(sink instanceof ArrayList)
+					((ArrayList)sink).ensureCapacity(size);
+			}, d -> sink.add(mapper.apply(d)));
 		}
-		public <K, V> Map<K,V> readMap(IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws IOException {
+		public <K, V> void readMap(Map<K, V> sink, IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws IOException {
 			Objects.requireNonNull(source, "source not set");
-
-			Map<K, V> map = new HashMap<>();
-			IOExceptionConsumer<DataInputStream> cons = dis -> map.put(keyReader.apply(dis), valueReader.apply(dis));
-
-			iterate0(this, cons) ;
-			return map;
+			iterate0(this, null, dis -> sink.put(keyReader.apply(dis), valueReader.apply(dis))) ;
 		}
 		private Wrapper source() throws IOException {
 			return new Wrapper(source);
@@ -98,11 +98,21 @@ public final class ObjectReader {
 	public static <E> E read(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
 		return  new ReaderConfig().source(path).read(mapper);
 	}
-	public static <E> List<E> readList(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
-		return  new ReaderConfig().source(path).readList(mapper);
+	public static <E> ArrayList<E> readList(Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
+		ArrayList<E> list = new ArrayList<>();
+		read(list,path, mapper);
+		return list;
 	}
-	public static <K, V> Map<K,V> readMap(Path path, IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws  IOException{
-		return  new ReaderConfig().source(path).readMap(keyReader, valueReader);
+	public static <E> void read(Collection<E> sink, Path path, IOExceptionFunction<DataInputStream, E> mapper) throws  IOException{
+		new ReaderConfig().source(path).readList(sink, mapper);
+	}
+	public static <K, V> HashMap<K,V> readMap(Path path, IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws  IOException{
+		HashMap<K, V> map = new HashMap<K, V>();
+		read(map, path, keyReader, valueReader);
+		return map;
+	}
+	public static <K, V> void read(Map<K, V> sink, Path path, IOExceptionFunction<DataInputStream, K> keyReader, IOExceptionFunction<DataInputStream, V> valueReader) throws  IOException{
+		new ReaderConfig().source(path).readMap(sink, keyReader, valueReader);
 	}
 	public static void iterate(Path path, IOExceptionConsumer<DataInputStream> consumer) throws  IOException{
 		new ReaderConfig().source(path).iterate(consumer);
@@ -119,34 +129,17 @@ public final class ObjectReader {
 			return out.readObject();
 		}
 	}
-
-	@SuppressWarnings("unchecked")
-	private static <E> List<E> iterate0(ReaderConfig config, Object action) throws  IOException {
-		Objects.requireNonNull(action);
+	private static <E> void iterate0(ReaderConfig config, IntConsumer sizeConsumer, IOExceptionConsumer<DataInputStream> consumer) throws  IOException {
 		Objects.requireNonNull(config);
-
-		IOExceptionFunction<DataInputStream, E> func = null;
-		IOExceptionConsumer<DataInputStream> consumer = null;
-
-		if(action instanceof IOExceptionFunction)
-			func = (IOExceptionFunction<DataInputStream, E>) action;
-		else if(action instanceof IOExceptionConsumer)
-			consumer = (IOExceptionConsumer<DataInputStream>) action;
-		else 
-			throw new IllegalArgumentException("unknown action: "+action);
 
 		try(Wrapper os2 = config.source();
 				DataInputStream in = new DataInputStream(os2.get())) {
 			int size = in.readInt();
-			ArrayList<E> list = func == null ? null : new ArrayList<>(size);
+			if(sizeConsumer != null)
+				sizeConsumer.accept(size);
 
-			for (int i = 0; i < size; i++) {
-				if(consumer != null)
-					consumer.accept(in);
-				else if(func != null)
-					list.add(func.apply(in));
-			}
-			return list;
+			for (int i = 0; i < size; i++) 
+				consumer.accept(in);
 		}
 	}
 
