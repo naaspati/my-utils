@@ -8,14 +8,14 @@ import java.nio.file.Path;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import sam.fx.helpers.FxFxml;
-import sam.io.fileutils.FileModifyListener;
+import sam.io.fileutils.FileWatcher;
 
 public class StageLiveReloadOnFxmlChange {
-	private final FileModifyListener fm;
+	private final FileWatcher fm;
 	
 	public StageLiveReloadOnFxmlChange(Path fxmlFile, Stage stage, Object controller) throws MalformedURLException {
 		URL url = fxmlFile.toUri().toURL();
-		this.fm = new FileModifyListener(fxmlFile) {
+		this.fm = new FileWatcher(fxmlFile) {
 			@Override
 			protected void onModify() {
 				Platform.runLater(() -> {

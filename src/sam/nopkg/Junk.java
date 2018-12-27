@@ -6,6 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,5 +64,19 @@ public interface Junk {
 						m.getParameterCount() == 0
 						);
 	}
-
+	public static <E> E notYetImplemented() throws IllegalAccessError {
+		throw new IllegalAccessError("NOT YET IMPLEMENTED");
+	}
+	public static StackTraceElement stackLocation() {
+		return Thread.currentThread().getStackTrace()[2];
+	}
+	public static void printstackLocation(String msg) {
+		System.out.println((msg == null ? "" : msg+" ")+Thread.currentThread().getStackTrace()[2]);
+	}
+	public static void printstackLocation() {
+		System.out.println(Thread.currentThread().getStackTrace()[2]);
+	}
+	public static void printTrack(int depth) {
+		System.out.println(Arrays.stream(Thread.currentThread().getStackTrace()).skip(2).limit(depth).map(String::valueOf).collect(Collectors.joining("\n  ")));
+	}
 }

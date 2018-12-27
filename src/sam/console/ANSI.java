@@ -1,7 +1,6 @@
 package sam.console;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 import sam.myutils.System2;
 
@@ -12,7 +11,10 @@ import sam.myutils.System2;
  *
  */
 public final class ANSI {
-    private static boolean no_color = Optional.ofNullable(System2.lookupAny("sam.console.ANSI.color", "ANSI.color", "ansi.color")).map(Boolean::valueOf).map(t -> !t).orElse(false);
+    private static boolean no_color;
+    static {
+    	no_color = !System2.lookupBoolean("sam.ansi", true);
+    }
     
     public static void disable() {
     	no_color = true;

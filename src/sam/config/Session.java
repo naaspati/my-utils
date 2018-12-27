@@ -32,7 +32,7 @@ public class Session {
 	private static Properties properties;
 
 	private static Session global;
-	public static Session sharedSession() {
+	public static Session global() {
 		if(global == null)
 			global = new Session(null);
 		return global;

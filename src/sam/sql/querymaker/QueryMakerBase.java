@@ -26,7 +26,7 @@ abstract class QueryMakerBase extends Appender {
        return new Where(this);
     }
     public String build() {
-        String s = sb.toString();
+        String s = sb.append(';').toString();
         maker.addBuilder(sb);
         return s;
     }

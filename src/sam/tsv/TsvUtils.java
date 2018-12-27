@@ -10,8 +10,8 @@ import sam.io.serilizers.StringWriter2;
 import sam.reference.WeakQueue;
 
 final class TsvUtils {
-	static final WeakQueue<StringBuilder> wsb = new WeakQueue<>(StringBuilder::new);
-	static final WeakQueue<ArrayList<String>> wlist = new WeakQueue<>(ArrayList::new);
+	static final WeakQueue<StringBuilder> wsb = new WeakQueue<>(true, StringBuilder::new);
+	static final WeakQueue<ArrayList<String>> wlist = new WeakQueue<>(true, ArrayList::new);
 
 	private TsvUtils() {}
 

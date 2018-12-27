@@ -61,9 +61,13 @@ public final class MyLoggerFactory {
 		
 		p.put("java.util.logging.ConsoleHandler.level", lookup("logging.level", "FINE"));
 		p.put("java.util.logging.ConsoleHandler.formatter", "java.util.logging.SimpleFormatter");
-		p.put("java.util.logging.ConsoleHandler.filter", "sam.logging.LogFilter");
 		p.put("java.util.logging.SimpleFormatter.format", lookup("logging.format", "%4$s: %3$s -> %5$s%6$s%n"));
-		p.put("sam.logging.loggerName.format", lookup("loggerName.format", "simple"));
+
+		String patterns = lookup("filter.patterns");
+		if(patterns != null) {
+			p.put("java.util.logging.ConsoleHandler.filter", "sam.logging.LogFilter");
+			p.put("sam.logging.LogFilter.allowed.patterns", patterns);
+		}
 		
 		try(ByteArrayOutputStream out = new ByteArrayOutputStream();
 				) {

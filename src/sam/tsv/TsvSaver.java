@@ -12,15 +12,15 @@ import java.util.Iterator;
 import java.util.Objects;
 
 import sam.myutils.Checker;
+
 public class TsvSaver {
 	private final CodingErrorAction onMalformedInput;
 	private final CodingErrorAction onUnmappableCharacter;
 
-	public TsvSaver(boolean append, CodingErrorAction onMalformedInput, CodingErrorAction onUnmappableCharacter) {
+	public TsvSaver(CodingErrorAction onMalformedInput, CodingErrorAction onUnmappableCharacter) {
 		this.onMalformedInput = onMalformedInput;
 		this.onUnmappableCharacter = onUnmappableCharacter;
 	}
-
 	public TsvSaver() {
 		this.onMalformedInput = defaultOnMalformedInput();
 		this.onUnmappableCharacter = defaultOnUnmappableCharacter();

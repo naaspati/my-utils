@@ -49,80 +49,113 @@ public interface IntSerializer {
 		return read(newChannel(is));
 	}
 	public static void write(int[] value, Path path) throws IOException {
+		write(value, path, null);
+	}
+	public static void write(int[] value, Path path, ByteBuffer buffer) throws IOException {
 		try(WritableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
-			write(value, c);
+			write(value, c, buffer);
 		}
 	}
-	
 	public static void write(int[] value, WritableByteChannel c) throws IOException {
+		write(value, c, (ByteBuffer)null);
+	}
+	public static void write(int[] value, WritableByteChannel c, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(value);
+		Objects.requireNonNull(c);
 		
 		if(value.length == 0) {
 			writeInt(0, c);
 			return;
 		}
+		buffer = getBuffer(buffer, value.length + 1, BYTES);
+		int bytes = 0;
 		
-		ByteBuffer buffer = getBuffer(value.length + 1, BYTES);
-		writeInt(buffer, value.length, c);
-		
-		int n = 0, m = 0;
-		final int ln = value.length;
-		final int max = (buffer.capacity())/BYTES;
-		int loops = 0;
-		
-		while(n < ln) {
-			loops++;
-			m = 0;
-			while(m < max && n < ln) {
-				buffer.putInt(value[n++]);
-				m++;
+		try {
+			buffer.putInt(value.length);
+			
+			int loops = 0;
+			for (int v : value) {
+				if(buffer.remaining() < BYTES) {
+					loops++;
+					bytes += Utils.write(buffer, c);
+				}
+				buffer.putInt(v);	
 			}
-			Utils.write(buffer, c);
+			
+			if(buffer.position() != 0) {
+				loops++;
+				bytes += Utils.write(buffer, c);
+			}
+			
+			int loops2 = loops;
+			int cap = buffer.capacity();
+			int bytes2 = bytes;
+			LOGGER.fine(() -> Utils.log("WRITE", "int[]", value.length, cap, loops2, bytes2));
+		} finally {
+			buffer.clear();
 		}
-		int loops2 = loops;
-		LOGGER.finer(() -> "WRITE { int[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+		
 	}
- 
+
 	public static void write(int[] value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
 	}
 	public static int[] readArray(Path path) throws IOException {
+		return readArray(path, null);
+	}
+	public static int[] readArray(Path path, ByteBuffer buffer) throws IOException {
 		try(ReadableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, READ)) {
-			return readArray(c);
+			return readArray(c, buffer);
 		}
 	}
 	public static int[] readArray( ReadableByteChannel c) throws IOException {
+		return readArray(c, null);
+	}
+	public static int[] readArray( ReadableByteChannel c, ByteBuffer buffer) throws IOException {
 		final int size = readInt(c);
-		
+
 		if(size == 0) return new int[0];
 		if(size == 1) return new int[] {read(c)};
 
 		int[] array = new int[size];
-		ByteBuffer buffer = getBuffer(size, BYTES);
+		buffer = getBuffer(buffer, size, BYTES);
+		int bytes = 4;
 		
-		int n = 0;
-		int loops = 0;
-		
-		while(n < size) {
-			loops++;
-			buffer.clear();
-			c.read(buffer);
+		try {
+			int loops = 1;
+			bytes += bytes(c.read(buffer));
 			buffer.flip();
 			
-			int m = 0;
-			int max = buffer.remaining()/BYTES;
-			
-			while(m < max) {
-				array[n++] = buffer.getInt();
-				m++;
+			for (int index = 0; index < array.length; index++) {
+				if(buffer.remaining() < BYTES) {
+					if(buffer.hasRemaining())
+						buffer.compact();
+					else
+						buffer.clear();
+				
+					loops++;
+					bytes += bytes(c.read(buffer));
+					buffer.flip();
+					if(buffer.remaining() < BYTES)
+						throw new IOException("bad file" );
+				}
+				array[index] = buffer.getInt();
 			}
+			
+			int loops2 = loops;
+			int cap = buffer.capacity();
+			int bytes2 = bytes;
+			LOGGER.fine(() -> Utils.log("READ", "int[]", array.length, cap, loops2, bytes2));
+			return array;
+		} finally {
+			buffer.clear();
 		}
-		int loops2 = loops;
-		LOGGER.finer(() -> "READ { int[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
-		
-		return array;
-		
 	}
+	
+	public static int bytes(int n) {
+		return n < 0 ? 0 : n;
+	}
+	
 	public static int[] readArray(InputStream is) throws IOException {
 		return readArray(newChannel(is));
 	}

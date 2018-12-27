@@ -8,6 +8,7 @@ public class LazyReference<E> {
 	private Reference<E> reference;
 	private final ReferenceType type;
 	private final Supplier<E> generator;
+	private final Object lock = new Object(); 
 
 	public LazyReference(Supplier<E> generator, ReferenceType type) {
 		this.generator = generator;
@@ -19,20 +20,28 @@ public class LazyReference<E> {
 	 * @return if no garbage collected, return the existing value, else create a value and return.
 	 */
 	public E get() {
-		E e = peek();
-		if(e == null)
-			reference = type.get(e = generator.get());
+		synchronized (lock) {
+			E e = peek();
+			if(e == null)
+				reference = type.get(e = generator.get());
 
-		return e;
+			return e;			
+		}
+
 	}
 	public void clear() {
-		reference.clear();
+		synchronized (lock) {
+			if(reference != null)
+				reference.clear();
+		}
 	}
 	/**
 	 * @return the value if there is any (without creating), else null
 	 */
 	public E peek() {
-		return ReferenceUtils.get(reference);
+		synchronized (lock) {
+			return ReferenceUtils.get(reference);
+		}
 	}
 	/**
 	 * <pre>
@@ -44,20 +53,27 @@ public class LazyReference<E> {
 	 * @return
 	 */
 	public E pop() {
-		E e = ReferenceUtils.get(reference);
-		reference = null;
-		if(e == null) return generator.get();
-		return e;
+		synchronized (lock) {
+			E e = ReferenceUtils.get(reference);
+			reference = null;
+			if(e == null) return generator.get();
+			return e;
+		}
 	}
 	public void set(E e) {
-		this.reference = e == null ? null : type.get(e);
+		synchronized (lock) {
+			this.reference = e == null ? null : type.get(e);
+		}
 	}
 	public boolean isPresent(){
 		return peek() != null;
 	}
 	public void ifPresent(Consumer<E> action){
-		E e = peek();
-		if(e != null)
+		E e = pop();
+		
+		if(e != null) {
 			action.accept(e);
+			set(e);
+		}
 	}
 }

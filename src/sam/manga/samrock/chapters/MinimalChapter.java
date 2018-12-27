@@ -27,8 +27,8 @@ public interface MinimalChapter {
 		
 		if(m.find()) {
 			try {
-				OptionalDouble.of(Double.parseDouble(m.group(1)));
-			} catch (NumberFormatException e) {}
+				return OptionalDouble.of(Double.parseDouble(m.group(1)));
+			} catch (NumberFormatException e) { }
 		}
 		return OptionalDouble.empty();
 	}

@@ -93,6 +93,17 @@ public abstract class JDBCHelper implements AutoCloseable {
 			while(rs.next()) action.accept(rs);
 		}
 	}
+	public void iterateStoppable(String sql, SqlFunction<ResultSet, Boolean> action) throws SQLException {
+		iterateStoppable(query(sql), action);
+	}
+	public static void iterateStoppable(ResultSet rs, SqlFunction<ResultSet, Boolean> action) throws SQLException {
+		try(ResultSet rs2 = rs) {
+			while(rs.next()) {
+				if(!action.apply(rs))
+					break;
+			}
+		}
+	}
 	public <C extends Collection<E>, E> C collect(String sql,C sink, SqlFunction<ResultSet, E> mapper) throws SQLException {
 		return collect(query(sql), sink, mapper); 
 	}

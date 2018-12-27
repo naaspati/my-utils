@@ -114,12 +114,12 @@ public final class FileNameSanitizer {
 		return new String(chars, start, end + 1 - start);
 	}
 
-	public static String removeInvalidCharsFromFileName(String name) {
-		return removeInvalidCharsFromFileName(name, IOConstants.defaultCharset());
+	public static String sanitize(String name) {
+		return sanitize(name, IOConstants.defaultCharset());
 	}
 
 	private static FileNameSanitizer remover;
-	public static String removeInvalidCharsFromFileName(String name, Charset charset) {
+	public static String sanitize(String name, Charset charset) {
 		if (name == null)
 			throw new NullPointerException("Name: " + name);
 

@@ -3,7 +3,6 @@ package sam.manga.samrock.chapters;
 import static sam.manga.samrock.chapters.ChapterUpdate.DELETE;
 import static sam.manga.samrock.chapters.ChapterUpdate.NEW_FROM_DATA;
 import static sam.manga.samrock.chapters.ChapterUpdate.NEW_PARSING_FILE;
-import static sam.manga.samrock.chapters.ChapterUpdate.NO_UPDATE;
 import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTERS_TABLE_NAME;
 import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTER_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
@@ -30,10 +29,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.function.BiFunction;
@@ -45,9 +44,11 @@ import java.util.stream.Stream;
 
 import sam.collection.Iterables;
 import sam.logging.MyLoggerFactory;
+import sam.manga.samrock.Renamer;
 import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MinimalManga;
 import sam.myutils.Checker;
+import sam.myutils.MyUtilsException;
 import sam.myutils.System2;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
@@ -63,9 +64,6 @@ public class ChapterUtils {
 
 	private QueryMaker qm() {
 		return QueryMaker.getInstance();
-	}
-	public ChapterNumbers chapterNumbers() throws SQLException{
-		return new ChapterNumbers(db);
 	}
 	public void selectByMangaId(Collection<Integer> mangaIds, SqlConsumer<ResultSet> consumer, String...chaptersMeta) throws SQLException {
 		String sql = qm().select(chaptersMeta).from(CHAPTERS_TABLE_NAME).where(w -> w.in(ChaptersMeta.MANGA_ID, mangaIds)).build();
@@ -126,11 +124,11 @@ public class ChapterUtils {
 		}
 	}
 	private static class TempInsert {
-		final int manga_id;
+		final MinimalManga manga;
 		final MinimalChapter chapter;
-		
-		public TempInsert(int manga_id, MinimalChapter chapter) {
-			this.manga_id = manga_id;
+
+		public TempInsert(MinimalManga manga, MinimalChapter chapter) {
+			this.manga = manga;
 			this.chapter = chapter;
 		}
 	}
@@ -146,28 +144,31 @@ public class ChapterUtils {
 		if(mangasToUpdate.isEmpty())
 			throw new IllegalArgumentException("invalid state: mangasToUpdate is empty");
 
-		HashMap<Integer, Map<String, MinimalChapter>> newData = new HashMap<>();
-		HashMap<Integer, MinimalManga> mangas = new HashMap<>();
-
-		/**
+		/** FIXME Converter not supplying proper data
 		 * eliminate duplicate mangas
 		 */
-		for (MinimalManga m : mangasToUpdate) {
-			Map<String, MinimalChapter> chapters = newData.computeIfAbsent(m.getMangaId(), i -> new HashMap<>());
-			mangas.put(m.getMangaId(), m);
+		IdentityHashMap<MinimalManga, Map<String, MinimalChapter>> suppliedData = mangasToUpdate.stream()
+				.collect(Collectors.toMap(m -> m, m -> {
+					Map<String, MinimalChapter> chapters = new HashMap<>();
+					for (MinimalChapter c : m.getChapterIterable()) {
+						String s =  c.getFileName();
+						if(s == null)
+							s = Renamer.makeChapterFileName(c.getNumber(), c.getTitle(), m.getMangaName());
+						if(s != null)
+							chapters.put(s.concat(".jpeg"), c);
+					} 
+					return chapters;
+				}, (o, n) -> n, IdentityHashMap::new));
 
-			for (MinimalChapter c : m.getChapterIterable()) 
-				chapters.put(c.getFileName(), c);
+		IdentityHashMap<MinimalManga, List<ChapterFile>> files = suppliedData.keySet().stream().collect(Collectors.toMap(m -> m, m -> MyUtilsException.noError(() -> chapterFileNames(m)).map(ChapterFile::new).collect(Collectors.toList()), (p, o) -> {throw new IllegalStateException();}, IdentityHashMap::new));
+		IdentityHashMap<MinimalManga, List<Chapter>> dbloaded = new IdentityHashMap<>();
+
+		{
+			Map<Integer, MinimalManga> map = suppliedData.keySet().stream().collect(Collectors.toMap(MinimalManga::getMangaId, m -> m, (p,o) -> p));
+			Map<Integer, List<Chapter>> chapters = getChapters(map.keySet());
+			chapters.forEach((id,chaps) -> dbloaded.put(map.get(id), chaps));
 		}
 
-		Map<Integer, List<Chapter>> _db0 = getChapters(newData.keySet());
-		HashMap<Integer, Map<String, Chapter>> database = new HashMap<>();
-		_db0.forEach((id, list) -> database.put(id, list.stream().collect(Collectors.toMap(MinimalChapter::getFileName, c -> c))));
-
-		Map<Integer, List<ChapterFile>> walked = new HashMap<>();
-		for (Entry<Integer, MinimalManga> m : mangas.entrySet()) 
-			walked.put(m.getKey(), chapterFileNames(m.getValue()).map(ChapterFile::new).collect(Collectors.toList()));	
-		
 		ArrayList<MangaLog> logs = new ArrayList<>();
 		final HashSet<String> chapCountPc = new HashSet<>();
 		Pattern pattern =  Pattern.compile(" - \\d\\.jpe?g");
@@ -175,39 +176,38 @@ public class ChapterUtils {
 		int[] readCount = {0};
 		List<Integer> delete = new ArrayList<>();
 		List<TempInsert> insert = new ArrayList<>();
+		HashMap<String, Chapter> dbMap = new HashMap<>();
 
-		walked.forEach((id, chapters) -> {
+		files.forEach((manga, chapters) -> {
 			total[0] = 0;
 			readCount[0] = 0;
 			chapCountPc.clear();
 
-			MinimalManga manga = mangas.get(id);
 			List<ChapterLog> chapLogs = new ArrayList<>(chapters.size()+1);
 
-			Map<String, MinimalChapter> newDataMap = newData.get(id);
-			Map<String, Chapter> dbMap = database.get(id);
-			if(newDataMap == null)
-				newDataMap = Collections.emptyMap();
-			if(dbMap == null)
-				dbMap = Collections.emptyMap();
+			Map<String, MinimalChapter> supplied = suppliedData.getOrDefault(manga, Collections.emptyMap());
+			dbMap.clear();
+			List<Chapter> temp = dbloaded.get(manga);
+			if(temp != null)
+				temp.forEach(c -> dbMap.put(c.getFileName(), c));
 
 			for (ChapterFile c : chapters) {
 				total[0]++;
 				String fileName = c.getFileName();
-				MinimalChapter dataC = newDataMap.get(fileName);
+				MinimalChapter dataC = supplied.get(fileName);
 				Chapter dbC = dbMap.remove(fileName);
 				chapCountPc.add(fileName.lastIndexOf('-') < 0 ? fileName : pattern.matcher(fileName).replaceFirst(""));
 
 				if(dataC == null && dbC == null) {
 					chapLogs.add(new ChapterLog(c, NEW_PARSING_FILE));
-					insert.add(new TempInsert(id, c));
+					insert.add(new TempInsert(manga, c));
 				} else if(dbC != null) {
-					chapLogs.add(new ChapterLog(dbC, NO_UPDATE));
+					// chapLogs.add(new ChapterLog(dbC, NO_UPDATE));
 					if(dbC.isRead())
 						readCount[0]++;
 				} else {
 					chapLogs.add(new ChapterLog(dataC, NEW_FROM_DATA));
-					insert.add(new TempInsert(id, c));
+					insert.add(new TempInsert(manga, c));
 				} 
 			}
 			logs.add(new MangaLog(manga, Collections.unmodifiableList(chapLogs), total[0], readCount[0], total[0] - readCount[0], dbMap.size(), chapCountPc.size()));
@@ -226,13 +226,15 @@ public class ChapterUtils {
 				.build();
 		s = s.replace("?", "{}");
 		BasicFormat format = new BasicFormat(s.concat("\n"));
-		
+		logs.removeIf(m -> m.chapters.isEmpty());
+
 		StringBuilder sb = new StringBuilder();
-		for (MangaLog m : logs)
+		for (MangaLog m : logs) 
 			format.format(sb, m.read, m.unread, m.chapCountPc, m.manga.getMangaId());
-		
-		db.executeUpdate(sb.toString());
-		
+
+		if(sb.length() != 0)
+			db.executeUpdate(sb.toString());
+
 		if(!delete.isEmpty()) {
 			String sql = qm().deleteFrom(CHAPTERS_TABLE_NAME)
 					.where(w -> w.in(MANGA_ID, delete))
@@ -245,7 +247,7 @@ public class ChapterUtils {
 
 			try(PreparedStatement p = db.prepareStatement(sql)) {
 				for (TempInsert t : insert) {
-					p.setInt(1, t.manga_id);
+					p.setInt(1, t.manga.getMangaId());
 					p.setString(2, t.chapter.getFileName());
 					p.setDouble(3, t.chapter.getNumber());
 					p.addBatch();	
@@ -314,6 +316,8 @@ public class ChapterUtils {
 
 			for (Path p : strm) {
 				if(Files.isRegularFile(p) && !Files.isHidden(p)) {
+					build.add(p.getFileName().toString());
+				} else {
 					LOGGER.fine(() -> {
 						try {
 							return String.format("Skipping File {regular-file:%s, is-hidden:%s, file-path:%s}", Files.isRegularFile(p) , Files.isHidden(p), p);
@@ -321,7 +325,6 @@ public class ChapterUtils {
 							return String.format("Skipping File {regular-file:%s, is-hidden:%s, file-path:%s}", Files.isRegularFile(p), e.toString(), p);
 						}
 					});
-					build.add(p.getFileName().toString());
 				}
 			}
 			return build.build();
@@ -342,4 +345,23 @@ public class ChapterUtils {
 		return chapterFileNames(manga, simplewalk);
 	}
 
+	public Map<Integer, ChapterFilter> getChapterFilters(Collection<Integer> mangaIds, String filterTitle) throws SQLException {
+		return getChapterFilters(mangaIds, filterTitle, ChapterFilter::new);
+	}
+
+	public <E extends ChapterFilter> Map<Integer, E> getChapterFilters(Collection<Integer> mangaIds, String filterTitle, BiFunction<Integer, String, E> newInstance) throws SQLException {
+		if(mangaIds.isEmpty())
+			return Collections.emptyMap();
+
+		Map<Integer, E> map = new HashMap<>();
+		Function<Integer, E> mapper = manga_id -> newInstance.apply(manga_id, filterTitle);
+
+		db.iterate(QueryMaker.qm().select(MANGA_ID, NUMBER).from(CHAPTERS_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build(), rs -> {
+			map.computeIfAbsent(rs.getInt(MANGA_ID), mapper)
+			.add(rs.getDouble(NUMBER));
+		});
+
+		map.forEach((s,t) -> t.setCompleted());
+		return map;
+	}
 }

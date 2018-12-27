@@ -42,7 +42,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	Path path;
 	final Collection<Row> rows;
 	final Map<String, Column> columns = new HashMap<>();
-	
+
 	public Tsv(String...columnNames) {
 		this(new ArrayList<>(),defaultCharset(), columnNames);
 	}
@@ -52,7 +52,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	Tsv(Collection<Row> sink, Charset charset, String...columnNames) {
 		Objects.requireNonNull(sink);
 		Objects.requireNonNull(charset);
-		
+
 		addColumns(columnNames);
 
 		this.rows = sink;
@@ -70,7 +70,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 		boolean firstLine[] = {true};
 		this.rows = Objects.requireNonNull(sink);
 		this.charset = Objects.requireNonNull(charset);
-		
+
 		new LineReader() {
 			public void accept(String line) {
 				Row row =  new Row(line, Tsv.this);
@@ -82,11 +82,11 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 			};
 		}
 		.parse(is, charset);
-		
+
 		if(firstLine[0])
 			throw new IOException(new TsvException("columnNames not found"));
 	}
-	
+
 	/**
 	 * merge two different tsv tables
 	 * @param tsv2 other tsv 
@@ -99,11 +99,11 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 		if(strict) {
 			String[] a1 = this.getColumnNames();
 			String[] a2 = tsv2.getColumnNames();
-			
+
 			if(strict && !Arrays.equals(a1, a2)) 
 				throw new TsvException("merge between incompatible tsv(s), this:" +Arrays.toString(a1)+"  tsv2: "+Arrays.toString(a2));
 		}
-		
+
 		tsv2.stream()
 		.map(r -> r.values())
 		.map(s -> new Row(Arrays.copyOf(s, s.length), this))
@@ -122,9 +122,9 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	public Path getPath() {
 		return path;
 	}
-	
+
 	public void save() throws IOException {
-		save(path, charset);
+		save(path);
 	}
 	public void save(Path path) throws IOException {
 		save(path, charset);
@@ -138,14 +138,17 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	 * @throws IOException 
 	 */
 	public void save(Path path, Charset charset) throws IOException {
-		save(path, charset, new TsvSaver());
+		save(path, charset, null);
 	}
-	public void save(Path path, Charset charset, TsvSaver tsvSaver) throws IOException {
+	public synchronized void save(Path path, Charset charset, TsvSaver tsvSaver) throws IOException {
 		this.path = path;
 		this.charset = charset;
 
+		Row row = new Row(getColumnNames(), this);
 		Iterator<Row> rows =  iterator();
-		tsvSaver.save(new Row(getColumnNames(), this), path, charset, new Iterator<Row>() {
+		TsvSaver saver = tsvSaver == null ? tsvSaver() : tsvSaver;
+		
+		saver.save(row, path, charset, new Iterator<Row>() {
 			@Override public boolean hasNext() { 
 				return rows.hasNext(); 
 			}
@@ -153,5 +156,8 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 				return rows.next();
 			}
 		});
+	}
+	private TsvSaver tsvSaver() {
+		return new TsvSaver();
 	}
 }

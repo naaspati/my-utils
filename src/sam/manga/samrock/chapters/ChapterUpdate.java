@@ -1,6 +1,6 @@
 package sam.manga.samrock.chapters;
 
-enum ChapterUpdate {
+public enum ChapterUpdate {
 	
 	DELETE,
 	NEW_FROM_DATA,

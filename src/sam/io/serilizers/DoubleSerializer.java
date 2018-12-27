@@ -22,11 +22,9 @@ import java.util.Objects;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
-import sam.reference.WeakAndLazy;
 
 public interface DoubleSerializer {
 	Logger LOGGER = MyLoggerFactory.logger(DoubleSerializer.class);
-	WeakAndLazy<ByteBuffer> wbuffer = new WeakAndLazy<>(() -> ByteBuffer.allocate(BYTES));
 
 	public static void write(double value, Path path) throws IOException {
 		try(WritableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
@@ -34,11 +32,10 @@ public interface DoubleSerializer {
 		}
 	}
 	public static void write(double value, WritableByteChannel c) throws IOException {
-		ByteBuffer buffer = wbuffer.pop();
+		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
 		buffer.clear();
 		buffer.putDouble(value);
 		Utils.write(buffer, c);
-		wbuffer.set(buffer);
 	} 
 	public static void write(double value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
@@ -49,23 +46,27 @@ public interface DoubleSerializer {
 		}
 	}
 	public static double read( ReadableByteChannel c) throws IOException {
-		ByteBuffer buffer = wbuffer.pop();
+		ByteBuffer buffer = ByteBuffer.allocate(BYTES);
 		buffer.clear();
 		c.read(buffer);
 		buffer.flip();
-		double d = buffer.getDouble();
-		wbuffer.set(buffer);
-		return d;
+		return buffer.getDouble();
 	} 
 	public static double read( InputStream is) throws IOException {
 		return read(newChannel(is));
 	}
 	public static void write(double[] value, Path path) throws IOException {
+		write(value, path, null);
+	}
+	public static void write(double[] value, Path path, ByteBuffer buffer) throws IOException {
 		try(WritableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
-			write(value, c);
+			write(value, c, buffer);
 		}
 	}
 	public static void write(double[] value, WritableByteChannel c) throws IOException {
+		write(value, c, null);
+	}
+	public static void write(double[] value, WritableByteChannel c, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(value);
 
 		if(value.length == 0) {
@@ -73,67 +74,89 @@ public interface DoubleSerializer {
 			return;
 		}
 
-		ByteBuffer buffer = getBuffer(value.length + 1, BYTES);
-		writeInt(buffer, value.length, c);
+		buffer = getBuffer(buffer, value.length + 1, BYTES);
 
-		int n = 0, m = 0;
-		final int ln = value.length;
-		final int max = (buffer.capacity())/BYTES;
-		int loops = 0;
-
-		while(n < ln) {
-			loops++;
-			m = 0;
-			while(m < max && n < ln) {
-				buffer.putDouble(value[n++]);
-				m++;
+		try {
+			buffer.putInt(value.length);
+			int loops = 0;
+			int bytes = 0;
+			
+			for (double v : value) {
+				if(buffer.remaining() < BYTES) {
+					loops++;
+					bytes += Utils.write(buffer, c);
+				}
+				buffer.putDouble(v);	
 			}
-			Utils.write(buffer, c);
-		}
 
-		int loops2 = loops;
-		LOGGER.finer(() -> "WRITE { double[].length:"+value.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
+			if(buffer.position() != 0) {
+				loops++;
+				bytes += Utils.write(buffer, c);
+			}
+
+			int loops2 = loops;
+			int cap = buffer.capacity();
+			int bytes2 = bytes;
+			LOGGER.fine(() -> Utils.log("WRITE", "double[]", value.length, cap, loops2, bytes2));
+		} finally {
+			buffer.clear();
+		}
 	} 
 	public static void write(double[] value, OutputStream os) throws IOException {
 		write(value, newChannel(os));
 	}
 	public static double[] readArray( Path path) throws IOException {
+		return readArray(path, null);
+	}
+	public static double[] readArray( Path path, ByteBuffer buffer) throws IOException {
 		try(ReadableByteChannel c = open(path, CREATE, TRUNCATE_EXISTING, READ)) {
-			return readArray(c);
+			return readArray(c, buffer);
 		}
 	}
-	public static double[] readArray( ReadableByteChannel c) throws IOException {
+	public static double[] readArray(ReadableByteChannel c, ByteBuffer buffer) throws IOException {
 		final int size = readInt(c);
 
 		if(size == 0) return new double[0];
 		if(size == 1) return new double[] {read(c)};
 
 		double[] array = new double[size];
-		ByteBuffer buffer = getBuffer(size, BYTES);
+		buffer = getBuffer(buffer, size, BYTES);
+		int bytes = 4;
 
-		int n = 0;
-		int loops = 0;
-
-		while(n < size) {
-			loops++;
-			buffer.clear();
-			c.read(buffer);
+		try {
+			int loops = 1;
+			bytes += bytes(c.read(buffer));
 			buffer.flip();
-
-			int m = 0;
-			int max = buffer.remaining()/BYTES;
-
-			while(m < max) {
-				array[n++] = buffer.getDouble();
-				m++;
+			
+			for (int index = 0; index < array.length; index++) {
+				if(buffer.remaining() < BYTES) {
+					if(buffer.hasRemaining())
+						buffer.compact();
+					else
+						buffer.clear();
+				
+					loops++;
+					bytes += bytes(c.read(buffer));
+					buffer.flip();
+					if(buffer.remaining() < BYTES)
+						throw new IOException("bad file" );
+				}
+				array[index] = buffer.getDouble();
 			}
+			
+			int loops2 = loops;
+			int cap = buffer.capacity();
+			int bytes2 = bytes;
+			LOGGER.fine(() -> Utils.log("READ", "double[]", array.length, cap, loops2, bytes2));
+			return array;
+		} finally {
+			buffer.clear();
 		}
-
-		int loops2 = loops;
-		LOGGER.finer(() -> "READ { double[].length:"+array.length+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+loops2+"}");
-		return array;
 	} 
+	public static int bytes(int n) {
+		return n < 0 ? 0 : n;
+	}
 	public static double[] readArray( InputStream is) throws IOException {
-		return readArray(newChannel(is));
+		return readArray(newChannel(is), null);
 	}
 }

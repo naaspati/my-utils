@@ -21,6 +21,8 @@ import sam.manga.samrock.SamrockDB;
 import sam.sql.querymaker.QueryMaker;
 import sam.string.StringUtils;
 
+import static sam.manga.samrock.urls.MangaUrlsBaseMeta.*
+;
 public final class MangaUrlsUtils {
     private final String mangafoxBase;
     private final String mangahereBase;
@@ -30,12 +32,12 @@ public final class MangaUrlsUtils {
         Map<String, String> baseMap = new HashMap<>();
         this.db = db;
 
-        try(ResultSet rs = db.executeQuery(StringUtils.join("SELECT * FROM ",MangaUrlsBaseMeta.TABLE_NAME));
+        try(ResultSet rs = db.executeQuery(StringUtils.join("SELECT * FROM ",TABLE_NAME));
                 ) {
             UnaryOperator<String> map = temp -> temp.endsWith("/") ? temp : temp.concat("/");
 
             while(rs.next())
-                baseMap.put(rs.getString(MangaUrlsBaseMeta.COLUMN_NAME), map.apply(rs.getString(MangaUrlsBaseMeta.BASE)));
+                baseMap.put(rs.getString(COLUMN_NAME), map.apply(rs.getString(BASE)));
         }
         mangafoxBase = baseMap.get(MANGAFOX);
         mangahereBase = baseMap.get(MANGAHERE);

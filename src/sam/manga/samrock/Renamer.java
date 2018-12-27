@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import sam.io.fileutils.FileNameSanitizer;
+import sam.myutils.Checker;
 import sam.string.StringUtils;
 
 public class Renamer {
@@ -16,7 +17,6 @@ public class Renamer {
 	 */
 	public static String mangaDirName(String mangaName) {
 		Objects.requireNonNull(mangaName, "mangaName ='" + mangaName + "'");
-
 		
 		char[] chars = mangaName.toCharArray();
 		
@@ -98,11 +98,8 @@ public class Renamer {
 	}
 	
 	public static String makeChapterFileName(double number, String chapterFileName, String mangaName) {
-		if (chapterFileName == null)
-			throw new NullPointerException("chapterName: " + chapterFileName);
-
 		final String numS = StringUtils.doubleToString(number);
-		if(chapterFileName == null || chapterFileName.trim().isEmpty())
+		if(Checker.isEmptyTrimmed(chapterFileName))
 			return numS;
 
 		chapterFileName = Pattern.compile(mangaName.replaceFirst("(?i)Manh(?:w|u)a", ""), Pattern.LITERAL | Pattern.CASE_INSENSITIVE)

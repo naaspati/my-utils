@@ -137,7 +137,7 @@ public class StringReader2 {
 		}
 
 		int loops2 = loops;
-		LOGGER.finer(() -> "READ { charset:"+config.charset()+", fileSize:"+buffersize[0]+", ByteBuffer.capacity:"+bytes.capacity()+", loopCount:"+loops2+"}");
+		LOGGER.fine(() -> "READ { charset:"+config.charset()+", fileSize:"+buffersize[0]+", ByteBuffer.capacity:"+bytes.capacity()+", loopCount:"+loops2+"}");
 		return result;
 	}
 	private static String concat(String result, CharBuffer cb) {
@@ -202,7 +202,7 @@ public class StringReader2 {
 
 		int loops2 = bytesloops;
 		int loops3 = charloops;
-		LOGGER.finer(() -> "READ { charset:"+config.charset()+", fileSize:"+bs[0]+", Stringbuilder.length:"+sb.length()+", Stringbuilder.capacity("+startCapacity+"->"+sb.capacity()+ "), ByteBuffer.capacity:"+bytes.capacity()+", averageBytesPerChar: "+d+", CharBuffer.capacity: "+chars.capacity()+", byteLoopCount:"+loops2+", charLoopCount:"+loops3+"}");
+		LOGGER.fine(() -> "READ { charset:"+config.charset()+", fileSize:"+bs[0]+", Stringbuilder.length:"+sb.length()+", Stringbuilder.capacity("+startCapacity+"->"+sb.capacity()+ "), ByteBuffer.capacity:"+bytes.capacity()+", averageBytesPerChar: "+d+", CharBuffer.capacity: "+chars.capacity()+", byteLoopCount:"+loops2+", charLoopCount:"+loops3+"}");
 		return sb;
 	}
 	private static long[] buffersize(ReadableByteChannel channel2) throws IOException {
