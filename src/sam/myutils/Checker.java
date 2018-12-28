@@ -60,6 +60,18 @@ public interface Checker {
 	public static <E> boolean isEmpty(E[] es) {
 		return es == null || es.length == 0;
 	}
+	public static <E> boolean isEmpty(int[] es) {
+		return es == null || es.length == 0;
+	}
+	public static <E> boolean isEmpty(double[] es) {
+		return es == null || es.length == 0;
+	}
+	public static <E> boolean isEmpty(long[] es) {
+		return es == null || es.length == 0;
+	}
+	public static <E> boolean isEmpty(char[] es) {
+		return es == null || es.length == 0;
+	}
 	public static <E> boolean isNotEmpty(E[] es) {
 		return !isEmpty(es);
 	}

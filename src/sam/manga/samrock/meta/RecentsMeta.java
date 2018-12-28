@@ -10,5 +10,5 @@ public interface RecentsMeta {
     String SCALE = "scale";
     String TIME = "_time";
 
-    String TABLE_NAME = "Recents";
+    String RECENTS_TABLE_NAME = "Recents";
 }

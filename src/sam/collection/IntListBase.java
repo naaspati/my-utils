@@ -1,5 +1,6 @@
 package sam.collection;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
@@ -46,9 +47,18 @@ abstract class IntListBase implements IntCollection {
 	private void modified() {
 		modCount++;
 	}
+	
 	private void move(int srcPos, int destPos, int length) {
-		System.arraycopy(data, srcPos, data, destPos, length);
-		afterMove(srcPos, destPos, length);
+		try {
+			System.arraycopy(data, srcPos, data, destPos, length);
+			afterMove(srcPos, destPos, length);	
+		} catch (Exception e) {
+			System.out.println(String.format("data: %s, srcPos: %s, data: %s, destPos: %s, length: %s", "["+data.length+"]", srcPos, "["+data.length+"]", destPos, length));
+			throw e;
+		}
+	}
+	private void move(int srcPos, int destPos) {
+		move(srcPos, destPos, size - srcPos);
 	}
 	void afterMove(int srcPos, int destPos, int length) {
 	}
@@ -57,9 +67,9 @@ abstract class IntListBase implements IntCollection {
 		afterDataResize();
 	}
 	void ensureCapacity(int minCapacity) {
-		if(capacity() >= minCapacity) return;
-		grow(minCapacity);
-		if(capacity() < minCapacity) throw new IllegalStateException("bad grow() implementation"); 
+		if(capacity() > minCapacity) return;
+		grow(minCapacity + 1);
+		if(capacity() <= minCapacity) throw new IllegalStateException("bad grow() implementation"); 
 	}
 	int capacity() {
 		return data.length;
@@ -132,14 +142,14 @@ abstract class IntListBase implements IntCollection {
 		checkIndex(index);
 		size++;
 		ensureCapacity(size);
-		move(index, index+1, size - index);
+		move(index, index+1);
 		data[index] = value;
 		modified();
 	}
 	int removeIndex(int index) {
 		int value = get(index);
 		modified();
-		move(index+1, index, size - index);
+		move(index+1, index);
 		size--;
 		return value;
 	}
@@ -184,7 +194,7 @@ abstract class IntListBase implements IntCollection {
 		int len = c.length;
 		int newsize = size + len;
 		ensureCapacity(newsize);
-		move(index, index + len, size - index);
+		move(index, index + len);
 		System.arraycopy(c, 0, data, index, len);
 		size = newsize;
 		return true;

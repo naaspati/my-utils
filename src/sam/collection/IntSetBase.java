@@ -34,18 +34,15 @@ class IntSetBase extends IntListBase {
 	
 	@Override
 	boolean add(int value) {
-		if(size() == 0)
+		if(size() == 0 || value > max())
 			return super.add(value);
 		else if(value == max())
 			return false;
-		else if(value > max()) {
-			super.add(value);
-			return true;
-		}
 		
 		int n = indexOf(value);
 		if(n >= 0) return false;
 		n = n*-1 - 1;
+		
 		if(n >= size())
 			super.add(value);
 		else

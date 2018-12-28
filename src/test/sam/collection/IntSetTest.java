@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.function.IntConsumer;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import sam.collection.IntSet;
@@ -21,7 +22,29 @@ public class IntSetTest {
 	static IntSet listStatic = new IntSet(10);
 	static TreeSet<Integer> arraylistStatic = new TreeSet<>();
 
-	static Runnable asrt = () -> assertArrayEquals(arraylistStatic.stream().mapToInt(Integer::intValue).toArray(), listStatic.toArray());   
+	static Runnable asrt = () -> assertArrayEquals(arraylistStatic.stream().mapToInt(Integer::intValue).toArray(), listStatic.toArray());
+	
+	@Test
+	public void testOrder() {
+		int[] array = new int[SAMPLE_SIZE];
+		IntSet set = new IntSet();
+		Random r = new Random();
+		
+		for (int i = 0; i < array.length; i++) {
+			array[i] = r.nextInt();
+			set.add(array[i]);
+		} 
+		
+		int[] result = set.toArray();
+		int[] expected = Arrays.stream(array).distinct().sorted().toArray();
+		
+		System.out.println(array.length);
+		System.out.println(set.size()+"  "+set.capacity());
+		System.out.println(result.length);
+		System.out.println(expected.length);
+		
+		assertArrayEquals(expected, result); 
+	}
 
 	@Test
 	public void add() {
