@@ -11,7 +11,7 @@ import java.util.function.IntConsumer;
  */
 class IntSetBase extends IntListBase {
 	IntSetBase() {}
-	
+
 	IntSetBase(int initialCapacity) {
 		super(initialCapacity);
 	}
@@ -31,23 +31,25 @@ class IntSetBase extends IntListBase {
 	int indexOf(int value) {
 		return binarySearch(value);
 	}
-	
+
 	@Override
-	boolean add(int value) {
-		if(size() == 0 || value > max())
+	public boolean add(int value) {
+		if(isEmpty() || value > max()) {
 			return super.add(value);
-		else if(value == max())
+		} else if(value == max()) {
 			return false;
-		
+		}
+
 		int n = indexOf(value);
 		if(n >= 0) return false;
 		n = n*-1 - 1;
-		
-		if(n >= size())
-			super.add(value);
-		else
+
+		if(n >= size()) 
+			return super.add(value);
+		else {
 			super.add(n, value);
-		return true;
+			return true;
+		}
 	}
 	public int max() {
 		return get(size() - 1);
@@ -57,14 +59,14 @@ class IntSetBase extends IntListBase {
 	}
 
 	@Override
-	boolean remove(int value) {
+	public boolean remove(int value) {
 		int n = indexOf(value);
 		if(n < 0) return false;
 		super.removeIndex(n);
 		return true;
 	}
 	@Override
-	boolean addAll(IntCollection list) {
+	public boolean addAll(IntCollection list) {
 		boolean[] b = {false};
 		IntListBase list2 = (IntListBase) list.toIntListBase();
 		Objects.requireNonNull(list2);
@@ -72,14 +74,14 @@ class IntSetBase extends IntListBase {
 		return b[0];
 	}
 	@Override
-	boolean addAll(int... c) {
+	public boolean addAll(int... c) {
 		boolean b = false;
 		for (int i : c) 
 			b = this.add(i) || b;
 		return b;
 	}
 	@Override
-	void forEach(IntConsumer action) {
+	public void forEach(IntConsumer action) {
 		super.forEach(action);
 	}
 }

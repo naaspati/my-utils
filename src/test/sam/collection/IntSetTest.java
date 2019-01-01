@@ -11,7 +11,6 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.function.IntConsumer;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import sam.collection.IntSet;
@@ -22,27 +21,34 @@ public class IntSetTest {
 	static IntSet listStatic = new IntSet(10);
 	static TreeSet<Integer> arraylistStatic = new TreeSet<>();
 
-	static Runnable asrt = () -> assertArrayEquals(arraylistStatic.stream().mapToInt(Integer::intValue).toArray(), listStatic.toArray());
+	static Runnable asrt = () -> check(listStatic, arraylistStatic);
 	
+	private static void check(IntSet set, TreeSet<Integer> treeset) {
+		assertEquals("size:", treeset.size(), set.size());
+
+		int k = 0;
+		for (Integer n : treeset)
+			assertEquals("at index: "+(k - 1), (int)n, set.get(k++));	
+	}
+
+	private int[] array() {
+		int[] array = new int[SAMPLE_SIZE];
+		Random r = new Random();
+
+		for (int i = 0; i < array.length; i++)
+			array[i] = r.nextInt();
+
+		return array;
+	}
+
 	@Test
 	public void testOrder() {
-		int[] array = new int[SAMPLE_SIZE];
-		IntSet set = new IntSet();
-		Random r = new Random();
-		
-		for (int i = 0; i < array.length; i++) {
-			array[i] = r.nextInt();
-			set.add(array[i]);
-		} 
-		
+		int[] array = array();
+		IntSet set = new IntSet(array);
+
 		int[] result = set.toArray();
 		int[] expected = Arrays.stream(array).distinct().sorted().toArray();
-		
-		System.out.println(array.length);
-		System.out.println(set.size()+"  "+set.capacity());
-		System.out.println(result.length);
-		System.out.println(expected.length);
-		
+
 		assertArrayEquals(expected, result); 
 	}
 
@@ -109,19 +115,12 @@ public class IntSetTest {
 			filler.accept(i);
 
 		if(afterFill != null) {
-			int[] a = list.toArray();
-			int[] b = list2.stream().mapToInt(Integer::intValue).toArray();
-
-			assertArrayEquals(a, b);
-
+			check(list, list2);
 			r = new Random(10);
 			afterFill.run();
 		}
 
-		int[] a = list.toArray();
-		int[] b = list2.stream().mapToInt(Integer::intValue).toArray();
-
-		assertArrayEquals(a, b);
+		check(list, list2);
 	}
 
 	private IntConsumer simplefill = i -> {
@@ -134,7 +133,7 @@ public class IntSetTest {
 	public void toArray() {
 		arrayTest(false, simplefill, null);
 	}
-	
+
 	@Test
 	public void remove() {
 		arrayTest(false, simplefill, () -> {

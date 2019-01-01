@@ -32,6 +32,10 @@ public class IntSet extends IntSetBase {
 		return super.addAll(list);
 	}
 	@Override
+	public int get(int index) {
+		return super.get(index);
+	}
+	@Override
 	public 	boolean addAll(int... c) {
 		return super.addAll(c);
 	}

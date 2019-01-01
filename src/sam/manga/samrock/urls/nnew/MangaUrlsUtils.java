@@ -13,13 +13,13 @@ import java.util.Objects;
 import sam.manga.samrock.SamrockDB;
 import sam.sql.JDBCHelper;
 
-final class MangaUrlsUtils {
+public final class MangaUrlsUtils {
     private final SamrockDB db; 
     private final Map<String, UrlsPrefixImpl> prefixes;
 
     public MangaUrlsUtils(SamrockDB db) throws SQLException {
     	this.db = db;
-    	this.prefixes = UrlsPrefixImpl.getAll(db); 
+    	this.prefixes = Collections.unmodifiableMap(UrlsPrefixImpl.getAll(db)); 
     }
     
     /**
@@ -60,5 +60,8 @@ final class MangaUrlsUtils {
     	
     	sql.append(';');
         return db.collectToMap(sql.toString(), rs -> rs.getInt(MANGA_ID), rs -> prefix.resolve(rs.getString(urlColumn)));
+	}
+    public Map<String, UrlsPrefixImpl> getPrefixes() {
+		return Collections.unmodifiableMap(prefixes);
 	}
 }

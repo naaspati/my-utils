@@ -22,7 +22,7 @@ import sam.logging.MyLoggerFactory;
 import sam.myutils.Checker;
 
 public abstract class JDBCHelper implements AutoCloseable {
-	private Statement defaultStatement;
+	private Statement _defaultStatement;
 	private final Connection connection;
 	private final Logger LOGGER = MyLoggerFactory.logger(getClass());
 
@@ -30,9 +30,9 @@ public abstract class JDBCHelper implements AutoCloseable {
 		this.connection = connection;
 	}
 	public Statement getDefaultStatement() throws SQLException {
-		if(defaultStatement != null)
-			return defaultStatement;
-		return defaultStatement = connection.createStatement();
+		if(_defaultStatement != null)
+			return _defaultStatement;
+		return _defaultStatement = connection.createStatement();
 	}
 
 	public void commit() throws SQLException {
@@ -40,8 +40,8 @@ public abstract class JDBCHelper implements AutoCloseable {
 	}
 	@Override
 	public void close() throws SQLException {
-		if(defaultStatement != null)
-			defaultStatement.close();
+		if(_defaultStatement != null)
+			_defaultStatement.close();
 		connection.close();
 	}
 	public PreparedStatement prepareStatement(String sql) throws SQLException {

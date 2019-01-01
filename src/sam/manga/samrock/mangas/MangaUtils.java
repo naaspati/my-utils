@@ -11,10 +11,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import sam.io.fileutils.FileNameSanitizer;
 import sam.manga.samrock.SamrockDB;
 import sam.myutils.Checker;
 import sam.sql.SqlConsumer;

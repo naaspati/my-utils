@@ -3,7 +3,9 @@ package sam.collection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -63,5 +65,16 @@ public interface CollectionUtils {
 			into.put(keyMapper.apply(d), valueMapper.apply(d));
 
 		return into;
+	}
+	public static <E> List<E> copyOf(List<E> source) {
+		return copyOf(source, ArrayList::new);
+	}
+	public static <E> List<E> copyOf(List<E> source, Function<List<E>, List<E>> creater) {
+		if(Checker.isEmpty(source))
+			return Collections.emptyList();
+		if(source.size() == 1)
+			return Collections.singletonList(source.get(0));
+		
+		return creater.apply(source);
 	}
 }

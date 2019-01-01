@@ -1,6 +1,5 @@
 package sam.collection;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
@@ -49,13 +48,8 @@ abstract class IntListBase implements IntCollection {
 	}
 	
 	private void move(int srcPos, int destPos, int length) {
-		try {
-			System.arraycopy(data, srcPos, data, destPos, length);
-			afterMove(srcPos, destPos, length);	
-		} catch (Exception e) {
-			System.out.println(String.format("data: %s, srcPos: %s, data: %s, destPos: %s, length: %s", "["+data.length+"]", srcPos, "["+data.length+"]", destPos, length));
-			throw e;
-		}
+		System.arraycopy(data, srcPos, data, destPos, length);
+		afterMove(srcPos, destPos, length);
 	}
 	private void move(int srcPos, int destPos) {
 		move(srcPos, destPos, size - srcPos);
@@ -119,7 +113,7 @@ abstract class IntListBase implements IntCollection {
 	int[] toArray() {
 		return Arrays.copyOfRange(data, 0, size);
 	}
-	int get(int index) {
+	public int get(int index) {
 		checkIndex(index);
 		return data[index];
 	}
@@ -132,7 +126,7 @@ abstract class IntListBase implements IntCollection {
 		modified();
 		return data[index] = element;
 	}
-	boolean add(int value) {
+	public boolean add(int value) {
 		ensureCapacity(size+1);
 		modified();
 		data[size++] = value;
@@ -153,16 +147,16 @@ abstract class IntListBase implements IntCollection {
 		size--;
 		return value;
 	}
-	boolean remove(int value) {
+	public boolean remove(int value) {
 		int index = indexOf(value);
 		if(index < 0) return false;
 		removeIndex(index);
 		return true;
 	}
-	void clear() {
+	public void clear() {
 		size = 0;
 	}
-	boolean addAll(IntCollection list) {
+	public boolean addAll(IntCollection list) {
 		IntListBase list2 = (IntListBase) list.toIntListBase();
 		Objects.requireNonNull(list2);
 		if(list2.size() == 0) return false;
@@ -174,7 +168,7 @@ abstract class IntListBase implements IntCollection {
 		return true;
 
 	}
-	boolean addAll(int... c) {
+	public boolean addAll(int... c) {
 		Objects.requireNonNull(c);
 		if(c.length == 0) return false;
 		ensureCapacity(size+c.length);
@@ -199,7 +193,7 @@ abstract class IntListBase implements IntCollection {
 		size = newsize;
 		return true;
 	}
-	boolean removeAll(int... c) {
+	public boolean removeAll(int... c) {
 		Objects.requireNonNull(c);
 		if(c.length == 0) return false;
 		if(c.length == 1)
@@ -239,7 +233,7 @@ abstract class IntListBase implements IntCollection {
 	}
 	 */
 
-	int[] subList(int fromIndex, int toIndex) {
+	public int[] subList(int fromIndex, int toIndex) {
 		checkIndex(fromIndex);
 		if(fromIndex == toIndex)
 			return new int[]{get(fromIndex)};
@@ -251,7 +245,7 @@ abstract class IntListBase implements IntCollection {
 
 		return Arrays.copyOfRange(data, fromIndex, toIndex);
 	}
-	void forEach(IntConsumer action) {
+	public void forEach(IntConsumer action) {
 		if(size == 0) return;
 
 		int m = modCount;
@@ -260,7 +254,7 @@ abstract class IntListBase implements IntCollection {
 			action.accept(data[i]);
 		}
 	}
-	boolean removeIf(IntPredicate filter) {
+	public boolean removeIf(IntPredicate filter) {
 		int oldsize = size;
 		modified();
 		int m = modCount;
@@ -300,6 +294,7 @@ abstract class IntListBase implements IntCollection {
 	}
 	int binarySearch(int value) {
 		if(size == 0) return -1;
+		if(size == 1) return data[0] == value ? 0 : -1;
 		return Arrays.binarySearch(data, 0, size, value);
 	}
 	@Override

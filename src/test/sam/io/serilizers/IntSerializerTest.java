@@ -3,166 +3,84 @@ package test.sam.io.serilizers;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Test;
-
 import sam.io.serilizers.IntSerializer;
 
-public class IntSerializerTest {
+public class IntSerializerTest extends BaseTest<int[], Integer> {
 
-	static {
-		System.setProperty("java.util.logging.config.file","test-logging.properties");
+	@Override
+	protected int[] newInstance(int size) {
+		return new int[size];
 	}
 
-	private int[] array(int n) {
-		Random r = new Random();
-		int[] array = new int[n];
-		for (int i = 0; i < array.length; i++) 
-			array[i] = r.nextInt();
-
-		return array;
-	}
-	
-	@Test
-	public void singleValueTest() throws IOException {
-		Random r = new Random();
-
-		for (int i = 0; i < 10; i++) {
-			int n = r.nextInt();
-			Path p = Files.createTempFile("junit", null);
-			IntSerializer.write(n, p);
-			assertEquals(n, IntSerializer.read(p));
-		}
+	@Override
+	protected void set(int index, int[] array, Random r) {
+		array[index] = r.nextInt();
 	}
 
-	
-	@Test
-	public void writeWithDynamicBuffer() throws IOException {
-		writeTest(null);
-	}
-	
-	@Test
-	public void writeWithFixedBuffer() throws IOException {
-		writeTest(ByteBuffer.allocate(1111));
-	}
-	private void writeTest(ByteBuffer buffer) throws IOException {
-		int n = 10;
-		while(n < 100000) {
-			int[] array = array(n);
-			int[] expected = Arrays.copyOf(array, array.length);
-
-			Path p = Files.createTempFile("junit", null);
-
-			if(buffer == null)
-				IntSerializer.write(array, p);
-			else
-				IntSerializer.write(array, p, buffer);
-			
-			assertArrayEquals(expected, array);
-
-			int[] loaded = null;
-			try(DataInputStream dos = new DataInputStream(Files.newInputStream(p, StandardOpenOption.CREATE))){
-				loaded = new int[dos.readInt()];
-				int x = 0;
-				while(true) {
-					loaded[x++] = dos.readInt();
-				}
-			} catch (EOFException e) {}
-
-			assertArrayEquals(expected, loaded);
-			n = n*n;
-			Files.deleteIfExists(p);
-		}
-	}
-	
-
-	
-	@Test
-	public void readWithDynamicBuffer() throws IOException {
-		readTest(null);
-	}
-	
-	
-	@Test
-	public void readWithFixedBuffer() throws IOException {
-		readTest(ByteBuffer.allocate(1111));
-	}
-	private void readTest(ByteBuffer buffer) throws IOException {
-		int n = 10;
-		while(n < 100000) {
-			int[] array = array(n);
-			int[] expected = Arrays.copyOf(array, array.length);
-
-			Path p = Files.createTempFile("junit", null);
-			
-			try(DataOutputStream dos = new DataOutputStream(Files.newOutputStream(p, StandardOpenOption.CREATE))){
-				dos.writeInt(array.length);
-				
-				for (int i : array) 
-					dos.writeInt(i);
-			}
-			
-			int[] loaded;
-
-			if(buffer == null)
-				loaded = IntSerializer.readArray(p);
-			else
-				loaded = IntSerializer.readArray(p, buffer);
-
-			assertArrayEquals(expected, loaded);
-			n = n*n;
-			Files.deleteIfExists(p);
-		}
-	}
-	
-	
-	@Test
-	public void readWriteWithDynamicBuffer() throws IOException {
-		readWriteTest(null);
-	}
-	
-	@Test
-	public void readWriteWithFixedBuffer() throws IOException {
-		readWriteTest(ByteBuffer.allocate(1111));
-	}
-	private void readWriteTest(ByteBuffer buffer) throws IOException {
-		int n = 10;
-		while(n < 100000) {
-			int[] array = array(n);
-			int[] expected = Arrays.copyOf(array, array.length);
-
-			Path p = Files.createTempFile("junit", null);
-			
-			if(buffer == null)
-				IntSerializer.write(array, p);
-			else
-				IntSerializer.write(array, p, buffer);
-			
-			assertArrayEquals(expected, array);
-			
-			int[] loaded;
-
-			if(buffer == null)
-				loaded = IntSerializer.readArray(p);
-			else
-				loaded = IntSerializer.readArray(p, buffer);
-
-			assertArrayEquals(expected, loaded);
-			n = n*n;
-			Files.deleteIfExists(p);
-		}
+	@Override
+	protected void set(int index, int[] array, DataInputStream r) throws IOException {
+		array[index] = r.readInt();
 	}
 
+	@Override
+	protected Integer writeSingleValue(Random r, ByteArrayOutputStream os) throws IOException {
+		int n = r.nextInt();
+		IntSerializer.write(n, os);
+		return n;
+	}
 
+	@Override
+	protected Integer readSingleValue(ByteArrayInputStream is) throws IOException {
+		return IntSerializer.read(is);
+	}
+
+	@Override
+	protected void assert_equals(Integer expected, Integer actual) {
+		assertEquals(expected.intValue(), actual.intValue());
+	}
+
+	@Override
+	protected int[] readArray(ByteArrayInputStream p) throws IOException {
+		return IntSerializer.readArray(p);
+	}
+
+	@Override
+	protected void write(int[] array, ByteArrayOutputStream p) throws IOException {
+		IntSerializer.write(array, p);
+	}
+
+	@Override
+	protected void write(int[] array, ByteArrayOutputStream p, ByteBuffer buffer) throws IOException {
+		IntSerializer.write(array, Channels.newChannel(p),buffer);
+	}
+
+	@Override
+	protected int[] copyOf(int[] array) {
+		return Arrays.copyOf(array, array.length);
+	}
+
+	@Override
+	protected void assert_ArrayEquals(int[] expecteds, int[] actuals) {
+		assertArrayEquals(expecteds, actuals);
+	}
+
+	@Override
+	protected void writeSingleValue(int index, int[] array, DataOutputStream dos) throws IOException {
+		IntSerializer.write(array[index], dos);
+	}
+	@Override
+	protected int[] readArray(ByteArrayInputStream p, ByteBuffer buffer) throws IOException {
+		return IntSerializer.readArray(Channels.newChannel(p), buffer);
+	}
 	
 }

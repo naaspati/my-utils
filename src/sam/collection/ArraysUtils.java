@@ -9,6 +9,16 @@ public interface ArraysUtils {
     public static <E> E[] array(E...array) {
         return array;
     }
+	
+	public static int[] intRange(int start, int endExcluding) {
+		int[] array = new int[endExcluding - start];
+		for (int i = start; i < endExcluding; i++) {
+			array[i] = i;
+		}
+		
+		return array;
+	}
+	
     public static <E> void replace(E[] array, UnaryOperator<E> mapper) {
     	for (int i = 0; i < array.length; i++)
     		array[i] = mapper.apply(array[i]);

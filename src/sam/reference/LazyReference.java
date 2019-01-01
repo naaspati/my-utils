@@ -21,7 +21,7 @@ public class LazyReference<E> {
 	 */
 	public E get() {
 		synchronized (lock) {
-			E e = peek();
+			E e = ReferenceUtils.get(reference);
 			if(e == null)
 				reference = type.get(e = generator.get());
 

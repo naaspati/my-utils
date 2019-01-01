@@ -139,12 +139,12 @@ public class StringWriter2 {
 			CoderResult c = encoder.encode(chars, buffer, true);
 			checkResult(config, c);
 
-			write(buffer, channel);
+			write(buffer, channel, true);
 
 			if(!chars.hasRemaining()) {
 				while(true) {
 					c = encoder.flush(buffer);
-					write(buffer, channel);
+					write(buffer, channel, true);
 					if(c.isUnderflow()) break;
 				}
 				break;

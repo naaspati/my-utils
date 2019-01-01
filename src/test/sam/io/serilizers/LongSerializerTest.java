@@ -1,166 +1,85 @@
 package test.sam.io.serilizers;
 
-import static java.nio.file.StandardOpenOption.CREATE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Test;
-
 import sam.io.serilizers.LongSerializer;
 
-public class LongSerializerTest {
+public class LongSerializerTest extends BaseTest<long[], Long> {
 
-	static {
-		System.setProperty("java.util.logging.config.file","test-logging.properties");
+	@Override
+	protected long[] newInstance(int size) {
+		return new long[size];
+	}
+
+	@Override
+	protected void set(int index, long[] array, Random r) {
+		array[index] = r.nextLong();
+	}
+
+	@Override
+	protected void set(int index, long[] array, DataInputStream r) throws IOException {
+		array[index] = r.readLong();
+	}
+
+	@Override
+	protected Long writeSingleValue(Random r, ByteArrayOutputStream os) throws IOException {
+		long n = r.nextLong();
+		LongSerializer.write(n, os);
+		return n;
+	}
+	@Override
+	protected Long readSingleValue(ByteArrayInputStream is) throws IOException {
+		return LongSerializer.read(is);
+	}
+
+	@Override
+	protected void assert_equals(Long expected, Long actual) {
+		assertEquals(expected.longValue(), actual.longValue());
+	}
+
+	@Override
+	protected long[] readArray(ByteArrayInputStream p) throws IOException {
+		return LongSerializer.readArray(p);
+	}
+
+	@Override
+	protected void write(long[] array, ByteArrayOutputStream p) throws IOException {
+		LongSerializer.write(array, p);
+	}
+
+	@Override
+	protected void write(long[] array, ByteArrayOutputStream p, ByteBuffer buffer) throws IOException {
+		LongSerializer.write(array, Channels.newChannel(p),buffer);
+	}
+
+	@Override
+	protected long[] copyOf(long[] array) {
+		return Arrays.copyOf(array, array.length);
+	}
+
+	@Override
+	protected void assert_ArrayEquals(long[] expecteds, long[] actuals) {
+		assertArrayEquals(expecteds, actuals);
+	}
+
+	@Override
+	protected void writeSingleValue(int index, long[] array, DataOutputStream dos) throws IOException {
+		LongSerializer.write(array[index], dos);
+	}
+	@Override
+	protected long[] readArray(ByteArrayInputStream p, ByteBuffer buffer) throws IOException {
+		return LongSerializer.readArray(Channels.newChannel(p), buffer);
 	}
 	
-	private long[] array(int n) {
-		Random r = new Random();
-		long[] array = new long[n];
-		for (int i = 0; i < array.length; i++) 
-			array[i] = r.nextLong();
-
-		return array;
-	}
-
-	
-	  @Test
-	public void singleValueTest() throws IOException {
-		Random r = new Random();
-
-		for (long i = 0; i < 10; i++) {
-			long n = r.nextLong();
-			Path p = Files.createTempFile("junit", null);
-			LongSerializer.write(n, p);
-			assertEquals(n, LongSerializer.read(p), 0);
-		}
-	}
-
-	
-	 @Test
-	public void writeWithDynamicBuffer() throws IOException {
-		writeTest(null);
-	}
-	
-	  @Test
-	public void writeWithFixedBuffer() throws IOException {
-		writeTest(ByteBuffer.allocate(1111));
-	}
-	private void writeTest(ByteBuffer buffer) throws IOException {
-		int n = 10;
-		while(n < 100000) {
-			long[] array = array(n);
-			long[] expected = Arrays.copyOf(array, array.length);
-
-			Path p = Files.createTempFile("junit", null);
-
-			if(buffer == null)
-				LongSerializer.write(array, p);
-			else
-				LongSerializer.write(array, p, buffer);
-			
-			assertArrayEquals(expected, array);
-
-			long[] loaded = null;
-			try(DataInputStream dos = new DataInputStream(Files.newInputStream(p, CREATE))){
-				loaded = new long[dos.readInt()];
-				int x = 0;
-				while(true) {
-					loaded[x++] = dos.readLong();
-				}
-			} catch (EOFException e) {}
-
-			assertArrayEquals(expected, loaded);
-			n = n*n;
-			Files.deleteIfExists(p);
-		}
-	}
-	
-
-	
-	  @Test
-	public void readWithDynamicBuffer() throws IOException {
-		readTest(null);
-	}
-	
-	
-	  @Test
-	public void readWithFixedBuffer() throws IOException {
-		readTest(ByteBuffer.allocate(1111));
-	}
-	private void readTest(ByteBuffer buffer) throws IOException {
-		int n = 10;
-		while(n < 100000) {
-			long[] array = array(n);
-			long[] expected = Arrays.copyOf(array, array.length);
-
-			Path p = Files.createTempFile("junit", null);
-			
-			try(DataOutputStream dos = new DataOutputStream(Files.newOutputStream(p, CREATE))){
-				dos.writeInt(array.length);
-				
-				for (long i : array) 
-					dos.writeLong(i);
-			}
-			
-			long[] loaded;
-
-			if(buffer == null)
-				loaded = LongSerializer.readArray(p);
-			else
-				loaded = LongSerializer.readArray(p, buffer);
-
-			assertArrayEquals(expected, loaded);
-			n = n*n;
-			Files.deleteIfExists(p);
-		}
-	}
-	
-	
-	  @Test
-	public void readWriteWithDynamicBuffer() throws IOException {
-		readWriteTest(null);
-	}
-	
-	 @Test
-	public void readWriteWithFixedBuffer() throws IOException {
-		readWriteTest(ByteBuffer.allocate(1111));
-	}
-	private void readWriteTest(ByteBuffer buffer) throws IOException {
-		int n = 10;
-		while(n < 100000) {
-			long[] array = array(n);
-			long[] expected = Arrays.copyOf(array, array.length);
-
-			Path p = Files.createTempFile("junit", null);
-			
-			if(buffer == null)
-				LongSerializer.write(array, p);
-			else
-				LongSerializer.write(array, p, buffer);
-			
-			assertArrayEquals(expected, array);
-			
-			long[] loaded;
-
-			if(buffer == null)
-				loaded = LongSerializer.readArray(p);
-			else
-				loaded = LongSerializer.readArray(p, buffer);
-
-			assertArrayEquals(expected, loaded);
-			n = n*n;
-			Files.deleteIfExists(p);
-		}
-	}
 }

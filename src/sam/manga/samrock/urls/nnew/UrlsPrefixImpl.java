@@ -25,13 +25,13 @@ public final class UrlsPrefixImpl {
 	final String protocol;
 	private final String combined;
 
-	public UrlsPrefixImpl(ResultSet rs) throws SQLException {
+	UrlsPrefixImpl(ResultSet rs) throws SQLException {
 		this.column_name = rs.getString(COLUMN_NAME);
 		this.prefix = rs.getString(PREFIX);
 		this.protocol = rs.getString(PROTOCOL);
 		this.combined = protocol.concat(":").concat(prefix).concat(prefix.charAt(prefix.length() - 1) == '/' ? "" : "/");
 	}
-	public UrlsPrefixImpl(String url, String column_name) throws MalformedURLException{
+	UrlsPrefixImpl(String url, String column_name) throws MalformedURLException{
 		Checker.checkArgument(Checker.isEmptyTrimmed(column_name), () -> "bad value for column_name:\""+column_name+"\"");
 		
 		url = url.replace('\\', '/');
@@ -51,7 +51,7 @@ public final class UrlsPrefixImpl {
 		this.combined = url;  
 	}
 	
-	String resolve(String suffix) {
+	public String resolve(String suffix) {
 		if(suffix == null)
 			return null;
 		if(suffix.isEmpty())

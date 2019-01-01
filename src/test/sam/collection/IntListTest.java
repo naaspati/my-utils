@@ -1,6 +1,5 @@
 package test.sam.collection;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -21,7 +20,15 @@ public class IntListTest {
 	static IntList listStatic = new IntList(10);
 	static ArrayList<Integer> arraylistStatic = new ArrayList<>();
 
-	static Runnable asrt = () -> assertArrayEquals(arraylistStatic.stream().mapToInt(Integer::intValue).toArray(), listStatic.toArray());   
+	static Runnable asrt = () -> check(listStatic, arraylistStatic);
+	
+	private static void check(IntList list, List<Integer> arraylist) {
+		assertEquals("size:", list.size(), arraylist.size());
+
+		int k = 0;
+		for (Integer n : arraylist)
+			assertEquals("at index: "+k, (int)n, list.get(k++));	
+	}
 
 	@Test
 	public void add() {
@@ -94,19 +101,13 @@ public class IntListTest {
 			filler.accept(i);
 
 		if(afterFill != null) {
-			int[] a = list.toArray();
-			int[] b = list2.stream().mapToInt(Integer::intValue).toArray();
-
-			assertArrayEquals(a, b);
+			check(list, list2);
 
 			r = new Random(10);
 			afterFill.run();
 		}
-
-		int[] a = list.toArray();
-		int[] b = list2.stream().mapToInt(Integer::intValue).toArray();
-
-		assertArrayEquals(a, b);
+		
+		check(list, list2);
 	}
 
 	private IntConsumer simplefill = i -> {
