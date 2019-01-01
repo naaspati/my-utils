@@ -51,6 +51,9 @@ public abstract class BaseSerializer<E> {
 			return readArray(c, buffer);
 		}
 	}
+	public E readArray(ReadableByteChannel c) throws IOException {
+		return read_array(c, null);
+	}
 	public E readArray(ReadableByteChannel c, ByteBuffer buffer) throws IOException {
 		return read_array(c, buffer);
 	} 

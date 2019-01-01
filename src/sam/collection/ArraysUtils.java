@@ -12,9 +12,8 @@ public interface ArraysUtils {
 	
 	public static int[] intRange(int start, int endExcluding) {
 		int[] array = new int[endExcluding - start];
-		for (int i = start; i < endExcluding; i++) {
-			array[i] = i;
-		}
+		for (int i = 0; i < array.length; i++) 
+			array[i] = start++;
 		
 		return array;
 	}
