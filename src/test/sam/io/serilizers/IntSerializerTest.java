@@ -16,6 +16,10 @@ import java.util.Random;
 import sam.io.serilizers.IntSerializer;
 
 public class IntSerializerTest extends BaseTest<int[], Integer> {
+	
+	private IntSerializer serializer() {
+		return new IntSerializer();
+	}
 
 	@Override
 	protected int[] newInstance(int size) {
@@ -35,13 +39,13 @@ public class IntSerializerTest extends BaseTest<int[], Integer> {
 	@Override
 	protected Integer writeSingleValue(Random r, ByteArrayOutputStream os) throws IOException {
 		int n = r.nextInt();
-		IntSerializer.write(n, os);
+		serializer().write(n, os);
 		return n;
 	}
 
 	@Override
 	protected Integer readSingleValue(ByteArrayInputStream is) throws IOException {
-		return IntSerializer.read(is);
+		return serializer().read(is);
 	}
 
 	@Override
@@ -51,17 +55,17 @@ public class IntSerializerTest extends BaseTest<int[], Integer> {
 
 	@Override
 	protected int[] readArray(ByteArrayInputStream p) throws IOException {
-		return IntSerializer.readArray(p);
+		return serializer().readArray(p);
 	}
 
 	@Override
 	protected void write(int[] array, ByteArrayOutputStream p) throws IOException {
-		IntSerializer.write(array, p);
+		serializer().write(array, p);
 	}
 
 	@Override
 	protected void write(int[] array, ByteArrayOutputStream p, ByteBuffer buffer) throws IOException {
-		IntSerializer.write(array, Channels.newChannel(p),buffer);
+		serializer().write(array, Channels.newChannel(p),buffer);
 	}
 
 	@Override
@@ -76,11 +80,11 @@ public class IntSerializerTest extends BaseTest<int[], Integer> {
 
 	@Override
 	protected void writeSingleValue(int index, int[] array, DataOutputStream dos) throws IOException {
-		IntSerializer.write(array[index], dos);
+		serializer().write(array[index], dos);
 	}
 	@Override
 	protected int[] readArray(ByteArrayInputStream p, ByteBuffer buffer) throws IOException {
-		return IntSerializer.readArray(Channels.newChannel(p), buffer);
+		return serializer().readArray(Channels.newChannel(p), buffer);
 	}
 	
 }

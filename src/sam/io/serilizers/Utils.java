@@ -12,9 +12,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.function.IntFunction;
-import java.util.logging.Logger;
 
 import sam.io.IOConstants;
 
@@ -60,10 +57,14 @@ interface Utils {
 		buffer.putInt(value);
 		write(buffer, c, true);
 	}
+	static String log(String prefix, String arrayType, int length, int bufferCapacity, int loopsCount, int bytesCount) {
+		return prefix+" { "+arrayType+".length:"+length+", bytes: "+bytesCount+", capacity:"+bufferCapacity+", loopCount:"+loopsCount+"}";
+	}
+
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
-		
+
 		int n = 0;
 		while(buffer.hasRemaining())
 			n += channel.write(buffer);
@@ -71,114 +72,7 @@ interface Utils {
 		buffer.clear();
 		return n;
 	}
-	static String log(String prefix, String arrayType, int length, int bufferCapacity, int loopsCount, int bytesCount) {
-		return prefix+" { "+arrayType+".length:"+length+", bytes: "+bytesCount+", capacity:"+bufferCapacity+", loopCount:"+loopsCount+"}";
-	}
 
-	@FunctionalInterface
-	static interface Putter {
-		void put(ByteBuffer buffer, int index);
-	}
-
-	static void write_array(Object value, int length, WritableByteChannel c, ByteBuffer buffer, int BYTES, Logger LOGGER, Putter putter) throws IOException {
-		Objects.requireNonNull(value);
-		Objects.requireNonNull(c);
-
-		if(length == 0) {
-			writeInt(0, c);
-			return;
-		}
-		buffer = getBuffer(buffer, length + 1, BYTES);
-		int bytes = 0;
-
-		try {
-			buffer.putInt(length);
-			int loops = 0;
-
-			for (int i = 0; i < length; i++) {
-				if(buffer.remaining() < BYTES) {
-					loops++;
-					bytes += write(buffer, c, true);
-				}
-				putter.put(buffer, i);
-			}
-
-			if(buffer.position() != 0) {
-				loops++;
-				bytes += write(buffer, c, true);
-			}
-
-			int loops2 = loops;
-			int cap = buffer.capacity();
-			int bytes2 = bytes;
-			LOGGER.fine(() -> log("WRITE", value.getClass().getSimpleName(), length, cap, loops2, bytes2));
-		} finally {
-			buffer.clear();
-		}
-	}
-
-	@FunctionalInterface
-	static interface Setter<E> {
-		void set(E e, ByteBuffer buffer, int index);
-	}
-
-	public static <E> E read_array(ReadableByteChannel c, ByteBuffer buffer, final int bytes_per_entity, Logger LOGGER, IntFunction<E> creater, Setter<E> setter) throws IOException {
-		final int size = readInt(c);
-		final E array = creater.apply(size);
-
-		if(size == 0) return array;
-		if(size == 1) {
-			setter.set(array, read(bytes_per_entity, c), 0);
-			return array;
-		}
-
-		buffer = getBuffer(buffer, size, bytes_per_entity);
-		ByteBuffer b2 = buffer;
-		int bytes = 4;
-
-		try {
-			int loops = 0;
-			int n = 0;
-			int remaining = size * bytes_per_entity;
-			final int start = buffer.capacity()%bytes_per_entity;
-			
-			while(n < size) {
-				int pos = start;
-				loops++;
-				
-				if(buffer.remaining() > remaining)
-					pos = buffer.capacity() - remaining;
-				
-				buffer.position(pos);
-				
-				while(buffer.hasRemaining())
-					c.read(buffer);
-				
-				buffer.flip();
-				buffer.position(pos);
-				
-				remaining -= buffer.remaining();
-				bytes += buffer.remaining();
-				
-				while(buffer.hasRemaining())
-					setter.set(array, buffer, n++);
-				
-				buffer.clear();
-			}
-
-			int loops2 = loops;
-			int bytes2 = bytes + 4;
-			E ar2 = array;
-			LOGGER.fine(() -> log("READ", ar2.getClass().getSimpleName(), size, b2.capacity(), loops2, bytes2));
-			return array;
-		} finally {
-			buffer.clear();
-		}
-	}
-
-	static int bytes(int n) {
-		return n < 0 ? 0 : n;
-	}
 	public static void write(ByteBuffer buffer, Path path) throws IOException {
 		try(WritableByteChannel c = writable(path)) {
 			write(buffer, c, false);
@@ -193,7 +87,7 @@ interface Utils {
 		ByteBuffer b = allocate(BYTES);
 		while(b.hasRemaining())
 			c.read(b);
-		
+
 		b.flip();
 		return b;
 	}

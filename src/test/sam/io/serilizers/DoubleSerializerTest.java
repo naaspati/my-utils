@@ -16,6 +16,10 @@ import java.util.Random;
 import sam.io.serilizers.DoubleSerializer;
 
 public class DoubleSerializerTest extends BaseTest<double[], Double> {
+	
+	private DoubleSerializer serializer() {
+		return new DoubleSerializer();
+	}
 
 	@Override
 	protected double[] newInstance(int size) {
@@ -35,12 +39,13 @@ public class DoubleSerializerTest extends BaseTest<double[], Double> {
 	@Override
 	protected Double writeSingleValue(Random r, ByteArrayOutputStream os) throws IOException {
 		double n = r.nextDouble();
-		DoubleSerializer.write(n, os);
+		serializer().write(n, os);
 		return n;
 	}
+
 	@Override
 	protected Double readSingleValue(ByteArrayInputStream is) throws IOException {
-		return DoubleSerializer.read(is);
+		return serializer().read(is);
 	}
 
 	@Override
@@ -50,17 +55,17 @@ public class DoubleSerializerTest extends BaseTest<double[], Double> {
 
 	@Override
 	protected double[] readArray(ByteArrayInputStream p) throws IOException {
-		return DoubleSerializer.readArray(p);
+		return serializer().readArray(p);
 	}
 
 	@Override
 	protected void write(double[] array, ByteArrayOutputStream p) throws IOException {
-		DoubleSerializer.write(array, p);
+		serializer().write(array, p);
 	}
 
 	@Override
 	protected void write(double[] array, ByteArrayOutputStream p, ByteBuffer buffer) throws IOException {
-		DoubleSerializer.write(array, Channels.newChannel(p),buffer);
+		serializer().write(array, Channels.newChannel(p),buffer);
 	}
 
 	@Override
@@ -75,11 +80,11 @@ public class DoubleSerializerTest extends BaseTest<double[], Double> {
 
 	@Override
 	protected void writeSingleValue(int index, double[] array, DataOutputStream dos) throws IOException {
-		DoubleSerializer.write(array[index], dos);
+		serializer().write(array[index], dos);
 	}
 	@Override
 	protected double[] readArray(ByteArrayInputStream p, ByteBuffer buffer) throws IOException {
-		return DoubleSerializer.readArray(Channels.newChannel(p), buffer);
+		return serializer().readArray(Channels.newChannel(p), buffer);
 	}
 	
 }

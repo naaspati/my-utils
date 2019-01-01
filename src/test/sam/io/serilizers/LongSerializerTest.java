@@ -16,6 +16,10 @@ import java.util.Random;
 import sam.io.serilizers.LongSerializer;
 
 public class LongSerializerTest extends BaseTest<long[], Long> {
+	
+	private LongSerializer serializer() {
+		return new LongSerializer();
+	}
 
 	@Override
 	protected long[] newInstance(int size) {
@@ -35,12 +39,12 @@ public class LongSerializerTest extends BaseTest<long[], Long> {
 	@Override
 	protected Long writeSingleValue(Random r, ByteArrayOutputStream os) throws IOException {
 		long n = r.nextLong();
-		LongSerializer.write(n, os);
+		serializer().write(n, os);
 		return n;
 	}
 	@Override
 	protected Long readSingleValue(ByteArrayInputStream is) throws IOException {
-		return LongSerializer.read(is);
+		return serializer().read(is);
 	}
 
 	@Override
@@ -50,17 +54,17 @@ public class LongSerializerTest extends BaseTest<long[], Long> {
 
 	@Override
 	protected long[] readArray(ByteArrayInputStream p) throws IOException {
-		return LongSerializer.readArray(p);
+		return serializer().readArray(p);
 	}
 
 	@Override
 	protected void write(long[] array, ByteArrayOutputStream p) throws IOException {
-		LongSerializer.write(array, p);
+		serializer().write(array, p);
 	}
 
 	@Override
 	protected void write(long[] array, ByteArrayOutputStream p, ByteBuffer buffer) throws IOException {
-		LongSerializer.write(array, Channels.newChannel(p),buffer);
+		serializer().write(array, Channels.newChannel(p),buffer);
 	}
 
 	@Override
@@ -75,11 +79,11 @@ public class LongSerializerTest extends BaseTest<long[], Long> {
 
 	@Override
 	protected void writeSingleValue(int index, long[] array, DataOutputStream dos) throws IOException {
-		LongSerializer.write(array[index], dos);
+		serializer().write(array[index], dos);
 	}
 	@Override
 	protected long[] readArray(ByteArrayInputStream p, ByteBuffer buffer) throws IOException {
-		return LongSerializer.readArray(Channels.newChannel(p), buffer);
+		return serializer().readArray(Channels.newChannel(p), buffer);
 	}
 	
 }
