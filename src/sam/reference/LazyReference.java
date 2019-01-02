@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class LazyReference<E> {
-	private Reference<E> reference;
+	private volatile Reference<E> reference;
 	private final ReferenceType type;
 	private final Supplier<E> generator;
 	private final Object lock = new Object(); 

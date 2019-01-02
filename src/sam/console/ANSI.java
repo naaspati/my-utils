@@ -351,22 +351,34 @@ public final class ANSI {
      * @param text
      * @return
      */
-    public static String createBanner(String text){
-        return createBanner(text, 50, '#', FOREGROUND.YELLOW, FOREGROUND.BLUE);
+    public static String createBanner(String text) {
+        return createBanner(text, new StringBuilder()).toString();
+    }
+    public static StringBuilder createBanner(String text, StringBuilder sb){
+        return createBanner(text, 50, '#', FOREGROUND.YELLOW, FOREGROUND.BLUE, sb);
     }
     public static String createBanner(String text,int textColor, int symbolColor){
-        return createBanner(text, 50, '#', textColor, symbolColor);
+        return createBanner(text,textColor, symbolColor, new StringBuilder()).toString();
+    }
+    public static StringBuilder createBanner(String text,int textColor, int symbolColor, StringBuilder sb){
+        return createBanner(text, 50, '#', textColor, symbolColor, sb);
     }
     public static String createUnColoredBanner(String text, int length, char symbol){
-        return createBanner(text, length, symbol, -1, -1);
+        return createUnColoredBanner(text, length, symbol, new StringBuilder()).toString();
+    }
+    public static StringBuilder createUnColoredBanner(String text, int length, char symbol, StringBuilder sb){
+        return createBanner(text, length, symbol, -1, -1, sb);
     }
     /**
      * length = 50, symbol = '#'
      * @param text
      * @return
      */
+    public static StringBuilder createUnColoredBanner(String text, StringBuilder sb){
+        return createBanner(text, 50, '#', -1, -1, sb);
+    }
     public static String createUnColoredBanner(String text){
-        return createBanner(text, 50, '#', -1, -1);
+        return createUnColoredBanner(text, new StringBuilder()).toString();
     }
     
     /**
@@ -378,22 +390,23 @@ public final class ANSI {
      * @param symbolColor FOREGROUND_{color} color to wrap the symbol (if u wish skip ansi coloring then pass this value -1)
      * @return
      */
-    public static String createBanner(String text, int length, char symbol, int textColor, int symbolColor) {
+    public static StringBuilder createBanner(String text, int length, char symbol, int textColor, int symbolColor, StringBuilder sb) {
     	if(no_color)
-    		return _createBanner(text, length, symbol, -1, -1);
+    		_createBanner(text, length, symbol, -1, -1, sb);
     	else
-    		return _createBanner(text, length, symbol, textColor, symbolColor);
+    		_createBanner(text, length, symbol, textColor, symbolColor, sb);
+    	
+    	return sb;
     }
-    private static String _createBanner(String text, int length, char symbol, int textColor, int symbolColor) {
+    private static void _createBanner(String text, int length, char symbol, int textColor, int symbolColor, StringBuilder b) {
     	
         if(text == null)
             text = "null";
 
-        StringBuilder b = new StringBuilder();
         char[] symbols = new char[length];
         Arrays.fill(symbols, symbol);
 
-        if(symbolColor != -1){
+        if(symbolColor != -1) {
             b.append(ANSI_START)
             .append(symbolColor)
             .append(ANSI_START_CLOSE);
@@ -448,15 +461,13 @@ public final class ANSI {
 
         if(symbolColor != -1)
             b.append("\u001b[0m");
-
-        return b.toString();
     }
     /**
      * pre created banner with text "FINISHED"
      */
-    public static  final String FINISHED_BANNER = createBanner("FINISHED");
+    public static  final String FINISHED_BANNER = createBanner("FINISHED").toString();
     /**
      * pre created banner with text "FAILED"
      */
-    public static final String FAILED_BANNER = createBanner("FAILED");
+    public static final String FAILED_BANNER = createBanner("FAILED").toString();
 }
