@@ -1,7 +1,9 @@
 package sam.collection;
 
+import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 public interface ArraysUtils {
@@ -53,7 +55,14 @@ public interface ArraysUtils {
     	
     	return sb.toString();
     }
-    
+    public static <E> E[] removeIf(E[] array, Predicate<E> filter) {
+    	int n = 0;
+    	for (E e : array) {
+			if(!filter.test(e))
+				array[n++] = e;
+		}
+    	return n == array.length ? array : Arrays.copyOf(array, n);
+    }
 	
 	
 }
