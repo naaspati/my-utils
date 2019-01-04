@@ -6,8 +6,6 @@ import javafx.scene.layout.VBox;
 
 /**
  * 
- * FIXME
- * 
  * needs more work
  * 
  * 1. removing effect of methods and applying effect of transform when switching from method to transform and Vice versa

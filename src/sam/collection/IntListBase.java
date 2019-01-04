@@ -208,31 +208,7 @@ abstract class IntListBase implements IntCollection {
 		if(modCount != m)
 			throw new ConcurrentModificationException();		
 	}
-
-	/*
-	 * TODO
-	 * WORKING PERFECTLY, no intend to use
-	 * 
-	 * Iterator<Integer> iterator() {
-		return new Iterator<Integer>() {
-			int m = modCount;
-			int index = 0;
-
-			@Override
-			Integer next() {
-				checkModified(m);
-				return data[index++];
-			}
-
-			@Override
-			boolean hasNext() {
-				checkModified(m);
-				return index < size;
-			}
-		};
-	}
-	 */
-
+	
 	public int[] subList(int fromIndex, int toIndex) {
 		checkIndex(fromIndex);
 		if(fromIndex == toIndex)

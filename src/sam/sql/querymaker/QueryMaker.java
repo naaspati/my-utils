@@ -21,7 +21,6 @@ public class QueryMaker {
     	return getInstance();
     }
     
-  //TODO select
     public Select selectAll() {
         return new Select(this).all();
     }

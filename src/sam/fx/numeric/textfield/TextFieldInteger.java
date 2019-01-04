@@ -9,7 +9,6 @@ import javafx.scene.control.TextFormatter;
 
 public class TextFieldInteger extends TextField {
 
-	// TODO make it public if needed
 	private ReadOnlyIntegerWrapper value;
 
 	/**
