@@ -329,37 +329,4 @@ public class StringBuilder2 implements Appendable, CharSequence, Externalizable 
         
         return this;
     }
-    
-    private int mark = -1;
-    /**
-     * keep track of current length of builder;
-     */
-    public void mark() {
-        mark = sb.length();
-    }
-    public int getMark() {
-        return mark;
-    }
-    public void mark(int mark) {
-        if(mark < 0)
-            Checker.checkArgument(mark >= 0, "mark cannot be less than 0");
-        if(mark > sb.length())
-            throw new IndexOutOfBoundsException("max mark value: "+sb.length());
-        
-        this.mark = mark;
-    }
-    public void removeMark() {
-        mark = -1;   
-    }
-    /**
-     * set length of builder to mark
-     */
-    public void reset() {
-        if(mark < 0)
-            throw new IllegalStateException("mark not set");
-        
-        sb.setLength(mark);
-    }
-    
-    
 }

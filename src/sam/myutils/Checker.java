@@ -11,20 +11,20 @@ import java.util.function.Supplier;
 public interface Checker {
 	/**
 	 * 
-	 * @param ifNotTrueThrow if not true, throw new IllegalArgumentException(msg);
+	 * @param condition if not true, throw new IllegalArgumentException(msg);
 	 * @param msg
 	 */
-	public static void checkArgument(boolean ifNotTrueThrow, String msg) {
-		if(!ifNotTrueThrow)
+	public static void mustBeTrue(boolean condition, String msg) {
+		if(!condition)
 			throw new IllegalArgumentException(msg);
 	}
 	/**
 	 * 
-	 * @param ifNotTrueThrow if not true, throw new IllegalArgumentException(msg);
+	 * @param condition if not true, throw new IllegalArgumentException(msg);
 	 * @param msgSupplier
 	 */
-	public static void checkArgument(boolean ifNotTrueThrow, Supplier<String> msgSupplier) {
-		if(!ifNotTrueThrow)
+	public static void mustBeTrue(boolean condition, Supplier<String> msgSupplier) {
+		if(!condition)
 			throw new IllegalArgumentException(msgSupplier.get());
 	}
 
@@ -110,13 +110,29 @@ public interface Checker {
 		}
 		return false;
 	}
-	public static void requireNonNull(String[] variableNames, Object...objects) {
-		String s = "";
-		for (int i = 0; i < objects.length; i++) {
-			if(objects[i] == null)
-				s += variableNames[i]+", ";
+	/**
+	 * 
+	 * @param variableNames variableNames in a single string separator by space
+	 * @param variables
+	 */
+	public static void requireNonNull(String variableNames, Object...variables) {
+		mustBeTrue(isNotEmpty(variables), "args no speficied");
+		
+		int n = 0;
+		while( n < variables.length && variables[n++] != null) {}
+
+		if(n == variables.length)
+			return;
+
+		String[] s = variableNames.split("\\s+");
+		StringBuilder sb = new StringBuilder();
+
+		n--;
+		while(n < variables.length) {
+			if(variables[n] == null)
+				sb.append(s[n]).append(", ");
+			n++;
 		}
-		if(!s.isEmpty())
-			throw new NullPointerException(s.substring(0, s.length() - 2));
+		throw new NullPointerException(sb.substring(0, sb.length() - 2));
 	}
 }

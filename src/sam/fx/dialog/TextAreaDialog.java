@@ -94,7 +94,7 @@ public class TextAreaDialog {
 	private void importAction() {
 		FileChooser fc = new FileChooser();
 		if(importDir != null)
-			fc.setInitialDirectory(importDir.getParentFile());
+			fc.setInitialDirectory(importDir);
 		ExtensionFilter e = new ExtensionFilter("text file", "*.txt", "*.text");
 		fc.getExtensionFilters().addAll(e, new ExtensionFilter("all", "*.*"));
 		fc.setSelectedExtensionFilter(e);

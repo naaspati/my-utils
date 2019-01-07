@@ -115,11 +115,7 @@ public class TsvMap<K, V> implements Map<K, V> {
 			throw new TsvException("no column name found in file");
 	}
 	public TsvMap(Map<K, V> map, Charset charset,  String keyColumnName, String valueColumnName, Converter<K> keyConverter, Converter<V> valueConverter) {
-		Checker.requireNonNull(new String[] {"keyColumnName",
-				"valueColumnName",
-				"keyConverter",
-		"valueConverter"},
-
+		Checker.requireNonNull("keyColumnName valueColumnName keyConverter valueConverter",
 				keyColumnName,
 				valueColumnName,
 				keyConverter,

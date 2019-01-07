@@ -10,12 +10,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class LogFilter implements Filter {
-
-	private static final String cname = LogFilter.class.getName();
 	private final Set<String> allowed_names;
 	private final Predicate<String> allowed_patterns;
 
 	public LogFilter() {
+		String cname = getClass().getName();
 		LogManager lm = LogManager.getLogManager();
 		allowed_names = set(lm.getProperty(cname+".allowed.names"));
 		
