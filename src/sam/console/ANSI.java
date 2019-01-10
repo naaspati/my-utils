@@ -1,8 +1,8 @@
 package sam.console;
+import static sam.myutils.System2.lookupAny;
+import static sam.myutils.System2.parseBoolean;
 
 import java.util.Arrays;
-
-import sam.myutils.System2;
 
 //VERSION = 1.2;
 /**
@@ -13,7 +13,7 @@ import sam.myutils.System2;
 public final class ANSI {
     private static boolean no_color;
     static {
-    	no_color = !System2.lookupBoolean("sam.ansi", true);
+    	no_color = !parseBoolean(lookupAny("sam.ansi", "ConEmuANSI", "TERM"), false);
     }
     
     public static void disable() {

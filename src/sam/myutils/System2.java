@@ -35,13 +35,16 @@ public final class System2 {
 	}
 	public static boolean lookupBoolean(String key, boolean defaultValue) {
 		String value = lookup(key, null);
-		if(value == null)
+		return parseBoolean(value, defaultValue);
+	}
+	public static boolean parseBoolean(String booleanString, boolean defaultValue) {
+		if(booleanString == null)
 			return defaultValue;
 
-		String s = value.trim().toLowerCase();
+		String s = booleanString.trim().toLowerCase();
 		if(s.isEmpty()) return defaultValue;
 
-		switch (value.trim().toLowerCase()) {
+		switch (booleanString.trim().toLowerCase()) {
 			case "true": return true;
 			case "false": return false;
 
@@ -52,7 +55,7 @@ public final class System2 {
 			case "off": return false;
 			
 			default:
-				LOGGER.warning("Unknown boolean value: "+value);
+				LOGGER.warning("Unknown boolean value: "+booleanString);
 				return defaultValue;
 		}
 	}
