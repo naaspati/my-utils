@@ -3,13 +3,52 @@ package sam.myutils;
 import static java.lang.System.getProperty;
 import static java.lang.System.getenv;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
 
 public final class System2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(System2.class);
+	private static final Logger _LOGGER = MyLoggerFactory.logger(System2.class);
+	private static final FileWriter lookupWriter;
+	private static final boolean loggable;
+	
+	static {
+		String s = getProperty("DUMP_LOOKUP");
+		s = s != null ? s : getenv("DUMP_LOOKUP");
+		FileWriter w = null;
+		
+		if(s != null) {
+			if(s.trim().equalsIgnoreCase("true")) {
+				File p = new File("System2.lookups.dump");
+				try {
+					w = new FileWriter(p);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				_LOGGER.info("dumping System2.lookups in: "+p.getAbsolutePath());
+			} else
+				_LOGGER.severe("bad value for DUMP_LOOKUP: \""+s+"\", possible values are[true,false]");
+		}
+		
+		lookupWriter = w;
+		loggable = lookupWriter != null || _LOGGER.isLoggable(Level.FINE);
+		if(lookupWriter != null) {
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				try {
+					lookupWriter.flush();
+					lookupWriter.close();
+				} catch (IOException e) {
+					_LOGGER.log(Level.SEVERE, "failed to close ", e);
+				}
+			}));
+		}
+	}
 
 	public static String lookup(Class<?> cls, String fieldName, String defaultValue) {
 		return lookup(cls.getCanonicalName()+"."+fieldName, defaultValue);
@@ -27,7 +66,21 @@ public final class System2 {
 			return s = defaultValue;
 		} finally {
 			String s2 = s;
-			LOGGER.fine(() -> key.concat(s2 == null ? "=" : "=".concat(s2)));
+			log(() -> key.concat(s2 == null ? "=" : "=".concat(s2)));
+		}
+	}
+	private static void log(Supplier<String> msg) {
+		if(!loggable)
+			return;
+		String s = msg.get();
+		_LOGGER.fine(s);
+		
+		try {
+			lookupWriter.write(s);
+			lookupWriter.append('\n');
+			lookupWriter.flush();
+		} catch (IOException e) {
+			_LOGGER.log(Level.SEVERE, "failed to dump lookups", e);
 		}
 	}
 	public static boolean lookupBoolean(String key) {
@@ -55,7 +108,7 @@ public final class System2 {
 			case "off": return false;
 			
 			default:
-				LOGGER.warning("Unknown boolean value: "+booleanString);
+				_LOGGER.warning("Unknown boolean value: "+booleanString);
 				return defaultValue;
 		}
 	}
@@ -79,10 +132,10 @@ public final class System2 {
 
 		} finally {
 			if(s == null)
-				LOGGER.fine(() -> "NO VALUE found for any: "+Arrays.toString(keys));
+				log(() -> "NO VALUE found for any: "+Arrays.toString(keys));
 			else {
 				String s2 = s, k2 = k;
-				LOGGER.fine(() -> k2+"="+s2);
+				log(() -> Arrays.toString(keys)+", found: "+k2+"="+s2);
 			}
 		}
 		return null;

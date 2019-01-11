@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,33 +28,38 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalDouble;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import sam.collection.Iterables;
+import sam.io.fileutils.FileNameSanitizer;
+import sam.io.serilizers.StringWriter2;
 import sam.logging.MyLoggerFactory;
 import sam.manga.samrock.Renamer;
 import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MinimalManga;
 import sam.myutils.Checker;
-import sam.myutils.MyUtilsException;
 import sam.myutils.System2;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
 import sam.sql.querymaker.QueryMaker;
 import sam.string.BasicFormat;
+import sam.thread.MyUtilsThread;
 public class ChapterUtils {
 	private static final Logger LOGGER = MyLoggerFactory.logger(ChapterUtils.class);
 	private final SamrockDB db;
@@ -134,9 +140,9 @@ public class ChapterUtils {
 	}
 
 	/**
-	 * does not commit the changes, just executes them
-	 * @param mangasToUpdate mangas may contains chapters (helpful when paring chapter filename)
-	 * @param logger
+	 * 
+	 * @param mangasToUpdate manga_dir -> list(chapter)
+	 * @return
 	 * @throws SQLException
 	 * @throws IOException
 	 */
@@ -144,30 +150,28 @@ public class ChapterUtils {
 		if(mangasToUpdate.isEmpty())
 			throw new IllegalArgumentException("invalid state: mangasToUpdate is empty");
 
-		/** FIXME Converter not supplying proper data
-		 * eliminate duplicate mangas
-		 */
-		IdentityHashMap<MinimalManga, Map<String, MinimalChapter>> suppliedData = mangasToUpdate.stream()
-				.collect(Collectors.toMap(m -> m, m -> {
-					Map<String, MinimalChapter> chapters = new HashMap<>();
-					for (MinimalChapter c : m.getChapterIterable()) {
-						String s =  c.getFileName();
-						if(s == null)
-							s = Renamer.makeChapterFileName(c.getNumber(), c.getTitle(), m.getMangaName());
-						if(s != null)
-							chapters.put(s.concat(".jpeg"), c);
-					} 
-					return chapters;
-				}, (o, n) -> n, IdentityHashMap::new));
+		dumpSupplied(mangasToUpdate); // plan to delete in future
+		
+		Comparator<MinimalManga> comparator = Comparator.comparingInt(MinimalManga::getMangaId);
+		TreeSet<MinimalManga> distinctMangas = mangasToUpdate.stream().collect(Collectors.toCollection(() -> new TreeSet<>(comparator)));  
 
-		IdentityHashMap<MinimalManga, List<ChapterFile>> files = suppliedData.keySet().stream().collect(Collectors.toMap(m -> m, m -> MyUtilsException.noError(() -> chapterFileNames(m)).map(ChapterFile::new).collect(Collectors.toList()), (p, o) -> {throw new IllegalStateException();}, IdentityHashMap::new));
-		IdentityHashMap<MinimalManga, List<Chapter>> dbloaded = new IdentityHashMap<>();
+		Map<MinimalManga, List<ChapterFile>> files = new TreeMap<>(comparator);
 
-		{
-			Map<Integer, MinimalManga> map = suppliedData.keySet().stream().collect(Collectors.toMap(MinimalManga::getMangaId, m -> m, (p,o) -> p));
-			Map<Integer, List<Chapter>> chapters = getChapters(map.keySet());
-			chapters.forEach((id,chaps) -> dbloaded.put(map.get(id), chaps));
+		for (MinimalManga m : distinctMangas) {
+			Path path = m.getDirPath();
+			if(Files.notExists(path))
+				LOGGER.severe("manga_dir not found: "+path);
+			else {
+				try {
+					List<ChapterFile> chfiles = chapterFileNames(path).map(ChapterFile::new).collect(Collectors.toList());
+					files.put(m, chfiles);
+				} catch (IOException e) {
+					LOGGER.log(Level.SEVERE, "failed to list manga_dir"+path, e);
+				}
+			}	
 		}
+		// manga_id  -> chapters
+		Map<Integer, List<Chapter>> dbloaded = getChapters(Iterables.map(distinctMangas, MinimalManga::getMangaId));
 
 		ArrayList<MangaLog> logs = new ArrayList<>();
 		final HashSet<String> chapCountPc = new HashSet<>();
@@ -176,26 +180,52 @@ public class ChapterUtils {
 		int[] readCount = {0};
 		List<Integer> delete = new ArrayList<>();
 		List<TempInsert> insert = new ArrayList<>();
-		HashMap<String, Chapter> dbMap = new HashMap<>();
+		
+		HashMap<String, Chapter> _dbMap = new HashMap<>();
+		HashMap<String, MinimalChapter> _suppliedMap = new HashMap<>();
 
 		files.forEach((manga, chapters) -> {
+			int manga_id = manga.getMangaId();
 			total[0] = 0;
 			readCount[0] = 0;
 			chapCountPc.clear();
 
 			List<ChapterLog> chapLogs = new ArrayList<>(chapters.size()+1);
+			
+			final Map<String, Chapter> db;
 
-			Map<String, MinimalChapter> supplied = suppliedData.getOrDefault(manga, Collections.emptyMap());
-			dbMap.clear();
-			List<Chapter> temp = dbloaded.get(manga);
-			if(temp != null)
-				temp.forEach(c -> dbMap.put(c.getFileName(), c));
+			List<Chapter> temp = dbloaded.get(manga_id);
+			if(Checker.isEmpty(temp))
+				db = Collections.emptyMap();
+			else {
+				db = _dbMap;
+				db.clear();
+				temp.forEach(c -> db.put(c.getFileName(), c));
+			}
+			
+			Map<String, MinimalChapter> supplied = _suppliedMap;
+			supplied.clear();
+			
+			for (MinimalManga m : mangasToUpdate) {
+				if(m.getMangaId() != manga_id)
+					continue;
+				
+				for (MinimalChapter c : m.getChapterIterable()) {
+					String s =  c.getFileName();
+					if(s == null)
+						s = Renamer.makeChapterFileName(c.getNumber(), c.getTitle(), m.getMangaName());
+					if(s != null)
+						supplied.put(s, c);	
+				}
+			}
+			if(supplied.isEmpty())
+				supplied = Collections.emptyMap();
 
 			for (ChapterFile c : chapters) {
 				total[0]++;
 				String fileName = c.getFileName();
 				MinimalChapter dataC = supplied.get(fileName);
-				Chapter dbC = dbMap.remove(fileName);
+				Chapter dbC = db.remove(fileName);
 				chapCountPc.add(fileName.lastIndexOf('-') < 0 ? fileName : pattern.matcher(fileName).replaceFirst(""));
 
 				if(dataC == null && dbC == null) {
@@ -210,10 +240,10 @@ public class ChapterUtils {
 					insert.add(new TempInsert(manga, c));
 				} 
 			}
-			logs.add(new MangaLog(manga, Collections.unmodifiableList(chapLogs), total[0], readCount[0], total[0] - readCount[0], dbMap.size(), chapCountPc.size()));
+			logs.add(new MangaLog(manga, Collections.unmodifiableList(chapLogs), total[0], readCount[0], total[0] - readCount[0], db.size(), chapCountPc.size()));
 
-			if(!dbMap.isEmpty()) {
-				dbMap.values().forEach(c -> {
+			if(!db.isEmpty()) {
+				db.values().forEach(c -> {
 					chapLogs.add(new ChapterLog(c, DELETE));
 					delete.add(c.getChapterId());
 				});
@@ -257,6 +287,45 @@ public class ChapterUtils {
 		}
 		return logs;
 	}
+	private void dumpSupplied(List<MinimalManga> mangasToUpdate) {
+		if(!System2.lookupBoolean("DUMP_SUPPLIED", false))
+			return;
+
+		Comparator<MinimalManga> comparator = Comparator.comparingInt(MinimalManga::getMangaId);
+		Map<MinimalManga, Map<String, MinimalChapter>> suppliedData = new TreeMap<>(comparator);
+
+		mangasToUpdate.forEach(m -> {
+			Map<String, MinimalChapter> chaps = suppliedData.computeIfAbsent(m, c -> new HashMap<>());
+
+			for (MinimalChapter c : m.getChapterIterable()) {
+				String s =  c.getFileName();
+				if(s == null)
+					s = Renamer.makeChapterFileName(c.getNumber(), c.getTitle(), m.getMangaName());
+				if(s != null)
+					chaps.put(s, c);
+			}
+		});
+
+		StringBuilder sb = new StringBuilder();
+		suppliedData.forEach((m, chaps) -> {
+			sb.append("id: ").append(m.getMangaId())
+			.append(",  name: ").append(m.getMangaName()).append('\n')
+			.append("dirname: ").append(m.getDirName()).append('\n')
+			.append("path: ").append(m.getDirPath()).append('\n')
+			.append("chapters: ").append('\n');
+
+			chaps.forEach((f,c) -> sb.append("  ").append(f).append(" -> [id: ").append(c.getNumber()).append(", filename: ").append(c.getFileName()).append('\n'));
+
+			Path path = Paths.get(FileNameSanitizer.sanitize(MyUtilsThread.stackLocation().toString())+".dump");
+			try {
+				StringWriter2.setText(path, sb);
+				LOGGER.info("created: "+path.toAbsolutePath());
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "failed to write: "+path.toAbsolutePath(), e);
+			}
+		});
+	}
+
 	public Map<Integer, List<Chapter>> getChapters(Iterable<Integer> mangaIds) throws SQLException {
 		Map<Integer, List<Chapter>> map = new HashMap<>();
 
@@ -270,7 +339,7 @@ public class ChapterUtils {
 		return db.collectToList(qm().select(CHAPTER_ID, NAME, NUMBER, READ).from(CHAPTERS_TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), chapterMapper);
 	}
 	public static <E extends Chapter> List<E> reloadChapters(MinimalManga manga, Iterable<E> chapters, BiFunction<OptionalDouble, String, E> chapterMaker) throws IOException {
-		Map<String, OptionalDouble> map = chapterFileNames(manga).collect(Collectors.toMap(s -> s, MinimalChapter::parseChapterNumber));
+		Map<String, OptionalDouble> map = chapterFileNames(manga.getDirPath()).collect(Collectors.toMap(s -> s, MinimalChapter::parseChapterNumber));
 
 		if(map.values().stream().anyMatch(d -> !d.isPresent())) {
 			Path p = manga.getDirPath();
@@ -296,14 +365,14 @@ public class ChapterUtils {
 			map.forEach((s,t) -> chapterMaker.apply(t, s)); 
 		return list;
 	}
-	private static Stream<String> chapterFileNames(MinimalManga manga, boolean walkSimple) throws IOException{
-		Path path = manga.getDirPath();
+	public static Stream<String> chapterFileNames(Path mangadir, boolean walkSimple) throws IOException{
+		Objects.requireNonNull(mangadir);
 
-		if(Files.notExists(path))
-			throw new FileNotFoundException(path.toString());
+		if(Files.notExists(mangadir))
+			throw new FileNotFoundException(mangadir.toString());
 
 		if(walkSimple) {
-			String[] array = path.toFile().list();
+			String[] array = mangadir.toFile().list();
 			if(Checker.isEmpty(array))
 				return Stream.empty();
 
@@ -311,7 +380,7 @@ public class ChapterUtils {
 					.filter(s -> s.endsWith(".jpeg") || s.endsWith(".jpg"));
 		}
 
-		try (DirectoryStream<Path> strm = Files.newDirectoryStream(path)){
+		try (DirectoryStream<Path> strm = Files.newDirectoryStream(mangadir)){
 			Stream.Builder<String> build = Stream.builder();
 
 			for (Path p : strm) {
@@ -334,7 +403,7 @@ public class ChapterUtils {
 	private static String WALK_TYPE;
 	private static boolean simplewalk;
 
-	private static Stream<String> chapterFileNames(MinimalManga manga) throws IOException{
+	private static Stream<String> chapterFileNames(Path mangadir) throws IOException{
 		if(WALK_TYPE == null) {
 			WALK_TYPE = System2.lookup("MANGA_DIR_WALK_TYPE", "simple");
 			simplewalk = WALK_TYPE.equalsIgnoreCase("simple");
@@ -342,7 +411,7 @@ public class ChapterUtils {
 				throw new IllegalStateException("unknown value: MANGA_DIR_WALK_TYPE="+WALK_TYPE);
 		}
 
-		return chapterFileNames(manga, simplewalk);
+		return chapterFileNames(mangadir, simplewalk);
 	}
 
 	public Map<Integer, ChapterFilter> getChapterFilters(Collection<Integer> mangaIds, String filterTitle) throws SQLException {

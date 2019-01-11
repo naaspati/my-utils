@@ -67,16 +67,4 @@ public interface Junk {
 	public static <E> E notYetImplemented() throws IllegalAccessError {
 		throw new IllegalAccessError("NOT YET IMPLEMENTED");
 	}
-	public static StackTraceElement stackLocation() {
-		return Thread.currentThread().getStackTrace()[2];
-	}
-	public static void printstackLocation(String msg) {
-		System.out.println((msg == null ? "" : msg+" ")+Thread.currentThread().getStackTrace()[2]);
-	}
-	public static void printstackLocation() {
-		System.out.println(Thread.currentThread().getStackTrace()[2]);
-	}
-	public static void printTrack(int depth) {
-		System.out.println(Arrays.stream(Thread.currentThread().getStackTrace()).skip(2).limit(depth).map(String::valueOf).collect(Collectors.joining("\n  ")));
-	}
 }
