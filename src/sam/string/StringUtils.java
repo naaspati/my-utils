@@ -9,6 +9,8 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import sam.myutils.Checker;
 //VERSION = 0.004;
 public class StringUtils {
 
@@ -197,6 +199,7 @@ public class StringUtils {
 	 * @return
 	 */
 	public static String repeat(String s, int times) {
+		Checker.mustBeTrue(times >= 0, () -> "bad value for times: "+times);
 		Objects.requireNonNull(s);
 
 		if(times == 0 || s.isEmpty())
@@ -207,13 +210,10 @@ public class StringUtils {
 			return s.concat(s);
 		if(s.length() == 1)
 			return String.valueOf(repeat(s.charAt(0), times));
-
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < times; i++) 
-			sb.append(s);
-
-		return sb.toString();
+		
+		return repeat(s, times, new StringBuilder()).toString();
 	}
+	
 
 	private static char[] repeat(char c, int times) {
 		if(times == 0)
@@ -226,8 +226,21 @@ public class StringUtils {
 
 		return cs;
 	}
+	public static StringBuilder repeat(char c, int times, StringBuilder sb) {
+		Checker.mustBeTrue(times >= 0, () -> "bad value for times: "+times);
+		Objects.requireNonNull(sb);
+		
+		if(times == 0)
+			return sb;
+		
+		for (int i = 0; i < times; i++) 
+			sb.append(c);
+
+		return sb;
+	}
 
 	public static StringBuilder repeat(CharSequence s, int times, StringBuilder sink) {
+		Checker.mustBeTrue(times >= 0, () -> "bad value for times: "+times);
 		Objects.requireNonNull(s);
 
 		for (int i = 0; i < times; i++) 

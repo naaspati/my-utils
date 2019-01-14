@@ -72,15 +72,18 @@ public final class System2 {
 	private static void log(Supplier<String> msg) {
 		if(!loggable)
 			return;
+		
 		String s = msg.get();
 		_LOGGER.fine(s);
 		
-		try {
-			lookupWriter.write(s);
-			lookupWriter.append('\n');
-			lookupWriter.flush();
-		} catch (IOException e) {
-			_LOGGER.log(Level.SEVERE, "failed to dump lookups", e);
+		if(lookupWriter != null) {
+			try {
+				lookupWriter.write(s);
+				lookupWriter.append('\n');
+				lookupWriter.flush();
+			} catch (IOException e) {
+				_LOGGER.log(Level.SEVERE, "failed to dump lookups", e);
+			}
 		}
 	}
 	public static boolean lookupBoolean(String key) {

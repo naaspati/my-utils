@@ -1,6 +1,8 @@
 package sam.collection;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -20,6 +22,32 @@ public interface ArraysUtils {
 		return array;
 	}
 	
+	@SuppressWarnings("unchecked")
+	public static <E> E join(E...arrays) {
+		Objects.requireNonNull(arrays);
+		if(arrays.length == 0)
+			throw new IllegalArgumentException("no arrays specified");
+			
+		if(arrays.length == 1)
+			return arrays[0];
+		
+		int size = 0;
+		for (Object es : arrays) 
+			size += Array.getLength(es);
+		
+		if(size == 0)
+			return arrays[0];
+		
+		E array =  (E) Array.newInstance(arrays[0].getClass().getComponentType(), size);
+		
+		int n = 0;
+		for (Object es : arrays) {
+			int len = Array.getLength(es);
+			System.arraycopy(es, 0, array, n, len);
+			n += len;
+		}
+		return array;
+	}
     public static <E> void replace(E[] array, UnaryOperator<E> mapper) {
     	for (int i = 0; i < array.length; i++)
     		array[i] = mapper.apply(array[i]);
