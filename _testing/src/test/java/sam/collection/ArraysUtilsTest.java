@@ -1,10 +1,11 @@
-package test.sam.collection;
+package sam.collection;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
+
+import static sam.collection.ArraysUtils.fill;
 import static sam.collection.ArraysUtils.intRange;
 import static sam.collection.ArraysUtils.join;
-import static sam.collection.ArraysUtils.*;
+import static sam.collection.ArraysUtils.removeIf;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ArraysUtilsTest {
 
@@ -46,6 +47,10 @@ public class ArraysUtilsTest {
 	@Test
 	public void joinObjectArrayTest() {
 		Random random = new Random();
+		
+		Integer[] expected = fill(new Integer[10], i -> random.nextInt());
+		Integer[] actual = join(new Integer[][]{expected}); 
+		assertSame(expected, actual);
 
 		Integer[][] arrays = Stream.generate(() -> {
 			int start = random.nextInt();
@@ -56,10 +61,10 @@ public class ArraysUtilsTest {
 				.limit(20)
 				.toArray(Integer[][]::new);
 
-		Integer[] array = join(arrays);
-		Integer[] expected = Arrays.stream(arrays).flatMap(Arrays::stream).toArray(Integer[]::new);
+		actual = join(arrays);
+		expected = Arrays.stream(arrays).flatMap(Arrays::stream).toArray(Integer[]::new);
 
-		assertArrayEquals(expected, array);
+		assertArrayEquals(expected, actual);
 	}
 
 	@Test

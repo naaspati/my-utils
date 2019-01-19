@@ -1,6 +1,8 @@
 package sam.collection;
 
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -40,13 +42,9 @@ public interface Iterators {
 		};
 	}
 
+	
 	public static <E> Iterator<E> empty(){
-		return new ArrayIterator<E>(0) {
-			@Override
-			public E at(int index) {
-				throw new IndexOutOfBoundsException();
-			}
-		};
+		return Collections.emptyIterator();
 	}
 	public static <E> Iterator<E> of(E[] values){
 		return of(values, 0, values.length);
@@ -57,7 +55,7 @@ public interface Iterators {
 		if(values.length == 0) return empty();
 
 		return new ArrayIterator<E>(from, to) {
-			
+
 			@Override
 			public E at(int index) {
 				return values[index];
@@ -102,5 +100,49 @@ public interface Iterators {
 			s = Spliterators.spliteratorUnknownSize(iterator, Spliterator.IMMUTABLE); 
 
 		return StreamSupport.stream(s, false);
+	}
+
+	@SafeVarargs
+	public static <E> Iterator<E> join(Iterator<E>...iterators) {
+		Objects.requireNonNull(iterators);
+		if(iterators.length == 0)
+			return empty();
+		if(iterators.length == 1)
+			return iterators[0];
+
+		int n = 0;
+
+		while(!iterators[n].hasNext() && n < iterators.length) {
+			n++;
+		}
+		if(n >= iterators.length)
+			return empty();
+		
+		int[] n1 = {n};
+
+		return new Iterator<E>() {
+			int index = n1[0];
+
+			private Iterator<E> iter() {
+				return iterators[index];
+			}
+			@Override
+			public boolean hasNext() {
+				return index < iterators.length && iter().hasNext();
+			}
+
+			@Override
+			public E next() {
+				if(index >= iterators.length)
+					throw new NoSuchElementException();
+				
+				E current = iter().next();
+
+				if(!iter().hasNext())
+					index++;
+				
+				return current;
+			}
+		};
 	}
 }

@@ -1,7 +1,10 @@
-package test.sam.collection;
+package sam.collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
+
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,9 +13,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.IntConsumer;
 
-import org.junit.Test;
-
-import sam.collection.IntList;
+import org.junit.jupiter.api.Test;
 
 public class IntListTest {
 	private static final int SAMPLE_SIZE = 10000;
@@ -23,11 +24,11 @@ public class IntListTest {
 	static Runnable asrt = () -> check(listStatic, arraylistStatic);
 	
 	private static void check(IntList list, List<Integer> arraylist) {
-		assertEquals("size:", list.size(), arraylist.size());
+		assertEquals(list.size(), arraylist.size(), "size:");
 
 		int k = 0;
 		for (Integer n : arraylist)
-			assertEquals("at index: "+k, (int)n, list.get(k++));	
+			assertEquals(n.intValue(), list.get(k++), "at index: "+k);	
 	}
 
 	@Test
@@ -116,7 +117,7 @@ public class IntListTest {
 		list2.add(n);	
 	};
 
-	@Test(timeout=10)
+	@Test
 	public void toArray() {
 		arrayTest(false, simplefill, null);
 	}
@@ -203,9 +204,11 @@ public class IntListTest {
 			list2.removeIf(i -> i < 0);
 		});
 	}
-	@Test (expected = ConcurrentModificationException.class, timeout=10) 
 	public void testConcurrentModification()  {
-		IntList list = new IntList(new int[]{10});
-		list.forEach(i -> list.add(10));
+		assertThrows(ConcurrentModificationException.class, () -> {
+			IntList list = new IntList(new int[]{10});
+			list.forEach(i -> list.add(10));
+		});
+		
 	}
 }

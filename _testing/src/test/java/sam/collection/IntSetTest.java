@@ -1,8 +1,8 @@
-package test.sam.collection;
+package sam.collection;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,9 +11,7 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.function.IntConsumer;
 
-import org.junit.Test;
-
-import sam.collection.IntSet;
+import org.junit.jupiter.api.Test;
 
 public class IntSetTest {
 	private static final int SAMPLE_SIZE = 10000;
@@ -24,11 +22,11 @@ public class IntSetTest {
 	static Runnable asrt = () -> check(listStatic, arraylistStatic);
 	
 	private static void check(IntSet set, TreeSet<Integer> treeset) {
-		assertEquals("size:", treeset.size(), set.size());
+		assertEquals(treeset.size(), set.size(), "size:");
 
 		int k = 0;
 		for (Integer n : treeset)
-			assertEquals("at index: "+(k - 1), (int)n, set.get(k++));	
+			assertEquals((int)n, set.get(k++), "at index: "+(k - 1));	
 	}
 
 	private int[] array() {
@@ -167,13 +165,16 @@ public class IntSetTest {
 			list2.removeIf(i -> i < 0);
 		});
 	}
-	@Test (expected = ConcurrentModificationException.class, timeout=10) 
+	@Test 
 	public void testConcurrentModification()  {
-		IntSet list = new IntSet(new int[]{10});
-		list.forEach(i -> {
-			list.add(10);
-			list.add(10);
-			list.add(11);
+		assertThrows(ConcurrentModificationException.class, () -> {
+			IntSet list = new IntSet(new int[]{10});
+			list.forEach(i -> {
+				list.add(10);
+				list.add(10);
+				list.add(11);
+			});
 		});
+		
 	}
 }

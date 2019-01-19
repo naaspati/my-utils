@@ -11,7 +11,7 @@ public class ChapterFilter extends ChapterFilterBase {
 	private static final int BITSET_MAX = 500;
 
 	public ChapterFilter(int manga_id, String title) {
-		super(manga_id, title);
+		super(manga_id);
 	}
 	public void add(double value) {
 		check();
@@ -20,14 +20,10 @@ public class ChapterFilter extends ChapterFilterBase {
 		
 		if(value == n) {
 			addInt(n);
-			
-			if(_sb != null)
-				_sb.append(n).append(separator);
+			append(n);
 		} else {
 			addDouble(value);
-			
-			if(_sb != null)
-				_sb.append(value).append(separator);
+			append(value);
 		}
 	}
 	private void addDouble(double value) {
@@ -54,18 +50,17 @@ public class ChapterFilter extends ChapterFilterBase {
 		}
 	}
 	@Override
-	public void setCompleted() {
+	public String setCompleted() {
 		if(complete)
-			return;
+			return null;
 
-		super.setCompleted();
-		complete = true;
+		String s = super.setCompleted();
 
 		if(array != null) {
 			array = Arrays.copyOf(array, index);
 			Arrays.sort(array);
 		}
-		_sb = null;
+		return s;
 	}
 
 	@Override

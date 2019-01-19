@@ -1,7 +1,7 @@
-package test.sam.io.serilizers;
+package sam.io.serilizers;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,8 +12,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Random;
-
-import sam.io.serilizers.DoubleSerializer;
 
 public class DoubleSerializerTest extends BaseTest<double[], Double> {
 	
@@ -50,7 +48,7 @@ public class DoubleSerializerTest extends BaseTest<double[], Double> {
 
 	@Override
 	protected void assert_equals(Double expected, Double actual) {
-		assertEquals(expected.doubleValue(), actual.doubleValue(), 0);
+		assertEquals(expected.doubleValue(), actual.doubleValue());
 	}
 
 	@Override
@@ -75,7 +73,7 @@ public class DoubleSerializerTest extends BaseTest<double[], Double> {
 
 	@Override
 	protected void assert_ArrayEquals(double[] expecteds, double[] actuals) {
-		assertArrayEquals(expecteds, actuals, 0);
+		assertArrayEquals(expecteds, actuals);
 	}
 
 	@Override

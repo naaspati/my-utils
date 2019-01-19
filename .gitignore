@@ -12,3 +12,10 @@ src/main/resources/backup_setting/
 
 /bin/
 **/*.db
+yarn.lock
+
+**/bin/
+**/build/
+**/node_modules/
+**/.recommenders/
+**/.metadata/

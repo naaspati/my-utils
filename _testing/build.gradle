@@ -1,0 +1,38 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    jcenter()
+}
+
+compileJava.options.encoding = 'UTF-8'
+
+ext.JUNIT_VERSION = '5.3.2'
+ext.TRUTH_VERSION = '0.42'
+
+
+dependencies {
+  compile files('myutils.jar')
+
+  testCompile 'org.junit.jupiter:junit-jupiter-api:'+JUNIT_VERSION
+  // required for Parameterized test
+  // testCompile 'org.junit.jupiter:junit-jupiter-params:'+JUNIT_VERSION
+   testRuntime 'org.junit.jupiter:junit-jupiter-engine:'+JUNIT_VERSION
+  
+  // testCompile 'com.google.truth:truth:'+TRUTH_VERSION
+  // testCompile 'com.google.truth.extensions:truth-java8-extension:'+TRUTH_VERSION
+}
+
+test {
+  useJUnitPlatform()
+  systemProperty 'java.util.logging.config.file','test-logging.properties'
+}
+
+/*
+default imports 
+
+import static org.junit.jupiter.api.Assertions.*;
+import static com.google.common.truth.Truth8.*;
+import static com.google.common.truth.Truth.*;
+*/

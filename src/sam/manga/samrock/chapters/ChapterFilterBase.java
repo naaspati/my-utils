@@ -1,40 +1,61 @@
-package sam.manga.samrock.chapters;
+	package sam.manga.samrock.chapters;
 
 import java.util.function.DoublePredicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import sam.console.ANSI;
+import sam.logging.MyLoggerFactory;
 
 public abstract class ChapterFilterBase implements DoublePredicate {
 	public final int manga_id;
-	
-	private String asString;
-	protected StringBuilder _sb;
-	protected static final String separator = ANSI.yellow(", ");
+	private static final Logger LOGGER = MyLoggerFactory.logger(ChapterFilterBase.class);
+	private static final boolean logable = LOGGER.isLoggable(Level.FINE);
+	private StringBuilder sb;
 	
 	protected boolean complete;
 
-	public ChapterFilterBase(int manga_id, String title) {
+	public ChapterFilterBase(int manga_id) {
 		this.manga_id = manga_id;
 		
-		if(title != null) 
-			_sb = new StringBuilder(title).append(" [");
+		if(logable) {
+			sb = new StringBuilder(getClass()+"[ ")
+					.append("manga_id = ").append(manga_id).append(", ")
+					.append("data = [");
+		} 
 	}
-	protected void check() {
+	protected void append(double d) {
+		if(logable && check())
+			sb.append(d).append(", ");
+	}
+	protected void append(int d) {
+		if(logable && check())
+			sb.append(d).append(", ");
+	}
+	protected void append(String s) {
+		if(logable && check())
+			sb.append(s).append(", ");
+	}
+	protected boolean check() {
 		if(complete)
 			throw new IllegalStateException("closed to modifications");
+		return true;
 	}
 	
-	public void setCompleted() {
+	public String setCompleted() {
 		if(complete)
-			return;
+			return null;
 		
 		complete = true;
-		asString = _sb == null ? super.toString() : _sb.append("]").toString();
-	}
-	public String toString() {
-		if(!complete)
-			throw new IllegalStateException("not completed");
-		return asString;
+		if(logable) {
+			if(sb.charAt(sb.length() - 2) == ',')
+				sb.setLength(sb.length() - 2);
+			sb.append("]]");
+			String s = sb.toString();
+			LOGGER.fine(() -> s);
+			sb = null;
+			return s;
+		}
+		return null;
 	}
 	@Override
 	public int hashCode() {

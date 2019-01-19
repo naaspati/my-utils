@@ -1,4 +1,4 @@
-package test.sam.io.serilizers;
+package sam.io.serilizers;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,8 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class BaseTest<E, F> {
 	private static final int BASE_COUNT = 10 + new Random().nextInt(10); 

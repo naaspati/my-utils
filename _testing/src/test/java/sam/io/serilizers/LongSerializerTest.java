@@ -1,7 +1,7 @@
-package test.sam.io.serilizers;
+package sam.io.serilizers;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,8 +12,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Random;
-
-import sam.io.serilizers.LongSerializer;
 
 public class LongSerializerTest extends BaseTest<long[], Long> {
 	

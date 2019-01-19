@@ -1,12 +1,13 @@
 package sam.nopkg;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,19 +23,19 @@ public interface Junk {
 				.map(String::trim)
 				.filter(s -> !s.isEmpty() && s.charAt(0) != '#')
 				.collect(Collectors.toSet());
-		
+
 		System.out.println("working dir: "+Paths.get(".").toAbsolutePath().normalize());
-		
+
 		StringBuilder sb = new StringBuilder();
 		sb.append(ANSI.createUnColoredBanner("SYSTEM_PROPERTIES"));
 		sb.append('\n');
-		
+
 		System.getProperties().forEach((s,t)  -> {
 			if(!ignore.contains(s))
 				sb.append(s).append('=').append(t).append('\n');
 		});
 		sb.append("\n\n");
-		
+
 		sb.append(ANSI.createUnColoredBanner("SYSTEM_ENVIROMENT"));
 		sb.append('\n');
 		System.getenv().forEach((s,t)  -> {
@@ -42,7 +43,7 @@ public interface Junk {
 				sb.append(s).append('=').append(t).append('\n');
 		});
 		sb.append('\n');
-		
+
 		return sb.toString();
 	} 
 	public static String memoryUsage() {
@@ -63,6 +64,25 @@ public interface Junk {
 						!Modifier.isStatic(m.getModifiers()) &&
 						m.getParameterCount() == 0
 						);
+	}
+	public static void invokeGetters(Object object, Appendable sink) throws IOException {
+		Iterator<Method> mds = getters(object.getClass()).iterator();
+
+		while (mds.hasNext()) {
+			Method m = mds.next();
+
+			String s = m.getName();
+			sink.append(s, 3, s.length());
+			
+			sink.append(": ");
+			try {
+				sink.append(String.valueOf(m.invoke(object))).append('\n');
+			} catch (Exception e) {
+				sink.append("thrown: ").append(e.toString()).append('\n');
+			}
+		}
+
+
 	}
 	public static <E> E notYetImplemented() throws IllegalAccessError {
 		throw new IllegalAccessError("NOT YET IMPLEMENTED");
