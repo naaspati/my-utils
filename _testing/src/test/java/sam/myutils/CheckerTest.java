@@ -30,7 +30,7 @@ public class CheckerTest {
 		Random r = new Random();
 		StringBuilder sb = new StringBuilder();
 
-		append(sb, "tested againsts: ", 0);
+		append(sb, "ASSERT_TRUE: ", 0);
 		sb.append('\n');
 		int n = sb.length();
 
@@ -44,28 +44,13 @@ public class CheckerTest {
 				n = sb.length();
 			}
 		}
-
-		assertFalse(isInteger(" "));
-		assertFalse(isInteger("   "));
-		assertFalse(isInteger(""));
-		assertFalse(isInteger(" 1 2 "));
-		assertFalse(isInteger(" 1 "));
-		assertFalse(isInteger("1 "));
-		assertFalse(isInteger(" 1"));
-		assertFalse(isInteger("a"));
-		assertFalse(isInteger("abc"));
-
-		sb.append('\n')
-		.append(" ").append('\n')
-		.append("   ").append('\n')
-		.append("").append('\n')
-		.append(" 1 2 ").append('\n')
-		.append(" 1 ").append('\n')
-		.append("1 ").append('\n')
-		.append(" 1").append('\n')
-		.append("a").append('\n')
-		.append("abc").append('\n');
-
+		
+		sb.append("\n\nASSERT_FALSE: ");
+		for (String s : new String[]{" ","   ",""," 1 2 "," 1 ","1 "," 1","a","abc"}) {
+			assertFalse(isInteger(s));	
+			sb.append('\'').append(s).append('\'').append('\n');
+		}
+		
 		System.out.println(sb);
 
 	}
