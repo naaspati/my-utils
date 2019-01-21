@@ -135,4 +135,23 @@ public interface Checker {
 		}
 		throw new NullPointerException(sb.substring(0, sb.length() - 2));
 	}
+	public static boolean isInteger(String s) {
+		if(s.trim().isEmpty())
+			return false;
+		
+		int index = 0;
+		if(s.charAt(0) == '-')
+			index = 1;
+		
+		if(s.length() == index)
+			return false;
+		
+		while(index < s.length()){
+			char c = s.charAt(index++);
+			if(c < '0' || c > '9')
+				return false;
+		}
+		
+		return true;
+	}
 }

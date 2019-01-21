@@ -9,7 +9,7 @@ if [%1]==[] (
 )
 
 if [%1]==[index] (
-  "build\reports\tests\test\index.html"
+  explorer "build\reports\tests\test\index.html"
   goto:eof
 )
 
