@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,7 +59,7 @@ public interface Junk {
 		return sb.toString();
 	}
 	public static Stream<Method> getters(Class cls) {
-		return Stream.of(cls.getDeclaredMethods())
+		return Stream.of(cls.getMethods())
 				.filter(m -> m.getName().startsWith("get") && 
 						Modifier.isPublic(m.getModifiers()) && 
 						!Modifier.isStatic(m.getModifiers()) &&
@@ -66,10 +67,16 @@ public interface Junk {
 						);
 	}
 	public static void invokeGetters(Object object, Appendable sink) throws IOException {
+		invokeGetters(object, sink, s -> true);
+	}
+	public static void invokeGetters(Object object, Appendable sink, Predicate<Method> filter) throws IOException {
 		Iterator<Method> mds = getters(object.getClass()).iterator();
 
 		while (mds.hasNext()) {
 			Method m = mds.next();
+			
+			if(!filter.test(m))
+				continue;
 
 			String s = m.getName();
 			sink.append(s, 3, s.length());
@@ -79,6 +86,7 @@ public interface Junk {
 				sink.append(String.valueOf(m.invoke(object))).append('\n');
 			} catch (Exception e) {
 				sink.append("thrown: ").append(e.toString()).append('\n');
+				e.printStackTrace();
 			}
 		}
 
