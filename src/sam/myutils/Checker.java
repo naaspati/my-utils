@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public interface Checker {
+public final class Checker {
+	private Checker() {}
+	
 	/**
 	 * 
 	 * @param condition if not true, throw new IllegalArgumentException(msg);
@@ -37,14 +39,33 @@ public interface Checker {
 	public static boolean isEmptyTrimmed(CharSequence s) {
 		if(isEmpty(s)) return true;
 
-		int n = s.length();
-		for (int i = 0; i < n; i++) { 
-			char c = s.charAt(i);
-			if(!(c == ' ' || c == '\t' || c == '\n'))
-				return false;
+		int len = s.length();
+		int i = len/2;
+		int j = len/2;
+		int x = 0;
+		int y = s.length() - 1;
+		
+		
+		while(i >= 0 || j < s.length()) {
+			if(i >= x)
+				if(!isSpace(s, i) || !isSpace(s,x))
+					return false;
+			if(j <= y)
+				if(!isSpace(s,j) || !isSpace(s,y))
+					return false;
+			i--;
+			x++;
+			j++;
+			y--;
 		}
 		return true;
 	}
+	
+	private static boolean isSpace(CharSequence s, int index) {
+		char c = s.charAt(index);
+		return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+	}
+	
 	public static boolean isEmpty(Collection<?> s) {
 		return s == null || s.isEmpty();
 	}

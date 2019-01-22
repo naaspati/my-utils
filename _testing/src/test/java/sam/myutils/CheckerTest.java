@@ -1,18 +1,90 @@
 package sam.myutils;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sam.myutils.Checker.isEmptyTrimmed;
+import static sam.myutils.Checker.isInteger;
+import static sam.myutils.Checker.mustBeTrue;
+import static sam.myutils.Checker.requireNonNull;
+
+import java.util.Random;
 
 import org.junit.jupiter.api.Test;
-import static sam.myutils.Checker.*;
-
-import java.util.Formatter;
-import java.util.Random;
 
 public class CheckerTest {
 
 	@Test
 	public void testMustBeTrueBooleanString() {
 		assertThrows(IllegalArgumentException.class, () -> mustBeTrue(false, "msg"));
+	}
+	
+	@Test
+	void isEmptyTrimmedTest() {
+		StringBuilder sb = new StringBuilder();
+		try {
+			char[] chars = new char[100];
+			char[] chars2 = {'\n', ' ','\t', '\r'};
+			Random random = new Random();
+			
+			for (int i = 0; i < 20; i++) {
+				for (int j = 0; j < i; j++) {
+					chars[j] = chars2[random.nextInt(chars2.length)];	
+				}
+				isEmptyTrimmed2(true, sb, new String(chars, 0, i));
+			}
+			
+			isEmptyTrimmed2(true, sb, "");
+
+			for (int i = 2; i < 50; i+=2) {
+				int j = 0;
+				while(j < i) {
+					chars[j++] = (char) ('A' + random.nextInt('Z'));
+					chars[j++] = chars2[random.nextInt(chars2.length)];
+				}
+				isEmptyTrimmed2(false, sb, new String(chars, 0, i));
+			}
+			
+			isEmptyTrimmed2(false, sb, "a");
+			isEmptyTrimmed2(false, sb, "abc");
+			isEmptyTrimmed2(false, sb, " a ");
+			isEmptyTrimmed2(false, sb, " a");
+			isEmptyTrimmed2(false, sb, "a ");
+			isEmptyTrimmed2(false, sb, "   a");
+			isEmptyTrimmed2(false, sb, "a   ");
+			isEmptyTrimmed2(false, sb, " a   ");
+		} finally {
+			System.out.println(sb);
+		}
+	}
+
+	private void isEmptyTrimmed2(boolean expected, StringBuilder sb, String s) {
+		sb.append('\'');
+		s.chars()
+		.forEach(e -> {
+			switch (e) {
+				case '\n':
+					sb.append("\\n");
+					break;
+				case '\t':
+					sb.append("\\t");
+					break;
+				case '\r':
+					sb.append("\\r");
+					break;
+				default:
+					sb.append((char)e);
+					break;
+			}
+		});
+		sb.append('\'');
+		sb.append('\n');
+		
+		if(expected)
+			assertTrue(isEmptyTrimmed(s), s);
+		else
+			assertFalse(isEmptyTrimmed(s), s);
 	}
 
 	@Test
