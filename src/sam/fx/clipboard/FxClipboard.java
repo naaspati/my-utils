@@ -24,7 +24,8 @@ public interface FxClipboard {
     public static String getString() {
         return CLIPBOARD.get().getString();
     }
-    public static List<File> getFiles() {
-        return CLIPBOARD.get().getFiles();
+    public static void setFiles(List<File> files) {
+        CLIPBOARD.get().setContent(Collections.singletonMap(DataFormat.FILES, files));
     }
+    
 }

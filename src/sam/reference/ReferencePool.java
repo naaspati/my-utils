@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class ReferenceQueue<T>  {
+public class ReferencePool<T>  {
 	private final LinkedList<Reference<T>> queue = new LinkedList<>();
 	private final Supplier<T> valueGenerator;
 	private ReferenceType type;
@@ -17,11 +17,11 @@ public class ReferenceQueue<T>  {
 	 * a non-threadsafe
 	 * @param valueGenerator
 	 */
-	public ReferenceQueue(ReferenceType type, Supplier<T> valueGenerator) {
+	public ReferencePool(ReferenceType type, Supplier<T> valueGenerator) {
 		this(type, false, valueGenerator); 
 	}
 
-	public ReferenceQueue(ReferenceType type, boolean threadSafe, Supplier<T> valueGenerator) {
+	public ReferencePool(ReferenceType type, boolean threadSafe, Supplier<T> valueGenerator) {
 		this.valueGenerator = valueGenerator == null ? (() -> null) : valueGenerator;
 		this.type = type;
 		this.threadSafe = threadSafe;

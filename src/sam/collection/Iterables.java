@@ -43,6 +43,11 @@ public interface Iterables {
 	public static <E>  Stream<E> stream(Iterable<E> itr) {
 		return Iterators.stream(itr.iterator());
 	}
+	@SuppressWarnings("unchecked")
+	@SafeVarargs
+	public static <E>  Iterable<E> join(Iterable<E>... itr) {
+		return Iterables.of(Iterators.join(ArraysUtils.map(itr, Iterator[]::new, Iterable::iterator)));
+	}
 	public static <E> IterableWithSize<E> wrap(Iterable<E> iterable) {
 		return iterable == null ? null : iterable instanceof IterableWithSize ? (IterableWithSize<E>) iterable : new IterableWithSize<>(iterable);
 	}   

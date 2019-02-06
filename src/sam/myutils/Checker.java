@@ -36,6 +36,9 @@ public final class Checker {
 	public static boolean isNotEmpty(CharSequence s) {
 		return !isEmpty(s);
 	}
+	public static boolean isNotEmptyTrimmed(CharSequence s) {
+		return !isEmptyTrimmed(s);
+	}
 	public static boolean isEmptyTrimmed(CharSequence s) {
 		if(isEmpty(s)) return true;
 

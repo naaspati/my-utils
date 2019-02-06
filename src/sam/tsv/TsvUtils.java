@@ -7,11 +7,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 import sam.io.serilizers.StringWriter2;
-import sam.reference.WeakQueue;
+import sam.reference.WeakPool;
 
 final class TsvUtils {
-	static final WeakQueue<StringBuilder> wsb = new WeakQueue<>(true, StringBuilder::new);
-	static final WeakQueue<ArrayList<String>> wlist = new WeakQueue<>(true, ArrayList::new);
+	static final WeakPool<StringBuilder> wsb = new WeakPool<>(true, StringBuilder::new);
+	static final WeakPool<ArrayList<String>> wlist = new WeakPool<>(true, ArrayList::new);
 
 	private TsvUtils() {}
 

@@ -97,30 +97,21 @@ public class Renamer {
 		return _remover = new FileNameSanitizer(StandardCharsets.UTF_8);
 	}
 	
+	private static final Pattern chapterPattern = Pattern.compile("chapter", Pattern.CASE_INSENSITIVE | Pattern.LITERAL); 
+	
 	public static String makeChapterFileName(double number, String chapterFileName, String mangaName) {
 		final String numS = StringUtils.doubleToString(number);
 		if(Checker.isEmptyTrimmed(chapterFileName))
 			return numS;
 
-		chapterFileName = Pattern.compile(mangaName.replaceFirst("(?i)Manh(?:w|u)a", ""), Pattern.LITERAL | Pattern.CASE_INSENSITIVE)
+		chapterFileName = Pattern.compile(mangaName.replaceFirst("Manh(?:w|u)a", ""), Pattern.LITERAL | Pattern.CASE_INSENSITIVE)
 				.matcher(chapterFileName)
 				.replaceFirst("")
 				.replace(numS, "");
 
+		chapterFileName = chapterPattern.matcher(chapterFileName).replaceFirst("");
+		
 		char[] chars = (numS +" "+chapterFileName.trim()).toCharArray();
-
-		if ((chars[0] == 'C' || chars[0] == 'c') && (chars[1] == 'h' || chars[1] == 'H')
-				&& (chars[2] == 'a' || chars[2] == 'A') && (chars[3] == 'p' || chars[3] == 'P')
-				&& (chars[4] == 't' || chars[4] == 'T') && (chars[5] == 'e' || chars[5] == 'E')
-				&& (chars[6] == 'r' || chars[6] == 'R')) {
-			chars[0] = '\0';
-			chars[1] = '\0';
-			chars[2] = '\0';
-			chars[3] = '\0';
-			chars[4] = '\0';
-			chars[5] = '\0';
-			chars[6] = '\0';
-		}
 		
 		FileNameSanitizer rm = remover();
 

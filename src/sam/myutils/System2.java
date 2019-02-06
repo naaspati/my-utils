@@ -11,10 +11,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import sam.logging.MyLoggerFactory;
-
 public final class System2 {
-	private static final Logger _LOGGER = MyLoggerFactory.logger(System2.class);
+	private static final Logger _LOGGER = Logger.getLogger(System2.class.getName());
 	private static final FileWriter lookupWriter;
 	private static final boolean loggable;
 	

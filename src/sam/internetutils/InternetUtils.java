@@ -19,12 +19,12 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 import sam.myutils.MyUtilsPath;
-import sam.reference.WeakQueue;
+import sam.reference.WeakPool;
 
 // VERSION = 1.24;
 public final class InternetUtils {
 	private static final AtomicInteger COUNTER = new AtomicInteger(0);
-	private static final WeakQueue<byte[]> BUFFERS = new WeakQueue<>(true, () -> new byte[ConnectionConfig.DEFAULT_BUFFER_SIZE]);
+	private static final WeakPool<byte[]> BUFFERS = new WeakPool<>(true, () -> new byte[ConnectionConfig.DEFAULT_BUFFER_SIZE]);
 
 	public static final ConnectionConfig _DEFAULT_CONFIG = new ConnectionConfig();
 	public static final DownloadListener _DEFAULT_LISTENER = new SimpleDownloadListener(_DEFAULT_CONFIG);

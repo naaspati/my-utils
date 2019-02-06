@@ -1,6 +1,11 @@
 package sam.myutils;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.util.function.Consumer;
+
+import sam.string.StringWriter2;
 
 public interface MyUtilsException {
 	static final Consumer<Throwable> DEFAULT_ON_ERROR = e -> { throw new RuntimeException(e); };
@@ -10,29 +15,45 @@ public interface MyUtilsException {
 		r.run();
 		return System.nanoTime() - t;
 	}
-	public static String exceptionToString(Throwable e) {
+	
+	public static String toString(Throwable e) {
 		if(e == null)
 			return "";
-
-		StringBuilder sb =  new StringBuilder()
-				.append('[')
-				.append(e.getClass().getSimpleName());
-
-		if(e.getMessage() != null)
-			sb.append(": ").append(e.getMessage());
-
-		sb.append(']');
-
-		return sb.toString();
+		return append(new StringBuilder(), e, false).toString();
 	}
 
+	public static StringBuilder append(StringBuilder sb, Throwable e, boolean stackTrace) {
+		if(e == null)
+			return sb;
+		
+		if(stackTrace) {
+			StringWriter2 sw =  new StringWriter2(sb);
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+		} else {
+			sb.append('[')
+			.append(e.getClass().getSimpleName());
+
+			if(e.getMessage() != null)
+				sb.append(": ").append(e.getMessage());
+
+			sb.append(']');			
+		}
+		return sb;
+	}
 	/**
 	 * throws RuntimeException when supplier throws an Exception  
 	 * @param supplier
 	 * @return
 	 */
 	public static <E> E noError(ErrorSupplier<E> supplier){
-		return noError(supplier, DEFAULT_ON_ERROR);
+		try {
+			return supplier.get();
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 	public static <E> E noError(ErrorSupplier<E> supplier, Consumer<Throwable> onError) {
 		try {

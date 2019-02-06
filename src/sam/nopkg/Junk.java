@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -74,13 +75,13 @@ public interface Junk {
 
 		while (mds.hasNext()) {
 			Method m = mds.next();
-			
+
 			if(!filter.test(m))
 				continue;
 
 			String s = m.getName();
 			sink.append(s, 3, s.length());
-			
+
 			sink.append(": ");
 			try {
 				sink.append(String.valueOf(m.invoke(object))).append('\n');
@@ -94,5 +95,18 @@ public interface Junk {
 	}
 	public static <E> E notYetImplemented() throws IllegalAccessError {
 		throw new IllegalAccessError("NOT YET IMPLEMENTED");
+	}
+	
+	public static <K, V> String toString(Map<K, V> map) {
+		return append(map, new StringBuilder()).toString();
+	}
+
+	public static <K, V> StringBuilder append(Map<K, V> map, StringBuilder sb) {
+		map.forEach((s,t) -> sb.append(s).append(" = ").append(t).append('\n'));
+		return sb;
+	}
+	public static <K, V> StringBuilder append(Map<K, V> map, StringBuilder sb, Function<K, CharSequence> key, Function<V, CharSequence> value) {
+		map.forEach((k,v) -> sb.append(key.apply(k)).append(" = ").append(value.apply(v)).append('\n'));
+		return sb;
 	}
 }

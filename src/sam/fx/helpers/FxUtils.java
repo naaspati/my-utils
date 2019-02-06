@@ -4,8 +4,17 @@ import java.io.File;
 import java.util.function.Consumer;
 
 import javafx.beans.InvalidationListener;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Paint;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import sam.myutils.Checker;
@@ -71,5 +80,27 @@ public interface FxUtils {
 		if(editor != null)
 			editor.accept(fc);
 		return fc;
+	}
+	public static Border border(Paint stroke) {
+		return new Border(borderStroke(stroke));
+	}
+	public static BorderStroke borderStroke(Paint stroke) {
+		return new BorderStroke(stroke, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT, Insets.EMPTY);
+	}
+	public static Border border(Paint stroke, BorderStrokeStyle style, BorderWidths widths) {
+		return new Border(borderStroke(stroke, style, widths));
+	}
+	public static BorderStroke borderStroke(Paint stroke, BorderStrokeStyle style, BorderWidths widths) {
+		return new BorderStroke(stroke, style, CornerRadii.EMPTY, widths, Insets.EMPTY);
+	}
+	public static Border border(Paint stroke, BorderStrokeStyle style, CornerRadii radii, BorderWidths widths, Insets insets) {
+		return new Border(new BorderStroke(stroke, style, radii, widths, insets));
+	}
+	
+	public static Background background(Paint fill) {
+		return background(fill, CornerRadii.EMPTY, Insets.EMPTY);
+	}
+	public static Background background(Paint fill, CornerRadii radii, Insets insets) {
+		return new Background(new BackgroundFill(fill, radii, insets));
 	}
 }
