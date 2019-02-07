@@ -2,16 +2,45 @@ package sam.reference;
 
 import java.lang.ref.Reference;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import sam.console.ANSI;
+import sam.myutils.System2;
+
 public class ReferencePool<T>  {
-	private final LinkedList<Reference<T>> queue = new LinkedList<>();
+	private static final boolean DUMP_POOL_GENERATED_COUNT = System2.lookupBoolean("DUMP_POOL_GENERATED_COUNT", false);
+	private static final Map<String, AtomicInteger> counts = DUMP_POOL_GENERATED_COUNT ? Collections.synchronizedMap(new IdentityHashMap<>()) : null;
+	
+	static {
+		if(DUMP_POOL_GENERATED_COUNT) {
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				StringBuilder sb = new StringBuilder();
+				sb.append("\n\n");
+				ANSI.createBanner("DUMP_POOL_GENERATED_COUNT", sb);
+				sb.append('\n');
+				synchronized (counts) {
+					counts.forEach((s,t) -> sb.append(s).append(": ").append(t).append('\n'));	
+				}
+				System.out.println(sb);
+			}));
+		}
+	}
+	
+	private final Deque<Reference<T>> queue;
 	private final Supplier<T> valueGenerator;
-	private ReferenceType type;
-	private final boolean threadSafe;
+	private final ReferenceType type;
+	private final AtomicInteger count;
+	private final AtomicBoolean put;
 
 	/**
 	 * a non-threadsafe
@@ -22,9 +51,35 @@ public class ReferencePool<T>  {
 	}
 
 	public ReferencePool(ReferenceType type, boolean threadSafe, Supplier<T> valueGenerator) {
-		this.valueGenerator = valueGenerator == null ? (() -> null) : valueGenerator;
+		if(valueGenerator == null) {
+			this.valueGenerator = () -> null;
+			this.count = null;
+			this.put = null;
+		} else if(DUMP_POOL_GENERATED_COUNT) {
+			this.count = new AtomicInteger(0);
+			this.put = new AtomicBoolean(false);
+			this.valueGenerator = wrap(valueGenerator);
+		} else {
+			this.put = null;
+			this.count = null;
+			this.valueGenerator = valueGenerator;
+		}
+		
 		this.type = type;
-		this.threadSafe = threadSafe;
+		queue = threadSafe ? new ConcurrentLinkedDeque<>() : new LinkedList<>();
+	}
+	
+	private Supplier<T> wrap(Supplier<T> valueGenerator) {
+		return () -> {
+			count.incrementAndGet();
+			T t =  valueGenerator.get();
+			if(t != null && put.compareAndSet(false, true)) {
+				synchronized (counts) {
+					counts.put(getClass().getName()+"("+t.getClass().getName()+")", count);
+				}
+			}
+			return t;
+		};
 	}
 
 	public boolean offer(T value) {
@@ -38,24 +93,16 @@ public class ReferencePool<T>  {
 	public boolean add(T value) {
 		if(value == null)
 			return false;
-		if(threadSafe) 
-			synchronized (queue) { return queue.add(type.get(value)); }
-		else
-			return queue.add(type.get(value));
+		return queue.add(type.get(value));
 	}
 	public boolean addIfAbsent(T value) {
 		if(value == null || contains(value))
 			return false;
 		return add(value);
 	}
-	public boolean contains(Object obj) {
-		if(threadSafe) {
-			synchronized (queue) { return contains0(obj); }
-		} else
-			return contains0(obj);
-	}
-	private boolean contains0(Object obj) {
-		if(obj == null || queue.isEmpty()) return false;
+	private boolean contains(Object obj) {
+		if(obj == null || queue.isEmpty()) 
+			return false;
 
 		for (Reference<T> w : queue) {
 			if(obj.equals(ReferenceUtils.get(w)))
@@ -85,16 +132,11 @@ public class ReferencePool<T>  {
 	 * @return 
 	 */
 	public T poll() {
-		if(threadSafe) {
-			synchronized (queue) { return poll0(); }
-		} else
-			return poll0();
-	}
-	private T poll0() {
 		if(queue.isEmpty()) 
 			return valueGenerator.get();
 
 		T t = ReferenceUtils.get(queue.pollLast());
+		
 		if(t != null) 
 			return t;
 
@@ -105,20 +147,12 @@ public class ReferencePool<T>  {
 		}
 		return valueGenerator.get();
 	}
-
 	public void clear() {
-		if(threadSafe) {
-			synchronized (queue) { queue.clear(); }
-		} else
-			queue.clear();
-
+		queue.clear();
 	}
-
 	private void clean() {
-		synchronized (queue) {
-			if(queue.isEmpty()) return;
-			queue.removeIf(w -> ReferenceUtils.get(w) == null);	
-		}
+		if(queue.isEmpty()) return;
+		queue.removeIf(w -> ReferenceUtils.get(w) == null);
 	}
 
 	/**
@@ -142,16 +176,13 @@ public class ReferencePool<T>  {
 	}
 	public void forEach(Consumer<T> consumer) {
 		clean();
-		synchronized (queue) {
-			if(queue.isEmpty())
-				return;
+		if(queue.isEmpty())
+			return;
 
-			for (Reference<T> r : queue) {
-				T t = ReferenceUtils.get(r);
-				if(t != null)
-					consumer.accept(t);
-			}	
-		}
-
+		for (Reference<T> r : queue) {
+			T t = ReferenceUtils.get(r);
+			if(t != null)
+				consumer.accept(t);
+		}	
 	}
 }
