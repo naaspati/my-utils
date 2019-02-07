@@ -26,12 +26,13 @@ public abstract class ModResource<E> implements AutoCloseable {
 	
 	@Override
 	public void close() throws Exception {
-		if(mod != 0)
+		if(mod > 0)
 			write(data); 
 	}
 	
 	protected abstract E read();
 	protected abstract void write(E e) throws IOException;
+	
 	protected boolean isEqual(E a, E b) {
 		return Objects.equals(a, b);
 	}
