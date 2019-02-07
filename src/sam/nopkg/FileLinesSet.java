@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -28,11 +29,16 @@ public class FileLinesSet implements AutoCloseable {
 	private final boolean gzipped;
 	private final Path path;
 	private static final String DATE_MARKER = "#DATE = ";
+	private final Consumer<FileLinesSet> onClose;
 
 	public FileLinesSet(Path path, boolean gzipped) {
+		this(path, gzipped, null);
+	}
+	public FileLinesSet(Path path, boolean gzipped, Consumer<FileLinesSet> onSuccessfulClose) {
 		this.gzipped = gzipped;
 		this.path = path;
 		nnew = new LinkedHashSet<>();
+		this.onClose = onSuccessfulClose;
 	}
 	
 	public Set<String> getOld() {
@@ -96,5 +102,8 @@ public class FileLinesSet implements AutoCloseable {
 			for (String s : nnew) 
 				write.append(s).append('\n');
 		}
+		
+		if(onClose != null)
+			onClose.accept(this);
 	}
 }
