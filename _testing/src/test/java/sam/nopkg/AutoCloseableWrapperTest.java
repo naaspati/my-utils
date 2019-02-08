@@ -6,43 +6,52 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.junit.jupiter.api.Test;
 
 public class AutoCloseableWrapperTest {
 	
 	@Test
 	public void testManualClose() {
-		AutoCloseableWrapper<Long> s = instance();
+		String value = String.valueOf(System.currentTimeMillis());
+		int[] called = {0};
+		AutoCloseableWrapper<String> s = new AutoCloseableWrapper<>(() -> {
+			called[0]++;
+			return value;
+		}, t -> assertSame(value, t));
 		
-		assertEquals(s.get().longValue(), ATOMIC_LONG.get());
-		assertEquals(s.get().longValue(), ATOMIC_LONG.get());
+		assertSame(s.get(), value);
 		assertSame(s.get(), s.get());
+		assertSame(s.get(), value);
 		
 		assertDoesNotThrow(s::close);
-		
 		assertThrows(IllegalStateException.class, s::get);
+		assertEquals(called[0], 1);
 	}
 	
 	@Test
 	public void testAutoClose() {
-		AutoCloseableWrapper<Long> temp = instance();
+		String value = String.valueOf(System.currentTimeMillis());
+		int[] called = {0};
 		
-		try(AutoCloseableWrapper<Long> s = temp) {
-			assertEquals(s.get().longValue(), ATOMIC_LONG.get());
-			assertEquals(s.get().longValue(), ATOMIC_LONG.get());
-			assertSame(s.get(), s.get());	
+		AutoCloseableWrapper<String> temp = null; 
+		
+		try(AutoCloseableWrapper<String> s = new AutoCloseableWrapper<>(() -> {
+			called[0]++;
+			return value;
+		}, t -> assertSame(value, t));) {
+			
+			temp = s;
+			
+			assertSame(s.get(), value);
+			assertSame(s.get(), s.get());
+			assertSame(s.get(), value);
+			
 		} catch (Exception e) {
 			fail();
 		}
+		
+		assertDoesNotThrow(temp::close);
 		assertThrows(IllegalStateException.class, temp::get);
+		assertEquals(called[0], 1);
 	}
-	
-	private static final AtomicLong ATOMIC_LONG = new AtomicLong();
-
-	private AutoCloseableWrapper<Long> instance() {
-		return new AutoCloseableWrapper<>(ATOMIC_LONG::incrementAndGet, t -> System.out.println("closed: "+t));
-	}
-	
 }
