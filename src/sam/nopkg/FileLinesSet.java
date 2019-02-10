@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -29,16 +28,11 @@ public class FileLinesSet implements AutoCloseable {
 	private final boolean gzipped;
 	private final Path path;
 	private static final String DATE_MARKER = "#DATE = ";
-	private final Consumer<FileLinesSet> onClose;
-
+	
 	public FileLinesSet(Path path, boolean gzipped) {
-		this(path, gzipped, null);
-	}
-	public FileLinesSet(Path path, boolean gzipped, Consumer<FileLinesSet> onSuccessfulClose) {
 		this.gzipped = gzipped;
 		this.path = path;
 		nnew = new LinkedHashSet<>();
-		this.onClose = onSuccessfulClose;
 	}
 	
 	public Set<String> getOld() {
@@ -49,7 +43,7 @@ public class FileLinesSet implements AutoCloseable {
 			return _old;
 		
 		if(Files.exists(path)) {
-			Set<String> o  = new HashSet<>();
+			Set<String> o  = newSet();
 			try(InputStream is = Files.newInputStream(path, StandardOpenOption.READ);
 					InputStream is2 = !gzipped ? is : new GZIPInputStream(is);
 					InputStreamReader isr = new InputStreamReader(is2, "utf-8");
@@ -73,6 +67,9 @@ public class FileLinesSet implements AutoCloseable {
 		return _old;
 	}
 
+	protected Set<String> newSet() {
+		return new HashSet<>();
+	}
 	public Set<String> getNew() {
 		return nnew;
 	}
@@ -83,8 +80,10 @@ public class FileLinesSet implements AutoCloseable {
 	public boolean contains(String s) {
 		return nnew.contains(s) || old().contains(s);
 	}
-	public void add(String s) {
-		nnew.add(s);
+	public boolean add(String s) {
+		if(contains(s))
+			return false;
+		return nnew.add(s);
 	}
 
 	@Override
@@ -102,8 +101,5 @@ public class FileLinesSet implements AutoCloseable {
 			for (String s : nnew) 
 				write.append(s).append('\n');
 		}
-		
-		if(onClose != null)
-			onClose.accept(this);
 	}
 }

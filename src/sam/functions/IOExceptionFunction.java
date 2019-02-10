@@ -1,4 +1,4 @@
-package sam.io.serilizers;
+package sam.functions;
 
 import java.io.IOException;
 

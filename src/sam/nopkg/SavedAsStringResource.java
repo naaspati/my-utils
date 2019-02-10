@@ -8,15 +8,15 @@ import java.util.function.Function;
 
 import static java.nio.file.StandardOpenOption.*;
 
-public class ModResourceSavedAsString<E> extends ModResource<E> {
+public class SavedAsStringResource<E> extends SavedResource<E> {
 	public final Path save_path;
 	public final Function<E, String> toString;
 	public final Function<String, E> fromString;
 	
-	public ModResourceSavedAsString(Path save_path, Function<String, E> fromString) {
+	public SavedAsStringResource(Path save_path, Function<String, E> fromString) {
 		this(save_path, s -> s == null ? null : s.toString(), fromString);
 	}
-	public ModResourceSavedAsString(Path save_path, Function<E, String> toString, Function<String, E> fromString) {
+	public SavedAsStringResource(Path save_path, Function<E, String> toString, Function<String, E> fromString) {
 		this.save_path = Objects.requireNonNull(save_path);
 		this.toString = Objects.requireNonNull(toString);
 		this.fromString = Objects.requireNonNull(fromString); 
@@ -32,7 +32,6 @@ public class ModResourceSavedAsString<E> extends ModResource<E> {
 	}
 	@Override
 	protected E read() {
-		
 		try {
 			if(Files.notExists(save_path))
 				return null;

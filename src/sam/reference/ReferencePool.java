@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 
 import sam.console.ANSI;
 import sam.myutils.System2;
+import sam.nopkg.AutoCloseableWrapper;
 
 public class ReferencePool<T>  {
 	private static final boolean DUMP_POOL_GENERATED_COUNT = System2.lookupBoolean("DUMP_POOL_GENERATED_COUNT", false);
@@ -184,5 +185,8 @@ public class ReferencePool<T>  {
 			if(t != null)
 				consumer.accept(t);
 		}	
+	}
+	public AutoCloseableWrapper<T> autoCloseableWrapper() {
+		return new AutoCloseableWrapper<>(this::poll, this::add);
 	}
 }

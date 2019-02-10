@@ -16,6 +16,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntConsumer;
 
+import sam.functions.IOExceptionConsumer;
+import sam.functions.IOExceptionFunction;
+
 public final class ObjectReader {
 
 	public static <E> ReaderConfig reader(boolean gzip) {

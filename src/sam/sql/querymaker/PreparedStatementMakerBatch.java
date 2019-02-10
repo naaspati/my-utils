@@ -33,7 +33,7 @@ import sam.collection.Iterables;
 import sam.sql.sqlite.SQLiteDB;
 
 public abstract class PreparedStatementMakerBatch<E> {
-	private final ArrayList<CustomConsumer2<E>> pss;
+	private final ArrayList<PreparedStatementConsumer<E>> pss;
 	
 	public PreparedStatementMakerBatch() {
 		this.pss = new ArrayList<>();
@@ -41,7 +41,7 @@ public abstract class PreparedStatementMakerBatch<E> {
 	public PreparedStatementMakerBatch(PreparedStatementMakerBatch<E> from) {
 		this.pss = from.pss;
 	}
-	private void add(String columnName, CustomConsumer2<E> s) {
+	private void add(String columnName, PreparedStatementConsumer<E> s) {
 		if(isEmptyTrimmed(columnName))
 			throw new IllegalArgumentException("invalid columnname: "+columnName);
 		
@@ -308,7 +308,7 @@ public abstract class PreparedStatementMakerBatch<E> {
 		try(PreparedStatement ps = prepareStatement){
 			for (E e : Iterables.of(itr)) {
 				int n = 1;
-				for (CustomConsumer2<E> c : pss) 
+				for (PreparedStatementConsumer<E> c : pss) 
 					c.accept(n++, ps, e);
 				
 				ps.addBatch();

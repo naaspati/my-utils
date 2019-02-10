@@ -1,5 +1,6 @@
 package sam.io.fileutils;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -87,7 +89,6 @@ public interface FilesUtilsIO {
 	public static interface WalkConsumer<E> {
 		public void apply(Path path, E e) throws IOException;
 	}
-	
 	
 	public static class Walker {
 		private WalkResult<BasicFileAttributes> visitFile;
@@ -203,5 +204,14 @@ public interface FilesUtilsIO {
 		FileLock fl =  c.tryLock();
 		c.write(ByteBuffer.wrap(new byte[]{1}));
 		return fl;
+	}
+	@SuppressWarnings("rawtypes")
+	public static void writeAsString(Path path, Iterable itr, StandardOpenOption...options) throws IOException {
+		try(BufferedWriter w = Files.newBufferedWriter(path, StandardCharsets.UTF_8, options)) {
+			for (Object o : itr) {
+				w.append(o.toString());
+				w.newLine();
+			}
+		}
 	}
 }

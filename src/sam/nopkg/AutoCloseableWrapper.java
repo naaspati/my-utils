@@ -1,22 +1,23 @@
 package sam.nopkg;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.io.IOException;
+
+import sam.functions.IOExceptionConsumer;
+import sam.functions.IOExceptionSupplier;
 
 public class AutoCloseableWrapper<T> implements AutoCloseable {
-	private final Supplier<T> getter;
-	private final Consumer<T> closer;
+	private final IOExceptionSupplier<T> getter;
+	private final IOExceptionConsumer<T> closer;
 	private boolean getInvoked = false;
 	private boolean closed = false;
 	private T t;
 
-	public AutoCloseableWrapper(Supplier<T> getter, Consumer<T> closer) {
+	public AutoCloseableWrapper(IOExceptionSupplier<T> getter, IOExceptionConsumer<T> closer) {
 		this.getter = getter;
 		this.closer = closer;
 	}
-
 	
-	public T get() {
+	public T get() throws IOException {
 		checkClosed();
 		
 		if(getInvoked)
@@ -32,7 +33,7 @@ public class AutoCloseableWrapper<T> implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws IOException {
 		if(closed)
 			return;
 		
