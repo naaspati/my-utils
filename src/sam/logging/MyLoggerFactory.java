@@ -13,6 +13,11 @@ import java.util.logging.Logger;
 
 //import sam.logging.LogFilter;
 
+/**
+ * stupid decision, to use System logger for personal use 
+ * @author Sameer
+ *
+ */
 public final class MyLoggerFactory {
 	private static final boolean simpleName;
 

@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public final class Checker {
 	private Checker() {}
-	
+
 	/**
 	 * 
 	 * @param condition if not true, throw new IllegalArgumentException(msg);
@@ -47,8 +47,8 @@ public final class Checker {
 		int j = len/2;
 		int x = 0;
 		int y = s.length() - 1;
-		
-		
+
+
 		while(i >= 0 || j < s.length()) {
 			if(i >= x)
 				if(!isSpace(s, i) || !isSpace(s,x))
@@ -63,12 +63,12 @@ public final class Checker {
 		}
 		return true;
 	}
-	
+
 	private static boolean isSpace(CharSequence s, int index) {
 		char c = s.charAt(index);
 		return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 	}
-	
+
 	public static boolean isEmpty(Collection<?> s) {
 		return s == null || s.isEmpty();
 	}
@@ -141,7 +141,13 @@ public final class Checker {
 	 */
 	public static void requireNonNull(String variableNames, Object...variables) {
 		mustBeTrue(isNotEmpty(variables), "args no speficied");
-		
+
+		if(variables.length == 1) {
+			if(variables[0] == null)
+				throw new NullPointerException(variableNames);
+			return;
+		}
+
 		int n = 0;
 		while( n < variables.length && variables[n++] != null) {}
 
@@ -162,20 +168,20 @@ public final class Checker {
 	public static boolean isInteger(String s) {
 		if(s.trim().isEmpty())
 			return false;
-		
+
 		int index = 0;
 		if(s.charAt(0) == '-')
 			index = 1;
-		
+
 		if(s.length() == index)
 			return false;
-		
+
 		while(index < s.length()){
 			char c = s.charAt(index++);
 			if(c < '0' || c > '9')
 				return false;
 		}
-		
+
 		return true;
 	}
 }

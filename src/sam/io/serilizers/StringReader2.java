@@ -29,7 +29,7 @@ public class StringReader2 {
 	private static final Logger LOGGER = MyLoggerFactory.logger(StringReader2.class);
 	private static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 	private static final Charset DEFAULT_CHARSET = defaultCharset();
-	
+
 	public static ReaderConfig reader() {
 		return new ReaderConfig();
 	}
@@ -39,7 +39,7 @@ public class StringReader2 {
 
 		CodingErrorAction onMalformedInput;
 		CodingErrorAction onUnmappableCharacter;
-		
+
 		private ReaderConfig() {}
 
 		public ReaderConfig source(ReadableByteChannel source){ this.source=source;  return this; }
@@ -56,10 +56,10 @@ public class StringReader2 {
 		public ReaderConfig charset(String charset){ this.charset=Charset.forName(charset);  return this; }
 		public ReaderConfig onMalformedInput(CodingErrorAction onMalformedInput){ this.onMalformedInput=onMalformedInput;  return this; }
 		public ReaderConfig onUnmappableCharacter(CodingErrorAction onUnmappableCharacter){ this.onUnmappableCharacter=onUnmappableCharacter;  return this; }
-		
+
 		public StringBuilder read0() throws IOException {
 			Objects.requireNonNull(source, "source not set");
-			return getText0(this);
+			return getText0(this, new StringBuilder());
 		}
 		public String read(Path p) throws IOException {
 			this.source = p;
@@ -71,21 +71,21 @@ public class StringReader2 {
 		}
 		private CharsetDecoder decoder() {
 			return charset()
-			.newDecoder()
-			.onMalformedInput(onMalformedInput == null ? defaultOnMalformedInput() : onMalformedInput)
-			.onUnmappableCharacter(onUnmappableCharacter == null ? defaultOnUnmappableCharacter() : onUnmappableCharacter);
+					.newDecoder()
+					.onMalformedInput(onMalformedInput == null ? defaultOnMalformedInput() : onMalformedInput)
+					.onUnmappableCharacter(onUnmappableCharacter == null ? defaultOnUnmappableCharacter() : onUnmappableCharacter);
 		}
 		public ReadableByteChannel channel() throws IOException {
 			if(source instanceof ReadableByteChannel)
 				return (ReadableByteChannel)source;
-			
+
 			return FileChannel.open((Path)source, READ);
 		}
 		public Charset charset() {
 			return (charset == null ? DEFAULT_CHARSET : charset);
 		}
 	} 
-	
+
 	public static StringBuilder getText0(Path path, Charset charset) throws IOException {
 		return reader().charset(charset).source(path).read0();
 	}
@@ -95,7 +95,7 @@ public class StringReader2 {
 	public static StringBuilder getText0(Path path) throws IOException {
 		return getText0(path, defaultCharset());
 	}
-	
+
 	public static String getText(Path path, Charset charset) throws IOException {
 		return reader().charset(charset).read(path);
 	}
@@ -105,21 +105,21 @@ public class StringReader2 {
 	public static String getText(Path path) throws IOException {
 		return getText(path, defaultCharset());
 	}
-	
+
 	public static String getText(ReaderConfig config) throws IOException {
 		CharsetDecoder decoder = config.decoder();
 
 		ReadableByteChannel channel2 = config.channel();
 		if(channel2 instanceof FileChannel && ((FileChannel)channel2).size() == 0)
 			return "";
-			
+
 		long[] buffersize = buffersize(channel2);
 		ByteBuffer bytes = ByteBuffer.allocate((int)buffersize[1]);
 		String result = null;
 
 		int loops = 0;
 
-		try(ReadableByteChannel channel = channel2;){
+		try(ReadableByteChannel channel = channel2;) {
 			while(true) {
 				int n = channel.read(bytes);
 				bytes.flip();
@@ -143,71 +143,94 @@ public class StringReader2 {
 	private static String concat(String result, CharBuffer cb) {
 		if(result.length() == 0) return cb.toString();
 		if(cb.length() == 0) return result;
-		
+
 		char[] chars = new char[result.length() + cb.length()];
 		int n = 0;
 		for (int i = 0; i < result.length(); i++) 
 			chars[n++] = result.charAt(i);
-		
+
 		for (int i = 0; i < cb.length(); i++) 
 			chars[n++] = cb.charAt(i);
-		
+
 		return new String(chars);
 	}
-	public static StringBuilder getText0(ReaderConfig config) throws IOException {
+	public static StringBuilder getText0(ReaderConfig config, StringBuilder sink) throws IOException {
 		CharsetDecoder decoder = config.decoder();
 
 		double d = decoder.averageCharsPerByte();
 		int bytesPer = (int) Math.round(d);
 		ReadableByteChannel channel2 = config.channel();
 		if(channel2 instanceof FileChannel && ((FileChannel)channel2).size() == 0)
-			return new StringBuilder();
-		
-		long[] bs = buffersize(channel2);
-		int buffersize = (int) bs[1];
+			return sink == null ? new StringBuilder() : sink;
 
-		CharBuffer chars = CharBuffer.allocate(buffersize/bytesPer > 100 ? 100 : buffersize/bytesPer);
-		ByteBuffer bytes = ByteBuffer.allocate(buffersize);
-		StringBuilder sb = new StringBuilder((int) (bs[0]/bytesPer)+10);
-		int startCapacity = sb.capacity();
+			long[] bs = buffersize(channel2);
+			int buffersize = (int) bs[1];
 
-		int bytesloops = 0;
-		int charloops = 0;
+			CharBuffer chars = CharBuffer.allocate(buffersize/bytesPer > 100 ? 100 : buffersize/bytesPer);
+			ByteBuffer buf = ByteBuffer.allocate(buffersize);
+			StringBuilder sb = sink == null ? new StringBuilder((int) (bs[0]/bytesPer)+10) : sink;
+			int startCapacity = sb.capacity();
 
-		try(ReadableByteChannel channel = channel2) {
-			while(true) {
-				bytesloops++;
+			int bufloops = 0;
+			int charloops = 0;
 
-				int n = channel.read(bytes);
-				bytes.flip();
+			try(ReadableByteChannel channel = channel2) {
+				decoder.reset();
 
-				charloops += read(config,decoder, chars, bytes, sb, n);
-
-				if(n == -1) {
+				loop:
 					while(true) {
-						CoderResult c = decoder.flush(chars);
-						checkResult(config,c);
-						append(sb, chars);
+						int read = channel.read(buf);
+						boolean endOfInput = read == -1;
 
-						if(c.isUnderflow()) break;
+						bufloops++;
+						buf.flip();
+
+						while(true) {
+							charloops++;
+							CoderResult c = buf.hasRemaining() ?  decoder.decode(buf, chars, endOfInput) : CoderResult.UNDERFLOW;
+
+							if(c.isUnderflow()) {
+								if(endOfInput) {
+									append(chars, sb);
+									while(true) {
+										c = decoder.flush(chars);
+										checkResult(config, c);
+										chars.flip();
+										sb.append(chars);
+										if(c.isUnderflow())
+											break loop;
+									}
+								} 
+
+								break;
+							} else if(c.isOverflow()) {
+								append(chars, sb);
+							} else 
+								checkResult(config, c);
+						}
+
+						if(buf.hasRemaining())
+							buf.compact();
+						else
+							buf.clear();
 					}
-					break;
-				}
-				if(bytes.hasRemaining())
-					bytes.compact();
-				else
-					bytes.clear();
 			}
-		}
-
-		int loops2 = bytesloops;
-		int loops3 = charloops;
-		LOGGER.fine(() -> "READ { charset:"+config.charset()+", fileSize:"+bs[0]+", Stringbuilder.length:"+sb.length()+", Stringbuilder.capacity("+startCapacity+"->"+sb.capacity()+ "), ByteBuffer.capacity:"+bytes.capacity()+", averageBytesPerChar: "+d+", CharBuffer.capacity: "+chars.capacity()+", byteLoopCount:"+loops2+", charLoopCount:"+loops3+"}");
-		return sb;
+			
+			append(chars, sb);
+			
+			int loops2 = bufloops;
+			int loops3 = charloops;
+			LOGGER.fine(() -> "READ { charset:"+config.charset()+", fileSize:"+bs[0]+", Stringbuilder.length:"+sb.length()+", Stringbuilder.capacity("+startCapacity+"->"+sb.capacity()+ "), ByteBuffer.capacity:"+buf.capacity()+", averageBytesPerChar: "+d+", CharBuffer.capacity: "+chars.capacity()+", byteLoopCount:"+loops2+", charLoopCount:"+loops3+"}");
+			return sb;
+	}
+	private static void append(CharBuffer chars, StringBuilder sb) {
+		chars.flip();
+		sb.append(chars);
+		chars.clear();
 	}
 	private static long[] buffersize(ReadableByteChannel channel2) throws IOException {
 		long size, buffersize;
-		
+
 		if(channel2 instanceof FileChannel) {
 			size = ((FileChannel)channel2).size();
 			buffersize = (int)(size < DEFAULT_BUFFER_SIZE ? size : DEFAULT_BUFFER_SIZE);
@@ -217,31 +240,15 @@ public class StringReader2 {
 		}
 		if(buffersize < 20)
 			buffersize = 20;
-		
+
 		return new long[] {size, buffersize};
 	}
-	private static int read(ReaderConfig w, CharsetDecoder decoder, CharBuffer chars, ByteBuffer bytes, StringBuilder sb, int n) throws CharacterCodingException {
-		int cn = 0;
-		while(true) {
-			cn++;
-			CoderResult c  = decoder.decode(bytes, chars, n == -1);
-			checkResult(w, c);
 
-			append(sb, chars);
-			if(c.isUnderflow()) break;
-			c  = decoder.decode(bytes, chars, n == -1);
-		}
-		return cn;
-	}
-	private static void append(StringBuilder sb, CharBuffer chars) {
-		chars.flip();
-		sb.append(chars);
-		chars.clear();
-	}
 	private static void checkResult(ReaderConfig w, CoderResult c) throws CharacterCodingException {
 		if((c.isUnmappable() && w.onUnmappableCharacter == REPORT) || (c.isMalformed() && w.onMalformedInput == REPORT))
 			c.throwException();
-		
+
 	}
+
 
 }
