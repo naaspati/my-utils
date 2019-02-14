@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -21,6 +22,8 @@ import java.util.stream.Stream;
 
 import sam.io.IOConstants;
 import sam.io.fileutils.FilesWalker.FileWalkResult;
+import sam.myutils.Checker;
+import sam.myutils.ThrowException;
 
 public interface FilesUtilsIO {
 	/**
@@ -45,7 +48,7 @@ public interface FilesUtilsIO {
 	 */
 	public static long pipe(InputStream in, OutputStream out) throws IOException  {
 		int dbs = IOConstants.defaultBufferSize();
-		
+
 		int buffersize = in.available() + 5;
 		if(buffersize < 20)
 			buffersize = 20;
@@ -61,6 +64,43 @@ public interface FilesUtilsIO {
 			nread += n;
 		}
 		return nread;
+	}
+
+	public static long pipe(InputStream is, Path path, byte[] buffer) throws IOException {
+		Checker.requireNonNull("is path buffer", is, path, buffer);
+		if(buffer.length == 0)
+			ThrowException.illegalArgumentException("buffer.length == 0");
+
+		try(OutputStream out = Files.newOutputStream(path)) {
+			int n = 0;
+			long size = 0;
+			while((n = is.read(buffer)) > 0) {
+				out.write(buffer, 0, n);
+				size += n;
+			}
+			return size;
+		}
+	}
+	public static long pipe(InputStream in, WritableByteChannel out, byte[] buffer) throws IOException {
+		int n = 0;
+		long size = 0;
+		while((n = in.read(buffer)) > 0) {
+			out.write(ByteBuffer.wrap(buffer, 0, n));
+			size += n;
+		}
+		return size;
+	}
+
+	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
+		if(flip)
+			buffer.flip();
+
+		int n = 0;
+		while(buffer.hasRemaining())
+			n += channel.write(buffer);
+
+		buffer.clear();
+		return n;
 	}
 
 	public static void deleteDir(Path dir) throws IOException {
@@ -80,7 +120,7 @@ public interface FilesUtilsIO {
 		});
 		Files.deleteIfExists(dir); //needed
 	}
-	
+
 	@FunctionalInterface
 	public static interface WalkResult<E> {
 		public FileVisitResult apply(Path path, E e) throws IOException;
@@ -89,13 +129,13 @@ public interface FilesUtilsIO {
 	public static interface WalkConsumer<E> {
 		public void apply(Path path, E e) throws IOException;
 	}
-	
+
 	public static class Walker {
 		private WalkResult<BasicFileAttributes> visitFile;
 		private WalkResult<IOException> visitFileFailed;
 		private WalkResult<BasicFileAttributes> preVisitDirectory;
 		private WalkResult<IOException> postVisitDirectory;
-		
+
 		public Walker visitFile(WalkResult<BasicFileAttributes> visitFile) {
 			this.visitFile = visitFile;
 			return this;
@@ -134,7 +174,7 @@ public interface FilesUtilsIO {
 			this.postVisitDirectory = wrap(postVisitDirectory);
 			return this;
 		}
-		
+
 		public void start(Path start) throws IOException {
 			if(Stream.of(
 					visitFile,
@@ -143,7 +183,7 @@ public interface FilesUtilsIO {
 					preVisitDirectory).allMatch(Objects::isNull)){
 				throw new NullPointerException("no visitor specified");
 			}
-			
+
 			Files.walkFileTree(start, new FileVisitor<Path>() {
 				@Override
 				public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -173,10 +213,10 @@ public interface FilesUtilsIO {
 					return FileVisitResult.CONTINUE;
 				}
 			});
-			
+
 		}
 	}
-	
+
 	public static Walker walker() {
 		return new Walker();
 	}

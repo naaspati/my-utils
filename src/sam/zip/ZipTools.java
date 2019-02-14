@@ -13,7 +13,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-//VERSION = 1.2;
+//VERSION = 1.25;
 public interface ZipTools {
     
 	public static void zip(Path input, Path output, boolean keepRoot) throws IOException {
