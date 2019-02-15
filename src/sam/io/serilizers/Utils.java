@@ -14,6 +14,7 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 
 import sam.io.IOConstants;
+import sam.io.IOUtils;
 
 interface Utils {
 	static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
@@ -62,15 +63,7 @@ interface Utils {
 	}
 
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
-		if(flip)
-			buffer.flip();
-
-		int n = 0;
-		while(buffer.hasRemaining())
-			n += channel.write(buffer);
-
-		buffer.clear();
-		return n;
+		return IOUtils.write(buffer, channel, flip);
 	}
 
 	public static void write(ByteBuffer buffer, Path path) throws IOException {

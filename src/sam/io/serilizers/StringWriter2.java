@@ -1,12 +1,12 @@
 package sam.io.serilizers;
 
 import static java.nio.charset.CodingErrorAction.REPORT;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
-import static sam.io.IOConstants.defaultBufferSize;
 import static sam.io.IOConstants.defaultCharset;
 import static sam.io.IOConstants.defaultOnMalformedInput;
 import static sam.io.IOConstants.defaultOnUnmappableCharacter;
@@ -27,14 +27,12 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.logging.Logger;
 
 import sam.logging.MyLoggerFactory;
 public class StringWriter2 {
 	private static final Logger LOGGER = MyLoggerFactory.logger(StringWriter2.class);
-	private static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 	private static final Charset DEFAULT_CHARSET = defaultCharset();
 
 	public StringWriter2() {}
@@ -119,19 +117,8 @@ public class StringWriter2 {
 		if(s.length() == 0) return;
 		
 		CharsetEncoder encoder = config.encoder();
-		double bytes = encoder.averageBytesPerChar();
-
 		CharBuffer chars = s.getClass() == CharBuffer.class ? (CharBuffer) s : CharBuffer.wrap(s);
-		int buffersize = (int) (chars.length() * bytes);
-
-		buffersize = buffersize > DEFAULT_BUFFER_SIZE ? DEFAULT_BUFFER_SIZE : buffersize;
-		if(buffersize < 50)
-			buffersize = 50;
-
-		if(buffersize%bytes != 0)
-			buffersize = (int) (bytes*(buffersize/bytes + 1));
-
-		ByteBuffer buffer = ByteBuffer.allocate(buffersize);
+		ByteBuffer buffer = ByteBuffer.allocate(StringIOUtils.computeBufferSize(encoder, chars));
 		int loops = 0;
 
 		while(true) {
@@ -169,7 +156,7 @@ public class StringWriter2 {
 			writer().charset(charset).target(fc).write(s);
 			target.transferTo(0, target.size(), fc);
 		}
-		Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING); 
+		Files.move(temp, path, REPLACE_EXISTING); 
 	}
 	private static void checkResult(WriterConfig w, CoderResult c) throws CharacterCodingException {
 		if((c.isUnmappable() && w.onUnmappableCharacter == REPORT) || (c.isMalformed() && w.onMalformedInput == REPORT))
