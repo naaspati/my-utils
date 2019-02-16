@@ -6,6 +6,8 @@ import java.util.function.Consumer;
 import javafx.beans.InvalidationListener;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Labeled;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -15,6 +17,7 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Paint;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import sam.myutils.Checker;
@@ -102,5 +105,19 @@ public interface FxUtils {
 	}
 	public static Background background(Paint fill, CornerRadii radii, Insets insets) {
 		return new Background(new BackgroundFill(fill, radii, insets));
+	}
+	
+	public static void setText(String data, Node...nodes) {
+		for (Node o : nodes) {
+			if( o == null) {}
+			else if(o instanceof Labeled)
+				((Labeled)o).setText(null);
+			else if(o instanceof TextInputControl)
+				((TextInputControl)o).setText(null);
+			else if(o instanceof Text)
+				((Text)o).setText(null);
+			else
+				throw new RuntimeException("unsupported class: "+o.getClass());
+		}
 	}
 }
