@@ -15,10 +15,13 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -27,26 +30,26 @@ import java.util.zip.GZIPOutputStream;
 import sam.logging.MyLoggerFactory;
 public class FileLinesSet implements AutoCloseable {
 	private static final Logger LOGGER = MyLoggerFactory.logger(FileLinesSet.class);
-	
+
 	private Set<String> _old, nnew;
 	private final boolean gzipped;
 	private final Path path;
 	private static final String DATE_MARKER = "#DATE = ";
 	private int mod;
-	
+
 	public FileLinesSet(Path path, boolean gzipped) {
 		this.gzipped = gzipped;
 		this.path = path;
 		nnew = new LinkedHashSet<>();
 	}
-	
+
 	public Set<String> getOld() {
 		return old();
 	}
 	private Set<String> old() {
 		if(_old != null)
 			return _old;
-		
+
 		if(Files.exists(path)) {
 			Set<String> o  = newSet();
 			try(InputStream is = Files.newInputStream(path, READ);
@@ -55,9 +58,9 @@ public class FileLinesSet implements AutoCloseable {
 					BufferedReader reader = new BufferedReader(isr);
 					) {
 				reader.lines().forEach(s -> {
-					if(!s.isEmpty() && (s.charAt(0) != '#' || !s.startsWith(DATE_MARKER)))
+					if(!s.isEmpty() && !isDate(s))
 						o.add(s);
-						
+
 				});
 			} catch (IOException e) {
 				throw new RuntimeException("failed to read: "+path, e);
@@ -68,8 +71,12 @@ public class FileLinesSet implements AutoCloseable {
 			_old = Collections.emptySet();
 			LOGGER.warning("file not found: "+path);
 		}
-		
+
 		return _old;
+	}
+
+	private boolean isDate(String s) {
+		return !s.isEmpty() && s.charAt(0) == '#' && s.startsWith(DATE_MARKER);
 	}
 
 	protected Set<String> newSet() {
@@ -81,7 +88,7 @@ public class FileLinesSet implements AutoCloseable {
 	public boolean isGzipped() {
 		return gzipped;
 	}
-	
+
 	public boolean contains(String s) {
 		return nnew.contains(s) || old().contains(s);
 	}
@@ -94,7 +101,7 @@ public class FileLinesSet implements AutoCloseable {
 		boolean o = old().remove(s);
 		if(o) 
 			mod++;
-		
+
 		boolean n = nnew.remove(s);
 		return o || n;
 	}
@@ -102,31 +109,59 @@ public class FileLinesSet implements AutoCloseable {
 		boolean o = old().removeAll(s);
 		if(o) 
 			mod++;
-		
+
 		boolean n = nnew.removeAll(s);
 		return o || n;
 	} 
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws IOException {
 		if(!isModified())
 			return;
-		
-		try(OutputStream os = Files.newOutputStream(path, CREATE, mod == 0 ? APPEND : TRUNCATE_EXISTING );
+
+		List<String> old = null;
+		boolean truncate = false;
+
+		if(mod != 0) {
+			truncate = true;
+
+			if(!_old.isEmpty() && Files.exists(path)) {
+				Iterator<String> itr = Files.lines(path).iterator();
+				old = new ArrayList<>();
+
+				while (itr.hasNext()) {
+					String s = itr.next();
+					if(isDate(s))
+						old.add(s);
+					else if(_old.contains(s))
+						old.add(s);
+				}
+			}
+		}
+		try(OutputStream os = Files.newOutputStream(path, CREATE, truncate ?  TRUNCATE_EXISTING : APPEND );
 				OutputStream os2 = !gzipped ? os : new GZIPOutputStream(os);
 				OutputStreamWriter osr = new OutputStreamWriter(os2, "utf-8");
 				BufferedWriter write = new BufferedWriter(osr);
 				) {
-			
-			if(mod != 0 && !_old.isEmpty()) {
-				for (String s : _old) 
-					write.append(s).append('\n');
+
+			if(old != null && !old.isEmpty()) {
+				for (int i = 0; i < old.size(); i++) {
+					String s = old.get(i);
+					if(!(isDate(s) && (i == old.size() - 1 || isDate(old.get(i + 1)))))
+						write.append(s).append('\n');
+				}
 			}
+
+			System.out.println(old == null ? null : old.size());
 			
-			write.append("#DATE = "+LocalDateTime.now()).append('\n');
-			
-			for (String s : nnew) 
-				write.append(s).append('\n');
+			if(!nnew.isEmpty()) {
+				write.append("#DATE = "+LocalDateTime.now()).append('\n');
+
+				for (String s : nnew) 
+					write.append(s).append('\n');				
+			}
+
+
 		}
 	}
 
