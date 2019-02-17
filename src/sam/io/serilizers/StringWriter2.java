@@ -1,6 +1,5 @@
 package sam.io.serilizers;
 
-import static java.nio.charset.CodingErrorAction.REPORT;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -10,29 +9,20 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static sam.io.IOConstants.defaultCharset;
 import static sam.io.IOConstants.defaultOnMalformedInput;
 import static sam.io.IOConstants.defaultOnUnmappableCharacter;
-import static sam.io.serilizers.Utils.write;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.logging.Logger;
-
-import sam.logging.MyLoggerFactory;
 public class StringWriter2 {
-	private static final Logger LOGGER = MyLoggerFactory.logger(StringWriter2.class);
 	private static final Charset DEFAULT_CHARSET = defaultCharset();
 
 	public StringWriter2() {}
@@ -114,32 +104,7 @@ public class StringWriter2 {
 		.write(s);
 	}
 	public static void writeText(WritableByteChannel channel, CharSequence s, WriterConfig config) throws IOException {
-		if(s.length() == 0) return;
-		
-		CharsetEncoder encoder = config.encoder();
-		CharBuffer chars = s.getClass() == CharBuffer.class ? (CharBuffer) s : CharBuffer.wrap(s);
-		ByteBuffer buffer = ByteBuffer.allocate(StringIOUtils.computeBufferSize(encoder, chars));
-		int loops = 0;
-
-		while(true) {
-			loops++;
-			CoderResult c = encoder.encode(chars, buffer, true);
-			checkResult(config, c);
-
-			write(buffer, channel, true);
-
-			if(!chars.hasRemaining()) {
-				while(true) {
-					c = encoder.flush(buffer);
-					write(buffer, channel, true);
-					if(c.isUnderflow()) break;
-				}
-				break;
-			}
-		}
-
-		int t2 = loops;
-		LOGGER.fine(() -> "WRITE { charset:"+config.charset()+", CharSequence.length:"+s.length()+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+t2+"}"); 
+		StringIOUtils.write(channel, s, config.encoder(), config.onUnmappableCharacter, config.onMalformedInput);
 	}
 
 	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {
@@ -157,9 +122,5 @@ public class StringWriter2 {
 			target.transferTo(0, target.size(), fc);
 		}
 		Files.move(temp, path, REPLACE_EXISTING); 
-	}
-	private static void checkResult(WriterConfig w, CoderResult c) throws CharacterCodingException {
-		if((c.isUnmappable() && w.onUnmappableCharacter == REPORT) || (c.isMalformed() && w.onMalformedInput == REPORT))
-			c.throwException();
 	}
 }

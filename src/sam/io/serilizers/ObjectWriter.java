@@ -15,10 +15,9 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import sam.functions.IOExceptionBiConsumer;
-
-import java.util.Objects;
 
 public final class ObjectWriter {
 	public static  WriterConfig writer() {

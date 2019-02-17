@@ -1,18 +1,18 @@
-import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import sam.nopkg.AutoCloseableWrapper;
-import sam.nopkg.FileLinesSet;
-import sam.reference.ReferencePool;
-import sam.reference.WeakPool;
+import sam.nopkg.SavedAsStringResource;
 
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		FileLinesSet set = new FileLinesSet(Paths.get("temp"), false);
-		set.add(String.valueOf(System.currentTimeMillis()));
-		 set.remove("1550399529629");
-		set.close();
+		Path p = Paths.get("temp");
+		// Files.deleteIfExists(p);
+		SavedAsStringResource<Path> ss = new SavedAsStringResource<>(p, Paths::get);
+		
+		System.out.println(p.equals(ss.get()));
+		System.out.println(p.toString().equals(ss.get().toString()));
+		ss.close();
+		
 	}
-
 }

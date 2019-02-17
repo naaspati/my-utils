@@ -1,10 +1,11 @@
 package sam.books;
-import static sam.books.BooksMeta.*;
+import static sam.books.BooksMeta.BOOK_TABLE_NAME;
+import static sam.books.BooksMeta.CHANGE_LOG_TABLE_NAME;
+import static sam.books.BooksMeta.DML_TYPE;
 import static sam.books.BooksMeta.ID;
 import static sam.books.BooksMeta.LOG_NUMBER;
 import static sam.books.BooksMeta.PATH_TABLE_NAME;
 import static sam.books.BooksMeta.TABLENAME;
-import static sam.books.BooksMeta.DML_TYPE;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,5 +1,9 @@
 package sam.books;
-import static sam.books.BooksMeta.*;
+import static sam.books.BooksMeta.MARKER;
+import static sam.books.BooksMeta.PATH;
+import static sam.books.BooksMeta.PATH_ID;
+import static sam.books.BooksMeta.PATH_TABLE_NAME;
+
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;

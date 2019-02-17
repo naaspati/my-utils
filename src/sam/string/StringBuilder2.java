@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 import sam.console.ANSI;
-import sam.myutils.Checker;
 
 public class StringBuilder2 implements Appendable, CharSequence, Externalizable {
     private static final long serialVersionUID = -5771932955099124983L;

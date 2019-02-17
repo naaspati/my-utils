@@ -1,14 +1,15 @@
 package sam.books;
 import static sam.books.BooksMeta.AUTHOR;
 import static sam.books.BooksMeta.BOOK_ID;
+import static sam.books.BooksMeta.BOOK_TABLE_NAME;
 import static sam.books.BooksMeta.DESCRIPTION;
 import static sam.books.BooksMeta.FILE_NAME;
 import static sam.books.BooksMeta.ISBN;
 import static sam.books.BooksMeta.NAME;
 import static sam.books.BooksMeta.PAGE_COUNT;
 import static sam.books.BooksMeta.PATH_ID;
+import static sam.books.BooksMeta.PATH_TABLE_NAME;
 import static sam.books.BooksMeta.STATUS;
-import static sam.books.BooksMeta.*;
 import static sam.books.BooksMeta.URL;
 import static sam.books.BooksMeta.YEAR;
 

@@ -4,8 +4,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 
-import sam.io.fileutils.DirWatcher;
-
 public abstract class FileWatcher extends DirWatcher {
 	private final Path name;
 

@@ -1,5 +1,10 @@
 package sam.collection;
 
+import static java.util.Spliterator.IMMUTABLE;
+import static java.util.Spliterator.NONNULL;
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterator.SIZED;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,8 +18,6 @@ import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static java.util.Spliterator.*;
 
 public final class IndexedMap<E> implements Iterable<E> {
 	private final E[] array0;
