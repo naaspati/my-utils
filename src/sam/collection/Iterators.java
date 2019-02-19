@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -145,4 +146,7 @@ public interface Iterators {
 			}
 		};
 	}
+	public static <E> Iterator<E> filtered(Iterator<E> itr, Predicate<E> filter) {
+		return new FilteredIterator<>(itr, filter);
+	} 
 }
