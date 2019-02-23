@@ -17,13 +17,18 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import sam.io.IOUtils;
 
 public final class StringIOUtils {
-	static final Logger LOGGER = Logger.getLogger(StringIOUtils.class.getSimpleName());
-	static final int SIZE = 0, BUFFER_SIZE = 1; 
+
+	public static interface BufferFiller {
+		int fill(ByteBuffer buffer) throws IOException;
+		int size() throws IOException ;
+	}
+	public static interface BufferConsumer {
+		int consume(ByteBuffer buffer) throws IOException;
+	}
 
 	public static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 
@@ -42,88 +47,108 @@ public final class StringIOUtils {
 	public static int computeBufferSize(CharsetEncoder encoder, CharSequence chars) {
 		return computeBufferSize(encoder.averageBytesPerChar(), chars.length());
 	}
-	public static void write(WritableByteChannel c, CharSequence s) throws IOException {
-		write(c, s, defaultCharset().newEncoder(), REPORT, REPORT);
+	public static void write(BufferConsumer consumer, CharSequence s) throws IOException {
+		write(consumer, s, defaultCharset().newEncoder(), REPORT, REPORT);
 	}
-	public static void write(WritableByteChannel c, CharSequence s, CharsetEncoder encoder) throws IOException {
-		write(c, s, encoder, REPORT, REPORT);
+	public static BufferConsumer consumer(WritableByteChannel channel) {
+		return buffer -> IOUtils.write(buffer, channel, true);
 	}
-	public static void write(WritableByteChannel c, CharSequence s, CharsetEncoder encoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		write(c, s, encoder, ByteBuffer.allocate(computeBufferSize(encoder, s)), onUnmappableCharacter, onMalformedInput);
+	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder) throws IOException {
+		write(consumer, s, encoder, REPORT, REPORT);
 	}
-	public static void write(WritableByteChannel channel, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		write(consumer, s, encoder, ByteBuffer.allocate(computeBufferSize(encoder, s)), onUnmappableCharacter, onMalformedInput);
+	}
+	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		if(s.length() == 0) return;
 
 		CharBuffer chars = s instanceof CharBuffer ? (CharBuffer) s : CharBuffer.wrap(s);
-		int loops = 0;
 
 		while(true) {
-			loops++;
 			CoderResult c = encoder.encode(chars, buffer, true);
 			checkResult(c, onUnmappableCharacter, onMalformedInput);
 
-			IOUtils.write(buffer, channel, true);
+			consumer.consume(buffer);
 
 			if(!chars.hasRemaining()) {
 				while(true) {
 					c = encoder.flush(buffer);
-					IOUtils.write(buffer, channel, true);
+					consumer.consume(buffer);
 					if(c.isUnderflow()) break;
 				}
 				break;
 			}
 		}
-
-		int t2 = loops;
-		LOGGER.fine(() -> "WRITE { charset:"+encoder.charset()+", CharSequence.length:"+s.length()+", ByteBuffer.capacity:"+buffer.capacity()+", loopCount:"+t2+"}"); 
 	}
 
-	public static StringBuilder read(ReadableByteChannel c) throws IOException {
+	public static BufferFiller filler(ReadableByteChannel channel) {
+		Objects.requireNonNull(channel);
+
+		return new BufferFiller() {
+			@Override
+			public int fill(ByteBuffer buffer) throws IOException {
+				return channel.read(buffer);
+			}
+
+			@Override
+			public int size() throws IOException {
+				if(channel instanceof FileChannel) {
+					FileChannel f = (FileChannel) channel;
+					return (int) (f.size() - f.position());
+				}
+				return -1;
+			}
+		};
+	}
+
+	public static StringBuilder read(BufferFiller filler) throws IOException {
 		StringBuilder sb = new StringBuilder();
-		read(c, sb);
+		read(filler, sb);
 		return sb;
 	}
-	public static void read(ReadableByteChannel c, Appendable sink) throws IOException {
-		read(c, sink, null, null, null);
+
+	public static void read(BufferFiller filler, Appendable sink) throws IOException {
+		read(filler, sink, null, null, null);
 	}
-	public static void read(ReadableByteChannel c, Appendable sink, CharsetDecoder decoder) throws IOException {
-		read(c, sink, decoder, null, null);
+	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder) throws IOException {
+		read(filler, sink, decoder, null, null);
 	}
-	public static void read(ReadableByteChannel c, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		read(c, sink, decoder, null, null, onUnmappableCharacter, onMalformedInput);
+	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		read(filler, sink, decoder, null, null, onUnmappableCharacter, onMalformedInput);
 	}
-	public static void read(ReadableByteChannel channel, Appendable sink, CharsetDecoder decoder, CharBuffer chars, ByteBuffer buf, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder, CharBuffer chars, ByteBuffer buf, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		Objects.requireNonNull(sink);
+		int size0 = filler.size();
 
-		long[] bs = compute(channel);
-
-		if(bs[SIZE] == 0) 
+		if(size0 == 0) 
 			return;
-		
+
+		int size = size0 < 0 ? DEFAULT_BUFFER_SIZE : size0;
+
 		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);
 		onMalformedInput = orElse(onMalformedInput, REPORT);
-		
+
 		decoder = orElse(decoder, () -> defaultCharset().newDecoder());
 		decoder.reset();
 		double d = decoder.averageCharsPerByte();
 		int bytesPer = (int) Math.round(d);
 
-		int buffersize = (int) bs[BUFFER_SIZE];
+		chars = orElse(chars, () -> CharBuffer.allocate(size/bytesPer > 100 ? 100 : size/bytesPer));
+		buf = orElse(buf, () -> ByteBuffer.allocate(size));
 
-		chars = orElse(chars, () -> CharBuffer.allocate(buffersize/bytesPer > 100 ? 100 : buffersize/bytesPer));
-		buf = orElse(buf, () -> ByteBuffer.allocate(buffersize));
-		
-		if(sink instanceof StringBuilder) {
-			StringBuilder sb = (StringBuilder) sink; 
-			sb.ensureCapacity(sb.length() + (int) (bs[SIZE]/bytesPer)+10);
-		}
-		else if(sink instanceof StringBuffer) {
-			StringBuffer sb = (StringBuffer) sink; 
-			sb.ensureCapacity(sb.length() + (int) (bs[SIZE]/bytesPer)+10);
+		if(size != DEFAULT_BUFFER_SIZE) {
+			if(sink instanceof StringBuilder) {
+				StringBuilder sb = (StringBuilder) sink; 
+				sb.ensureCapacity(sb.length() + (int) (size/bytesPer)+10);
+			}
+			else if(sink instanceof StringBuffer) {
+				StringBuffer sb = (StringBuffer) sink; 
+				sb.ensureCapacity(sb.length() + (int) (size/bytesPer)+10);
+			}
 		}
 
 		while(true) {
-			int read = channel.read(buf);
+			int read = filler.fill(buf);
 			boolean endOfInput = read == -1;
 			buf.flip();
 
@@ -173,24 +198,6 @@ public final class StringIOUtils {
 		if(chars.hasRemaining())
 			sb.append(chars);
 		chars.clear();
-	}
-	static long[] compute(ReadableByteChannel c) throws IOException {
-		long[] sizes = {-1, -1}; 
-
-		if(c instanceof FileChannel) {
-			long size = sizes[SIZE] = ((FileChannel)c).size();
-			if(size == 0)
-				return sizes;
-
-			sizes[BUFFER_SIZE] = (int)(size < DEFAULT_BUFFER_SIZE ? size : DEFAULT_BUFFER_SIZE);
-		} else {
-			sizes[SIZE] = -1;
-			sizes[BUFFER_SIZE] = DEFAULT_BUFFER_SIZE;
-		}
-		if(sizes[BUFFER_SIZE] < 20)
-			sizes[BUFFER_SIZE] = 20;
-
-		return sizes;
 	}
 
 	private static void checkResult(CoderResult c, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws CharacterCodingException {

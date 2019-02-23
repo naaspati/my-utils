@@ -51,6 +51,23 @@ public interface IOUtils {
 			return size;
 		}
 	}
+	public static long pipe(Path input, OutputStream out, byte[] buffer) throws IOException {
+		Checker.requireNonNull("input out buffer", input, out, buffer);
+		
+		if(buffer.length == 0)
+			ThrowException.illegalArgumentException("buffer.length == 0");
+
+		try(InputStream is = Files.newInputStream(input)) {
+			int n = 0;
+			long size = 0;
+			
+			while((n = is.read(buffer)) > 0) {
+				out.write(buffer, 0, n);
+				size += n;
+			}
+			return size;
+		}
+	}
 	public static long pipe(InputStream in, WritableByteChannel out, byte[] buffer) throws IOException {
 		int n = 0;
 		long size = 0;

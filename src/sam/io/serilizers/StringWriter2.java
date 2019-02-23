@@ -104,10 +104,9 @@ public class StringWriter2 {
 		.write(s);
 	}
 	public static void writeText(WritableByteChannel channel, CharSequence s, WriterConfig config) throws IOException {
-		StringIOUtils.write(channel, s, config.encoder(), config.onUnmappableCharacter, config.onMalformedInput);
+		StringIOUtils.write(StringIOUtils.consumer(channel), s, config.encoder(), config.onUnmappableCharacter, config.onMalformedInput);
 	}
-
-	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {
+ 	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {
 		appendTextAtBegining(path, s, Charset.forName(charset));
 	}
 	public static void appendTextAtBegining(Path path, CharSequence s) throws IOException {

@@ -24,7 +24,6 @@ public abstract class SavedResource<E> implements AutoCloseable {
 		}
 	}
 	
-	
 	@Override
 	public void close() throws IOException {
 		if(isModified())

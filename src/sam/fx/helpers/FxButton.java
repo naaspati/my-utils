@@ -1,9 +1,9 @@
 package sam.fx.helpers;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
@@ -18,12 +18,12 @@ public interface FxButton {
 	public static Button button(String text, EventHandler<ActionEvent> action) {
 		return button(text, action, null); 
 	}
-	public static Button button(String text, EventHandler<ActionEvent> action, Consumer<Button> modifier) {
+	public static Button button(String text, EventHandler<ActionEvent> action, ObservableValue<? extends Boolean> disable) {
 		Button b = new Button(text);
 		if(action != null)
 			b.setOnAction(action);
-		if(modifier != null)
-			modifier.accept(b);
+		if(disable != null)
+			b.disableProperty().bind(disable);
 		return b;
 	} 
 

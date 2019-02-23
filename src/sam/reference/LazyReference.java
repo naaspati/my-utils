@@ -57,8 +57,11 @@ public class LazyReference<E> {
 	public boolean isPresent(){
 		return peek() != null;
 	}
+	public E getIfPresent(){
+		return peek();
+	}
 	public void ifPresent(Consumer<E> action){
-		E e = pop();
+		E e = peek();
 
 		if(e != null) {
 			action.accept(e);

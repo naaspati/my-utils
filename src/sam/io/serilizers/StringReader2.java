@@ -115,7 +115,7 @@ public class StringReader2 {
 	}
 	public static StringBuilder getText0(ReadableByteChannel c, ReaderConfig config, StringBuilder sink) throws IOException {
 		StringBuilder sb = new StringBuilder();
-		StringIOUtils.read(c, sink, config.decoder(), config.onUnmappableCharacter, config.onMalformedInput);
+		StringIOUtils.read(StringIOUtils.filler(c), sink, config.decoder(), config.onUnmappableCharacter, config.onMalformedInput);
 		return sb;
 	}
 }
