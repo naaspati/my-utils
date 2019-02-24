@@ -154,7 +154,7 @@ public final class Checker {
 		if(n == variables.length)
 			return;
 
-		String[] s = variableNames.split("\\s+");
+		String[] s = variableNames.split("\\s+|(?:\\s*,\\s*)");
 		StringBuilder sb = new StringBuilder();
 
 		n--;
