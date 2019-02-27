@@ -5,6 +5,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -84,23 +86,25 @@ public interface MyUtilsPath {
 		}
 	}
 	
-	public static final Path TEMP_DIR = (
-			(Supplier<Path>)(() -> {
-				Path p = Paths.get(System.getProperty("java.io.tmpdir"));
-				if(Files.notExists(p))
-					throw new RuntimeException("not found: "+p);
-				return p;
-			})).get();
+	public static final Path TEMP_DIR = AccessController.doPrivileged((PrivilegedAction<Path>)() -> {
+		Path p = Paths.get(System.getProperty("java.io.tmpdir"));
+		if(Files.notExists(p))
+			throw new RuntimeException("not found: "+p);
+		return p;
+	});
+			
 	
 	public static String pathFormattedDateTime() {
 		return LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy'T'HH.mm"));
 	}
 
-	public static final Path SELF_DIR = Optional.ofNullable(System2.lookup("SELF_DIR")).map(Paths::get).filter(f -> {
-		if(Files.notExists(f))
-			throw new IllegalStateException("SELF_DIR not found: "+f);
-		return true;
-	}).orElse(null);
+	public static final Path SELF_DIR = AccessController.doPrivileged((PrivilegedAction<Path>)() -> {
+				return Optional.ofNullable(System2.lookup("SELF_DIR")).map(Paths::get).filter(f -> {
+					if(Files.notExists(f))
+						throw new IllegalStateException("SELF_DIR not found: "+f);
+					return true;
+				}).orElse(null);
+			});
 	
 	public static Path selfDir() {
 		if(SELF_DIR == null)

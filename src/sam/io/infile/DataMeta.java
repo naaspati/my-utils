@@ -11,4 +11,9 @@ public class DataMeta {
 
 	public final long position() { return position; }
 	public final long size() { return size; }
+
+	@Override
+	public String toString() {
+		return "DataMeta [position=" + position + ", size=" + size + "]";
+	}
 }

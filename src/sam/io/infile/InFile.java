@@ -1,90 +1,133 @@
 package sam.io.infile;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.BufferOverflowException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ConcurrentModificationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import sam.io.IOConstants;
-import sam.io.IOUtils;
-import sam.logging.Logger;
-
+import sam.functions.IOExceptionConsumer;
+import sam.functions.IOExceptionSupplier;
 
 public class InFile implements AutoCloseable {
-	private static final Logger LOGGER = Logger.getLogger(InFile.class);
-
-	private static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
-	private final FileChannel file;
-	private final Path temp, filepath;
+	private final AtomicBoolean inUse = new AtomicBoolean();
+	private final AtomicBoolean closed = new AtomicBoolean();
+	private final InFileImpl file;
 	
 	public InFile(Path path, boolean createIfNotExits) throws IOException {
-		Objects.requireNonNull(path);
-		this.filepath = path;
-		
-		if(!createIfNotExits && !Files.isRegularFile(path))
-			throw new FileNotFoundException("file not found: "+path);
-		
-		this.temp = Files.createTempFile(null, null);
-		if(Files.exists(path))
-			Files.copy(path, temp, StandardCopyOption.REPLACE_EXISTING);
-		
-		file = FileChannel.open(temp, READ, WRITE);
-		file.position(file.size());
-		
-		System.out.println(temp);
+		this.file = new InFileImpl(path, createIfNotExits);
 	}
-	
-	public long position() throws IOException { return file.position(); }
-	public int write(InputStream is, byte[] buffer) throws IOException {
-		return (int) IOUtils.pipe(is, file, buffer);
+
+	private void checkClosed() throws ClosedChannelException {
+		if(closed.get())
+			throw new ClosedChannelException();
+	}
+
+	public Path getPath() {
+		return file.getPath();
+	}
+	public long size() throws IOException {
+		checkClosed();
+		return file.size();
+	}
+	public long acutualSize() throws IOException {
+		checkClosed();
+		return file.acutualSize();
+	}
+	public DataMeta write(ByteBuffer buffer) throws IOException {
+		checkClosed();
+		lock();
+
+		try {
+			return file.write(buffer);	
+		} finally {
+			unlock();
+		}
+	}
+	public DataMeta write(IOExceptionSupplier<ByteBuffer> buffers) throws IOException {
+		checkClosed();
+		lock();
+
+		try {
+			return file.write(buffers);	
+		} finally {
+			unlock();
+		}
+		
+	}
+	public int write2(IOExceptionSupplier<ByteBuffer> buffers) throws IOException {
+		checkClosed();
+		lock();
+
+		try {
+			return file.write2(buffers);	
+		} finally {
+			unlock();
+		}
+		
 	}
 	public ByteBuffer read(DataMeta meta, ByteBuffer buffer) throws IOException {
-		synchronized (file) {
-			Objects.requireNonNull(meta);
-			
-			if(meta.size == 0)
-				return buffer == null ? ByteBuffer.allocate(0) : buffer;
+		checkClosed();
+		lock();
 
-			if(buffer != null && (buffer.position() != 0 || buffer.limit() != buffer.capacity()))
-				throw new IOException("defaultBuffer.position("+buffer.position()+") != 0 || defaultBuffer.limit("+buffer.limit()+") != defaultBuffer.capacity("+buffer.capacity()+")");
-				
-			if(buffer == null || buffer.capacity() < meta.size) {
-				int oldsize = buffer == null ? -1 : buffer.capacity();
-				buffer = ByteBuffer.allocate(meta.size);
-				
-				LOGGER.debug("Buffer created: {} -> buffer({})", oldsize == -1 ? null : "buffer("+oldsize+")", meta.size);
-			}
-			
-			buffer.clear();
-			buffer.limit(meta.size);
-			
-			while(buffer.hasRemaining() && file.read(buffer, meta.position + buffer.position()) != -1) {
-			}
-			
-			if(buffer.hasRemaining()) 
-				throw new IOException(String.format("expected-to-read:%s, but-read:%s ", meta.size, buffer.position()));
-			
-			buffer.flip();
-			return buffer;
+		try {
+			return file.read(meta, buffer);	
+		} finally {
+			unlock();
 		}
-	} 
-	
-	@Override
+		
+	}
+	public void read(DataMeta meta, ByteBuffer buffer, IOExceptionConsumer<ByteBuffer> bufferConsumer) throws IOException {
+		checkClosed();
+		lock();
+
+		try {
+			file.read(meta, buffer, bufferConsumer);	
+		} finally {
+			unlock();
+		}
+		
+	}
+	public void transfer(Iterable<DataMeta> metas, WritableByteChannel target, ByteBuffer buffer) throws IOException {
+		checkClosed();
+		lock();
+
+		try {
+			file.transfer(metas, target, buffer);
+		} finally {
+			unlock();
+		}
+
+	}
+
+	/**
+	 * never use inside try block, 
+	 * if used finally block will unlock(), regardless lock was obtained
+	 */
+	private void lock() {
+		if(!this.inUse.compareAndSet(false, true))
+			throw new ConcurrentModificationException("already in use");
+	}
+	private void unlock() {
+		this.inUse.set(false);
+	}
+
 	public void close() throws IOException {
-		file.close();
-		Files.move(temp, filepath, StandardCopyOption.REPLACE_EXISTING);
+		if(closed.get())
+			return;
+
+		lock();
+
+		try {
+			if(closed.get())
+				return;
+
+			file.close();
+			closed.set(true);
+		} finally {
+			unlock();
+		}
 	}
 }

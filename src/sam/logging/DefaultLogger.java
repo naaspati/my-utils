@@ -1,6 +1,8 @@
 package sam.logging;
 
 import java.lang.ref.WeakReference;
+import java.util.ResourceBundle;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -13,36 +15,50 @@ class DefaultLogger implements Logger {
 	public boolean isEnabled(Level level){
 		return logger.isLoggable(level);
 	} 
-	public void log(LogRecord record) {
-		logger.log(record);
-	}
+
 	public void log(Level level, String msg, Object arg) {
 		if(!isEnabled(level))
 			return;
+		
+		msg = convert(msg);
 
 		if(arg instanceof Throwable) 
 			logger.log(level, msg, (Throwable)arg);
-		else {
-			LogRecord lr = new LogRecord(level, convert(msg));
-			lr.setParameters(new Object[]{arg});
-			log(lr);
-		}
+		else 
+			logger.log(level, msg, new Object[]{arg});
 	}
 	public void log(Level level, String format, Object...args) {
 		if(!isEnabled(level))
 			return;
+		
+		format = convert(format);
 
-		LogRecord lr = new LogRecord(level, convert(format));
+		Throwable t  = null;
 		if(args.length > 0 && args[args.length - 1] instanceof Throwable )
-			lr.setThrown((Throwable) args[args.length - 1]);
+			t = (Throwable) args[args.length - 1];
 
-		log(lr);
+		LogRecord lr = new LogRecord(level, format);
+		lr.setParameters(args);
+		if(t != null)
+			lr.setThrown(t);
+		
+		lr.setLoggerName(logger.getName());
+		
+		final ResourceBundle  bundle = logger.getResourceBundle();
+		final String ebname = logger.getResourceBundleName();
+		
+		if (ebname != null && bundle != null) {
+			lr.setResourceBundleName(ebname);
+			lr.setResourceBundle(bundle);
+		}
+		
+		logger.log(lr);
 	}
 
 	private static WeakReference<StringBuilder> wsb = new WeakReference<StringBuilder>(null);
 	private static final Object LOCK = new Object();
 
-	private String convert(String s){
+	private String convert(String s) {
 		int end = s.indexOf('{');
 		int start = 0;
 		if(end < 0)
@@ -61,15 +77,15 @@ class DefaultLogger implements Logger {
 					sb.append(k++);
 					found++;
 				}
-				
+
 				start = end + 1;
 				end = s.indexOf('{', start);
 				if(end < 0) {
-					sb.append(s, end + 1, s.length());
+					sb.append(s, start, s.length());
 					break;
 				}
 			}
-			
+
 			if(found == 0) {
 				sb.setLength(0);
 				return s;
@@ -104,6 +120,10 @@ class DefaultLogger implements Logger {
 	@Override
 	public void info(String msg, Throwable t) {
 		logger.log(Level.INFO, msg, t);
+	}
+	@Override
+	public void info(Supplier<String> msgSupplier) {
+		logger.info(msgSupplier);
 	}
 
 	@Override
@@ -157,6 +177,10 @@ class DefaultLogger implements Logger {
 		logger.log(Level.SEVERE, msg, t);
 	}
 
+	@Override
+	public void debug(Supplier<String> msgSupplier) {
+		logger.fine(msgSupplier);
+	}
 	@Override
 	public void debug(String msg) {
 		logger.fine(msg);

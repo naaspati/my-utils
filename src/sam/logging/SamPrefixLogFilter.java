@@ -6,7 +6,8 @@ import java.util.logging.LogRecord;
 public class SamPrefixLogFilter implements Filter {
 	@Override
 	public boolean isLoggable(LogRecord record) {
-		return record.getLoggerName().startsWith("sam.");
+		String s = record.getLoggerName(); 
+		return s == null ? true : s.startsWith("sam.");
 	}
 	
 }

@@ -56,6 +56,7 @@ public interface Logger {
 
 	boolean isDebugEnabled();
 	void debug(String msg);
+	void debug(Supplier<String> msgSupplier);
 	void debug(String format, Object arg);
 	void debug(String format, Object arg1, Object arg2);
 	void debug(String format, Object... arguments);
@@ -63,6 +64,7 @@ public interface Logger {
 
 	boolean isInfoEnabled();
 	void info(String msg);
+	void info(Supplier<String> msgSupplier);
 	void info(String format, Object arg);
 	void info(String format, Object arg1, Object arg2);
 	void info(String format, Object... arguments);
@@ -81,10 +83,5 @@ public interface Logger {
 	void error(String format, Object arg1, Object arg2);
 	void error(String format, Object... arguments);
 	void error(String msg, Throwable t);
-
-	default void debug(Supplier<String> s) {
-		if(isDebugEnabled())
-			debug(s.get());
-	}
 
 }

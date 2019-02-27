@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.Test;
 
 public class AutoCloseableWrapperTest {
 	
 	@Test
-	public void testManualClose() {
+	public void testManualClose() throws IOException {
 		String value = String.valueOf(System.currentTimeMillis());
 		int[] called = {0};
 		AutoCloseableWrapper<String> s = new AutoCloseableWrapper<>(() -> {

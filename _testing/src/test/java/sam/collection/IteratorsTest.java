@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 public class IteratorsTest {
-	private static final Logger LOGGER = Logger.getLogger(IteratorsTest.class.getSimpleName());
+	private static final Logger LOGGER = Logger.getLogger(IteratorsTest.class);
 
 	@Test
 	public void join_test_must_throw_nullpointerexcetion() {
