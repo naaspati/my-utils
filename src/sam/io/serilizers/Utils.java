@@ -58,10 +58,6 @@ interface Utils {
 		buffer.putInt(value);
 		write(buffer, c, true);
 	}
-	static String log(String prefix, String arrayType, int length, int bufferCapacity, int loopsCount, int bytesCount) {
-		return prefix+" { "+arrayType+".length:"+length+", bytes: "+bytesCount+", capacity:"+bufferCapacity+", loopCount:"+loopsCount+"}";
-	}
-
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		return IOUtils.write(buffer, channel, flip);
 	}

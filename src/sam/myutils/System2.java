@@ -8,11 +8,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 
 public final class System2 {
-	private static final Logger _LOGGER = Logger.getLogger(System2.class.getName());
+	private static final Logger _LOGGER = Logger.getLogger(System2.class);
 	private static final FileWriter lookupWriter;
 	private static final boolean loggable;
 	
@@ -31,18 +30,18 @@ public final class System2 {
 				}
 				_LOGGER.info("dumping System2.lookups in: "+p.getAbsolutePath());
 			} else
-				_LOGGER.severe("bad value for DUMP_LOOKUP: \""+s+"\", possible values are[true,false]");
+				_LOGGER.error("bad value for DUMP_LOOKUP: \""+s+"\", possible values are[true,false]");
 		}
 		
 		lookupWriter = w;
-		loggable = lookupWriter != null || _LOGGER.isLoggable(Level.FINE);
+		loggable = lookupWriter != null || _LOGGER.isDebugEnabled();
 		if(lookupWriter != null) {
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
 					lookupWriter.flush();
 					lookupWriter.close();
 				} catch (IOException e) {
-					_LOGGER.log(Level.SEVERE, "failed to close ", e);
+					_LOGGER.error("failed to close ", e);
 				}
 			}));
 		}
@@ -72,7 +71,7 @@ public final class System2 {
 			return;
 		
 		String s = msg.get();
-		_LOGGER.fine(s);
+		_LOGGER.debug(s);
 		
 		if(lookupWriter != null) {
 			try {
@@ -80,7 +79,7 @@ public final class System2 {
 				lookupWriter.append('\n');
 				lookupWriter.flush();
 			} catch (IOException e) {
-				_LOGGER.log(Level.SEVERE, "failed to dump lookups", e);
+				_LOGGER.error("failed to dump lookups", e);
 			}
 		}
 	}
@@ -109,7 +108,7 @@ public final class System2 {
 			case "off": return false;
 			
 			default:
-				_LOGGER.warning("Unknown boolean value: "+booleanString);
+				_LOGGER.warn("Unknown boolean value: "+booleanString);
 				return defaultValue;
 		}
 	}

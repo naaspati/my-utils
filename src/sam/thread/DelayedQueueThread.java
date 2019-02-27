@@ -9,12 +9,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 
-import sam.logging.MyLoggerFactory;
+import sam.logging.Logger;
 
 public class DelayedQueueThread<E>  {
-	private static final Logger LOGGER = MyLoggerFactory.logger(DelayedQueueThread.class);
+	private static final Logger LOGGER = Logger.getLogger(DelayedQueueThread.class);
 
 	private static final Object CONTINUE = new Object();
 	private static final Object STOP = new Object();
@@ -44,7 +43,7 @@ public class DelayedQueueThread<E>  {
 	}
 
 	public void start()  {
-		LOGGER.fine("STARTED: "+getClass().getName());
+		LOGGER.debug(() -> "STARTED: "+getClass().getName());
 		thread.start();
 	}
 

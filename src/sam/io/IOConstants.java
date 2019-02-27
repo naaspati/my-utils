@@ -6,12 +6,12 @@ import static java.nio.charset.CodingErrorAction.REPORT;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 
 import sam.myutils.System2;
 
 public final class IOConstants {
-	private static final Logger LOGGER = Logger.getLogger(IOConstants.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(IOConstants.class);
 
 	private final static CodingErrorAction DEFAULT_ON_MALFORMED = getCodingErrorAction("onMalformedInput", "ON_MALFORMED_INPUT");
 	private final static CodingErrorAction DEFAULT_ON_UNMAPPABLE_CHARACTER = getCodingErrorAction("onUnmappableCharacter", "ON_UNMAPPABLE_CHARACTER");
@@ -36,7 +36,7 @@ public final class IOConstants {
 			case "REPORT":
 				return REPORT;
 			default:
-				LOGGER.warning("unknown value: "+s);
+				LOGGER.warn("unknown value: {}", s);
 				return REPORT;
 		}
 	}
@@ -45,7 +45,7 @@ public final class IOConstants {
 	private static Charset dc() {
 		String s = System2.lookupAny("sam.charset", "DEFAULT_CHARSET");
 		Charset c = Charset.forName(s != null ? s: "utf-8");
-		LOGGER.config("DEFAULT_CHARSET: "+DEFAULT_CHARSET);
+		LOGGER.debug("DEFAULT_CHARSET: {}",DEFAULT_CHARSET);
 		return c;
 	}
 
@@ -61,7 +61,7 @@ public final class IOConstants {
 		if(bufferSize < 512)
 			throw new RuntimeException("minimum buffer size can be: 512, but given "+bufferSize);
 
-		LOGGER.config("DEFAULT_BUFFER_SIZE: "+bufferSize);		
+		LOGGER.debug("DEFAULT_BUFFER_SIZE: {}",bufferSize);		
 		return bufferSize;		
 	}
 

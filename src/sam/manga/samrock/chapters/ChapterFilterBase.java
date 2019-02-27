@@ -1,15 +1,12 @@
 	package sam.manga.samrock.chapters;
 
 import java.util.function.DoublePredicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import sam.logging.MyLoggerFactory;
+import sam.logging.Logger;
 
 public abstract class ChapterFilterBase implements DoublePredicate {
 	public final int manga_id;
-	private static final Logger LOGGER = MyLoggerFactory.logger(ChapterFilterBase.class);
-	private static final boolean logable = LOGGER.isLoggable(Level.FINE);
+	private static final Logger LOGGER = Logger.getLogger(ChapterFilterBase.class);
+	private static final boolean logable = LOGGER.isDebugEnabled();
 	private StringBuilder sb;
 	
 	protected boolean complete;
@@ -51,7 +48,7 @@ public abstract class ChapterFilterBase implements DoublePredicate {
 				sb.setLength(sb.length() - 2);
 			sb.append("]]");
 			String s = sb.toString();
-			LOGGER.fine(() -> s);
+			LOGGER.debug(s);
 			sb = null;
 			return s;
 		}

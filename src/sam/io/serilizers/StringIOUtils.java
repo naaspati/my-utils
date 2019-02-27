@@ -7,8 +7,6 @@ import static sam.io.IOConstants.defaultCharset;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
@@ -18,18 +16,11 @@ import java.nio.charset.CodingErrorAction;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import sam.io.BufferConsumer;
+import sam.io.BufferFiller;
 import sam.io.IOUtils;
 
 public final class StringIOUtils {
-
-	public static interface BufferFiller {
-		int fill(ByteBuffer buffer) throws IOException;
-		int size() throws IOException ;
-	}
-	public static interface BufferConsumer {
-		int consume(ByteBuffer buffer) throws IOException;
-	}
-
 	public static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 
 	public static int computeBufferSize(double averageBytesPerChar, int charSequenceLength) {
@@ -81,26 +72,6 @@ public final class StringIOUtils {
 		}
 	}
 
-	public static BufferFiller filler(ReadableByteChannel channel) {
-		Objects.requireNonNull(channel);
-
-		return new BufferFiller() {
-			@Override
-			public int fill(ByteBuffer buffer) throws IOException {
-				return channel.read(buffer);
-			}
-
-			@Override
-			public int size() throws IOException {
-				if(channel instanceof FileChannel) {
-					FileChannel f = (FileChannel) channel;
-					return (int) (f.size() - f.position());
-				}
-				return -1;
-			}
-		};
-	}
-
 	public static StringBuilder read(BufferFiller filler) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		read(filler, sb);
@@ -118,7 +89,7 @@ public final class StringIOUtils {
 	}
 	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder, CharBuffer chars, ByteBuffer buf, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		Objects.requireNonNull(sink);
-		int size0 = filler.size();
+		int size0 = filler.remaining();
 
 		if(size0 == 0) 
 			return;
@@ -148,9 +119,8 @@ public final class StringIOUtils {
 		}
 
 		while(true) {
-			int read = filler.fill(buf);
+			int read = filler.fillNFlip(buf);
 			boolean endOfInput = read == -1;
-			buf.flip();
 
 			while(true) {
 				CoderResult c = decoder.decode(buf, chars, endOfInput);
@@ -185,6 +155,20 @@ public final class StringIOUtils {
 				buf.clear();
 		}
 		append(chars, sink);
+	}
+	
+	public static void decode(ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		read(new BufferFiller() {
+			@Override
+			public int remaining() throws IOException {
+				return buffer.remaining();
+			}
+			
+			@Override
+			public int fillNFlip(ByteBuffer buffer) throws IOException {
+				return -1;
+			}
+		}, sink, decoder, charBuffer, buffer, onUnmappableCharacter, onMalformedInput);
 	}
 
 	private static <E> E orElse(E e, E defaultValue) {

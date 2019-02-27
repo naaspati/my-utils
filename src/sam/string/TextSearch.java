@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 import java.util.stream.Collectors;
 
 import javafx.collections.ObservableList;
-import sam.logging.MyLoggerFactory;
 
 /**
  * for javafx app user TextSearchFx</br>
@@ -22,7 +21,7 @@ import sam.logging.MyLoggerFactory;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class TextSearch<E> {
-	private static final Logger LOGGER = MyLoggerFactory.logger(TextSearch.class);
+	private static final Logger LOGGER = Logger.getLogger(TextSearch.class);
 
 	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
 	public static final Predicate FALSE_ALL = TextSearchPredicate.FALSE_ALL;
@@ -93,22 +92,22 @@ public class TextSearch<E> {
 			if(list == null)
 				return new ArrayList<>();
 			list.clear();
-			LOGGER.fine(() -> "filter == FALSE_ALL");
+			LOGGER.debug("filter == FALSE_ALL");
 			return list;
 		} else if(filter == TRUE_ALL) {
 			oldSearch = "";
-			LOGGER.fine(() -> "filter == TRUE_ALL");
+			LOGGER.debug("filter == TRUE_ALL");
 			return setAll(list, allData);
 		} else {
 			if(allDataChanged || preFilterChanged || list == null || !newSearchContainsOldSearch) {
-				LOGGER.fine(() -> "FULL FILTER: searchKey: "+wrap(currentSearch)+", "+ string("allDataChanged", allDataChanged)+ string("preFilterChanged", preFilterChanged)+  string("list == null", list == null)+  string("!newSearchContainsOldSearch", !newSearchContainsOldSearch));
+				LOGGER.debug(() -> "FULL FILTER: searchKey: "+wrap(currentSearch)+", "+ string("allDataChanged", allDataChanged)+ string("preFilterChanged", preFilterChanged)+  string("list == null", list == null)+  string("!newSearchContainsOldSearch", !newSearchContainsOldSearch));
 				preFilterChanged = false;
 				allDataChanged = false;
 				return setAll(list, allData.stream().filter(filter).collect(Collectors.toList()));
 			} else {
 				int len = list.size();
 				list.removeIf(filter.negate());
-				LOGGER.fine(() -> wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
+				LOGGER.debug(() -> wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
 				return list;
 			}
 		}

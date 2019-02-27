@@ -40,8 +40,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,7 +48,6 @@ import java.util.stream.Stream;
 import sam.collection.Iterables;
 import sam.io.fileutils.FileNameSanitizer;
 import sam.io.serilizers.StringWriter2;
-import sam.logging.MyLoggerFactory;
 import sam.manga.samrock.Renamer;
 import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MinimalManga;
@@ -61,7 +59,7 @@ import sam.sql.querymaker.QueryMaker;
 import sam.string.BasicFormat;
 import sam.thread.MyUtilsThread;
 public class ChapterUtils {
-	private static final Logger LOGGER = MyLoggerFactory.logger(ChapterUtils.class);
+	private static final Logger LOGGER = Logger.getLogger(ChapterUtils.class);
 	private final SamrockDB db;
 
 	public ChapterUtils(SamrockDB db) {
@@ -160,13 +158,13 @@ public class ChapterUtils {
 		for (MinimalManga m : distinctMangas) {
 			Path path = m.getDirPath();
 			if(Files.notExists(path))
-				LOGGER.severe("manga_dir not found: "+path);
+				LOGGER.error("manga_dir not found: {}", path);
 			else {
 				try {
 					List<ChapterFile> chfiles = chapterFileNames(path).map(ChapterFile::new).collect(Collectors.toList());
 					files.put(m, chfiles);
 				} catch (IOException e) {
-					LOGGER.log(Level.SEVERE, "failed to list manga_dir"+path, e);
+					LOGGER.error("failed to list manga_dir {}", path, e);
 				}
 			}	
 		}
@@ -321,7 +319,7 @@ public class ChapterUtils {
 				StringWriter2.setText(path, sb);
 				LOGGER.info("created: "+path.toAbsolutePath());
 			} catch (IOException e) {
-				LOGGER.log(Level.SEVERE, "failed to write: "+path.toAbsolutePath(), e);
+				LOGGER.error("failed to write: {}", path.toAbsolutePath(), e);
 			}
 		});
 	}
@@ -387,13 +385,13 @@ public class ChapterUtils {
 				if(Files.isRegularFile(p) && !Files.isHidden(p)) {
 					build.add(p.getFileName().toString());
 				} else {
-					LOGGER.fine(() -> {
+					if(LOGGER.isDebugEnabled()) {
 						try {
-							return String.format("Skipping File {regular-file:%s, is-hidden:%s, file-path:%s}", Files.isRegularFile(p) , Files.isHidden(p), p);
+							LOGGER.debug(String.format("Skipping File {regular-file:%s, is-hidden:%s, file-path:%s}", Files.isRegularFile(p) , Files.isHidden(p), p));
 						} catch (IOException e) {
-							return String.format("Skipping File {regular-file:%s, is-hidden:%s, file-path:%s}", Files.isRegularFile(p), e.toString(), p);
-						}
-					});
+							LOGGER.debug(String.format("Skipping File {regular-file:%s, is-hidden:%s, file-path:%s}", Files.isRegularFile(p), e.toString(), p));
+						}	
+					}
 				}
 			}
 			return build.build();

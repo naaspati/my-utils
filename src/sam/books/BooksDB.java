@@ -18,11 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import sam.logging.MyLoggerFactory;
 import sam.myutils.MyUtilsPath;
 import sam.string.BasicFormat;
 import sam.string.StringUtils;
@@ -52,7 +51,7 @@ public class BooksDB extends BooksDBMinimal {
 		Map<Integer, String> bookIdFileNameMap = collectToMap(qm().select(BOOK_ID,FILE_NAME).from(BOOK_TABLE_NAME).where(w -> w.in(BOOK_ID, bookIdPathMap.keySet(), false)).build(), rs -> rs.getInt(BOOK_ID), rs -> rs.getString(FILE_NAME));
 		
 		try {
-			Logger logger = MyLoggerFactory.logger(getClass()); 
+			Logger logger = Logger.getLogger(getClass()); 
 			
 			for (Entry<Integer, Path> entry : bookIdPathMap.entrySet()) {
 				Path path = Objects.requireNonNull(entry.getValue());
@@ -81,7 +80,7 @@ public class BooksDB extends BooksDBMinimal {
 					Files.move(path, target, StandardCopyOption.REPLACE_EXISTING);
 					Path p = target;
 					moved.add(new Path[] {path, target});
-					logger.info(() -> "moved: "+ MyUtilsPath.subpath(path, ROOT)+" -> " + MyUtilsPath.subpath(p, ROOT));
+					logger.info("moved: "+ MyUtilsPath.subpath(path, ROOT)+" -> " + MyUtilsPath.subpath(p, ROOT));
 				}
 			} 
 			 n = executeUpdate(qm().update(BOOK_TABLE_NAME).set(STATUS, newStatus, true).where(w -> w.in(BOOK_ID, bookIdFileNameMap.keySet(), false)).build());

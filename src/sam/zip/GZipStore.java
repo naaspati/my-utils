@@ -15,10 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import sam.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import sam.logging.MyLoggerFactory;
 
 public class GZipStore {
     private final int password = 1235;
@@ -83,7 +82,7 @@ public class GZipStore {
             nameBuf.flip();
 
             Charset charset = Charset.forName(StandardCharsets.UTF_8.decode(nameBuf).toString());
-            MyLoggerFactory.logger(getClass()).config(() -> "charset: "+charset);
+            Logger.getLogger(getClass()).debug(charset.name());
             
             ByteBuffer buffer = ByteBuffer.allocate(readInt(bb, rbc));
             rbc.read(buffer);

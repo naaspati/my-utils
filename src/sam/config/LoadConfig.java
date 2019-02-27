@@ -26,14 +26,14 @@ public final class LoadConfig {
 			p = null;
 			URL u = ClassLoader.getSystemResource(".config.properties");
 			if(u != null) {
-				Logger.getLogger(LoadConfig.class.getName()).fine("config_file: "+u);
+				Logger.getLogger(LoadConfig.class.getName()).fine(() -> "config_file: "+u);
 				load(u.openStream());
 				return;
 			} else {
 				Logger.getLogger(LoadConfig.class.getName()).warning("\".config.properties\" not found");
 			}
 		} else {
-			Logger.getLogger(LoadConfig.class.getName()).fine("config_file: "+p);
+			Logger.getLogger(LoadConfig.class.getName()).fine("config_file: " + p);
 			load(Files.newInputStream(p));
 		}
 	}

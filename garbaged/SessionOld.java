@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 import java.util.stream.Collectors;
 
 import sam.logging.MyLoggerFactory;
@@ -186,7 +186,7 @@ class SessionOld {
 			return 0;
 	}
 	private static Logger logger() {
-		return MyLoggerFactory.logger(SessionOld.class.getCanonicalName());
+		return Logger.getLogger(SessionOld.class.getCanonicalName().getName());
 	}
 
 	public static String get(String key) {

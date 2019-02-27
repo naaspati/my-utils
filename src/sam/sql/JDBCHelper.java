@@ -14,17 +14,16 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import sam.logging.MyLoggerFactory;
 import sam.myutils.Checker;
 
 public abstract class JDBCHelper implements AutoCloseable {
 	private Statement _defaultStatement;
 	private final Connection connection;
-	private final Logger LOGGER = MyLoggerFactory.logger(getClass());
+	private final Logger LOGGER = Logger.getLogger(getClass());
 
 	protected JDBCHelper(Connection connection) {
 		this.connection = connection;
@@ -45,11 +44,11 @@ public abstract class JDBCHelper implements AutoCloseable {
 		connection.close();
 	}
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		LOGGER.fine(() -> "PreparedStatement("+sql+")");
+		LOGGER.debug("PreparedStatement({})", sql);
 		return connection.prepareStatement(sql);
 	}
 	public int executeUpdate(String sql) throws SQLException {
-		LOGGER.fine(() -> "UPDATE: "+sql);
+		LOGGER.debug("UPDATE: ", sql);
 		return getDefaultStatement().executeUpdate(sql); 
 	}
 	public Statement createStatement() throws SQLException {
@@ -62,7 +61,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 	 * @throws SQLException
 	 */
 	public ResultSet query(String sql) throws SQLException {
-		LOGGER.fine(() -> "QUERY: "+sql);
+		LOGGER.debug("QUERY: ", sql);
 		return getDefaultStatement().executeQuery(sql);
 	}
 	public ResultSet executeQuery(String sql) throws SQLException {

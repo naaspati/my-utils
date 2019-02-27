@@ -1,9 +1,7 @@
 package sam.internetutils;
 
 import java.net.URL;
-import java.util.logging.Logger;
-
-import sam.logging.MyLoggerFactory;
+import sam.logging.Logger;
 
 public class SimpleDownloadListener implements DownloadListener {
     private final ConnectionConfig config;
@@ -13,7 +11,7 @@ public class SimpleDownloadListener implements DownloadListener {
      */
     SimpleDownloadListener(ConnectionConfig config) {
         this.config = config;
-        this.logger = config.show_download_warnings ? MyLoggerFactory.logger(getClass()) : null;
+        this.logger = config.show_download_warnings ? Logger.getLogger(getClass()) : null;
     }
     
     @Override public boolean extractNameFromWeb(URL url) { 
@@ -27,7 +25,7 @@ public class SimpleDownloadListener implements DownloadListener {
     @Override
     public void contentLength(long contentLength, URL url) {
         if(config.show_download_warnings)
-            logger.warning(() -> "Content Length = "+contentLength+"\t"+url);
+            logger.warn("Content Length = {}\t{}",contentLength,url);
     }
     @Override public void progress(int bytesRead, long totalBytes) {}
     @Override public void compleated(URL url, long totalRead) {}

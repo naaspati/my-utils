@@ -9,14 +9,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
-import java.util.logging.Logger;
-
-import sam.logging.MyLoggerFactory;
 
 public class DoubleSerializer extends BaseSerializer<double[]> {
-	
-	Logger LOGGER = MyLoggerFactory.logger(DoubleSerializer.class);
-
 	public void write(double value, Path path) throws IOException {
 		Utils.write(putDouble(value), path);
 	}

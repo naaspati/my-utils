@@ -5,21 +5,20 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.IdentityHashMap;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 
 import javafx.fxml.FXMLLoader;
 import javafx.util.Builder;
 import javafx.util.BuilderFactory;
 import javafx.util.Callback;
-import sam.logging.MyLoggerFactory;
 
 public final class FxFxml implements BuilderFactory  {
-	private static final Logger LOGGER = MyLoggerFactory.logger(FxFxml.class);
+	private static final Logger LOGGER = Logger.getLogger(FxFxml.class);
 
 	private static String FXML_DIR;
 	public static void setFxmlDir(URL fxml_dir) {
 		FXML_DIR = fxml_dir.toString();
-		LOGGER.fine(() -> "FXML_DIR: "+FXML_DIR);
+		LOGGER.debug("FXML_DIR: {}", FXML_DIR);
 	}
 
 	public final FXMLLoader loader;
@@ -40,7 +39,8 @@ public final class FxFxml implements BuilderFactory  {
 	}  
 
 	public <E> E load() throws IOException {
-		LOGGER.fine(() -> "Loading fxml: "+loader.getLocation());
+		LOGGER.debug("Loading fxml: {}", loader.getLocation());
+		
 		if(builderFactory != null)
 			loader.setBuilderFactory(builderFactory);
 		if(builds != null)
@@ -123,6 +123,4 @@ public final class FxFxml implements BuilderFactory  {
 	public static <E> E load(Object obj, boolean isDynamicRoot) throws IOException {
 		return new FxFxml(obj, isDynamicRoot ? obj : null, obj).load();
 	}
-
-
 }

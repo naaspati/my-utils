@@ -10,12 +10,10 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.logging.Logger;
-
-import sam.logging.MyLoggerFactory;
+import sam.logging.Logger;
 
 public abstract class BaseSerializer<E> {
-	private final Logger LOGGER = MyLoggerFactory.logger(getClass());
+	private final Logger LOGGER = Logger.getLogger(getClass());
 	
 	Logger logger() {
 		return LOGGER;
@@ -92,10 +90,7 @@ public abstract class BaseSerializer<E> {
 				loops++;
 				bytes += Utils.write(buffer, c, true);
 			}
-			int loops2 = loops;
-			int cap = buffer.capacity();
-			int bytes2 = bytes;
-			LOGGER.fine(() -> Utils.log("WRITE", value.getClass().getSimpleName(), length, cap, loops2, bytes2));
+			LOGGER.debug("WRITE {}.length:{}, bytes-read:{}, capacity:{}, loopCount:{}", value.getClass().getSimpleName(), length, bytes, buffer.capacity(), loops);
 		} finally {
 			buffer.clear();
 		}
@@ -113,7 +108,6 @@ public abstract class BaseSerializer<E> {
 
 		final int bytes_per_entity = bytesPerEntity();
 		buffer = Utils.getBuffer(buffer, size, bytes_per_entity);
-		ByteBuffer b2 = buffer;
 		int bytes = 4;
 
 		try {
@@ -146,10 +140,7 @@ public abstract class BaseSerializer<E> {
 				buffer.clear();
 			}
 
-			int loops2 = loops;
-			int bytes2 = bytes + 4;
-			E ar2 = array;
-			logger().fine(() -> Utils.log("READ", ar2.getClass().getSimpleName(), size, b2.capacity(), loops2, bytes2));
+			LOGGER.debug("READ {}.length:{}, bytes-read:{}, capacity:{}, loopCount:{}", array.getClass().getSimpleName(), size, bytes, buffer.capacity(), loops);
 			return array;
 		} finally {
 			buffer.clear();

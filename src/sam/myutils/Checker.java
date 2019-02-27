@@ -134,6 +134,14 @@ public final class Checker {
 		}
 		return false;
 	}
+	@SafeVarargs
+	public static <E> boolean allMatch(Predicate<E> tester, E...es) {
+		for (E e : es) {
+			if(!tester.test(e))
+				return false;
+		}
+		return true;
+	}
 	/**
 	 * 
 	 * @param variableNames variableNames in a single string separator by space

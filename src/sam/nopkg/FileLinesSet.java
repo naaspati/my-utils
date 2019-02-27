@@ -23,13 +23,11 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
+import sam.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import sam.logging.MyLoggerFactory;
 public class FileLinesSet implements AutoCloseable {
-	private static final Logger LOGGER = MyLoggerFactory.logger(FileLinesSet.class);
+	private static final Logger LOGGER = Logger.getLogger(FileLinesSet.class);
 
 	private Set<String> _old, nnew;
 	private final boolean gzipped;
@@ -66,10 +64,10 @@ public class FileLinesSet implements AutoCloseable {
 				throw new RuntimeException("failed to read: "+path, e);
 			}
 			_old = o.isEmpty() ? Collections.emptySet() : o;
-			LOGGER.fine(() -> "lines: "+_old.size()+", in file: \""+path+"\"");
+			LOGGER.debug("lines: {}, inFile:\"{}\"",_old.size(),path);
 		} else {
 			_old = Collections.emptySet();
-			LOGGER.warning("file not found: "+path);
+			LOGGER.warn("file not found: "+path);
 		}
 
 		return _old;

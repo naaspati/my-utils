@@ -9,8 +9,8 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
+import sam.logging.Logger;
 
-import sam.logging.MyLoggerFactory;
 import sam.myutils.System2;
 import sam.sql.JDBCHelper;
 
@@ -43,7 +43,7 @@ public class SQLiteDB extends JDBCHelper {
      */
     public SQLiteDB(Path dbPath, Properties prop, boolean create) throws SQLException {
     	super(connection(dbPath, prop, create));
-    	MyLoggerFactory.logger(getClass()).fine(() -> "SQLite Connection open: jdbc:sqlite:"+dbPath);
+    	Logger.getLogger(getClass()).debug("SQLite Connection open: jdbc:sqlite:"+dbPath.getFileName());
         
         // JDBC.class.getCanonicalName() =  "org.sqlite.JDBC"
         // JDBC.PREFIX = "jdbc:sqlite:"

@@ -18,7 +18,7 @@ public abstract class BaseTest<E, F> {
 	private static final int BASE_COUNT = 10 + new Random().nextInt(10); 
 
 	static {
-		System.setProperty("java.util.logging.config.file","test-logging.properties");
+		System.setProperty("sam.logging.config.file","test-logging.properties");
 	}
 
 	private ByteArrayOutputStream bos() {

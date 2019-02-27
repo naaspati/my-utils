@@ -14,16 +14,14 @@ import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import sam.logging.MyLoggerFactory;
+import sam.logging.Logger;
 import sam.myutils.System2;
 
 
 // VERSION = 0.13;
 public class Session {
-	private final Logger LOGGER = MyLoggerFactory.logger(Session.class);
+	private static final Logger LOGGER = Logger.getLogger(Session.class);
 
 	@SuppressWarnings("rawtypes")
 	private static HashMap<Class, Session> configs = new HashMap<>();
@@ -53,13 +51,13 @@ public class Session {
 		if(sessionFile == null || Files.notExists(sessionFile))
 			return;
 
-		Logger LOGGER0 = MyLoggerFactory.logger(Session.class);
+		Logger LOGGER0 = Logger.getLogger(Session.class);
 
 		try {
 			properties.load(Files.newInputStream(sessionFile));
-			LOGGER0.config(() -> "session_file: "+sessionFile);
+			LOGGER0.debug("session_file: {}",sessionFile);
 		} catch (IOException e) {
-			LOGGER0.log(Level.SEVERE, "failed to load session_file: "+sessionFile, e);
+			LOGGER0.error("failed to load session_file: "+sessionFile, e);
 		}
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -67,7 +65,7 @@ public class Session {
 			try {
 				save(sessionFile);
 			} catch (IOException | URISyntaxException e) {
-				LOGGER0.log(Level.SEVERE, "failed to session_file: "+path2, e);
+				LOGGER0.error("failed to session_file: "+path2, e);
 			}
 		}) );
 	}
@@ -81,10 +79,10 @@ public class Session {
 	private static Path path_0() {
 		String s = System2.lookupAny("session_file", "session.file", "sessionFile", "SESSION.FILE");
 
-		Logger LOGGER0 = MyLoggerFactory.logger(Session.class);
+		Logger LOGGER0 = Logger.getLogger(Session.class);
 
 		if(s == null) {
-			LOGGER0.warning("session_file variable not set: Session will not be saved in a File");
+			LOGGER0.warn("session_file variable not set: Session will not be saved in a File");
 			return null;
 		} 
 
@@ -101,11 +99,11 @@ public class Session {
 
 		_modified = false;
 		properties.store(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)));
-		MyLoggerFactory.logger(Session.class).config(() -> "SESSION SAVED: "+path);
+		LOGGER.debug("SESSION SAVED: {}", path.getFileName());
 	}
 
 	// ----------------------------------------------------------------
-	
+
 	private final String _prefix;
 
 	/**
@@ -179,8 +177,13 @@ public class Session {
 		Objects.requireNonNull(key);
 		String v = getString(key);
 
-		LOGGER.config(() -> "GET: "+key(key)+(v == null ? "=" : "="+v));
-		return v == null ? defaultValue : v;
+		if(v == null) {
+			LOGGER.debug("GET: \"{}\"=null", key(key));
+			return defaultValue;
+		} else {
+			LOGGER.debug("GET: \"{}\"=\"{}\"", key(key), v);
+			return v;
+		}
 	}
 	public boolean contains(Object key) {
 		Objects.requireNonNull(key);
@@ -196,7 +199,7 @@ public class Session {
 			_modified = properties.remove(key(key)) != null || _modified;
 			if(stringObjectmap != null)
 				stringObjectmap.remove(key);
-			LOGGER.config("REMOVE: "+key(key));
+			LOGGER.debug("REMOVE: {}", key(key));
 		} else if(objectmap != null) 
 			objectmap.remove(key);
 	}
@@ -220,11 +223,10 @@ public class Session {
 					return;
 
 				_modified = true;
-				Object v2 = prop;
 				if(prop != null)
-					LOGGER.config(() -> "CHANGED "+key(key) +"="+v2+" -> "+value);
+					LOGGER.debug("CHANGED key=\"{}\", value=\"{}\" -> \"{}\"",key(key), prop, value);
 				else
-					LOGGER.config(() -> "PUT "+key(key) +"="+value);
+					LOGGER.debug("PUT \"{}\"=\"{}\"",key(key),value);
 			} else {
 				if(stringObjectmap == null)
 					stringObjectmap = new HashMap<>();
