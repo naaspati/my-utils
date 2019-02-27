@@ -4,13 +4,17 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -24,9 +28,23 @@ public class InFile implements AutoCloseable {
 
 	private static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
 	private final FileChannel file;
+	private final Path temp, filepath;
 	
-	public InFile(Path path, boolean createInNotExits) throws IOException {
-		this.file = createInNotExits ? FileChannel.open(path, CREATE, READ, WRITE) : FileChannel.open(path, READ, WRITE);
+	public InFile(Path path, boolean createIfNotExits) throws IOException {
+		Objects.requireNonNull(path);
+		this.filepath = path;
+		
+		if(!createIfNotExits && !Files.isRegularFile(path))
+			throw new FileNotFoundException("file not found: "+path);
+		
+		this.temp = Files.createTempFile(null, null);
+		if(Files.exists(path))
+			Files.copy(path, temp, StandardCopyOption.REPLACE_EXISTING);
+		
+		file = FileChannel.open(temp, READ, WRITE);
+		file.position(file.size());
+		
+		System.out.println(temp);
 	}
 	
 	public long position() throws IOException { return file.position(); }
@@ -67,5 +85,6 @@ public class InFile implements AutoCloseable {
 	@Override
 	public void close() throws IOException {
 		file.close();
+		Files.move(temp, filepath, StandardCopyOption.REPLACE_EXISTING);
 	}
 }
