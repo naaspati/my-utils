@@ -61,7 +61,6 @@ interface Utils {
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		return IOUtils.write(buffer, channel, flip);
 	}
-
 	public static void write(ByteBuffer buffer, Path path) throws IOException {
 		try(WritableByteChannel c = writable(path)) {
 			write(buffer, c, false);

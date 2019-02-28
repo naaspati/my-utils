@@ -81,7 +81,7 @@ public interface IOUtils {
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
-
+		
 		int n = 0;
 		while(buffer.hasRemaining())
 			n += channel.write(buffer);

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -23,15 +23,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import sam.functions.IOExceptionConsumer;
-import sam.functions.IOExceptionSupplier;
+import sam.io.BufferSupplier;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.logging.Logger;
-import sam.myutils.Checker;
 
 
 class InFileImpl implements AutoCloseable {
 	private static final Logger LOGGER = Logger.getLogger(InFileImpl.class);
+	private static final boolean DEBUG_ENABLED = LOGGER.isDebugEnabled();
 
 	private static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
 	private final FileChannel file;
@@ -55,15 +55,20 @@ class InFileImpl implements AutoCloseable {
 		}
 
 		file = FileChannel.open(temp, READ, WRITE);
-		position.set(file.size());
-		file.position(position.get());
+		long pos = file.size();
+		position.set(pos);
+		file.position(pos);
 	}
 
 	public Path getPath() {
 		return filepath;
 	}
-
-	private long position() throws IOException {
+	private void resetPosition() throws IOException {
+		long n = acutualSize();
+		LOGGER.warn("Position reset: {} -> {}", position.get(), n);
+		position.set(n);
+	}
+	long position() throws IOException {
 		return position.get();
 	}
 	public long size() throws IOException {
@@ -72,30 +77,47 @@ class InFileImpl implements AutoCloseable {
 	public long acutualSize() throws IOException {
 		return file.size();
 	}
-	
-	private int read(ByteBuffer buffer, long pos) throws IOException {
-		return file.read(buffer, pos);
+	int read(ByteBuffer buffer, long pos, int size, boolean flip) throws IOException {
+		buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
+		return read(buffer, pos, flip);
 	}
-	
-	public DataMeta write(ByteBuffer buffer) throws IOException {
-		return write(new IOExceptionSupplier<ByteBuffer>() {
-			boolean b = true;
+	int read(ByteBuffer buffer, long pos, boolean flip) throws IOException {
+		int n = file.read(buffer, pos);
+		if(flip)
+			buffer.flip();
 
-			@Override
-			public ByteBuffer get() throws IOException {
-				if(b) {
-					b = false;
-					return buffer;
-				}
-				return null;
-			}
-		});
+		if(DEBUG_ENABLED)
+			LOGGER.debug("READ: pos: {}, size: {}", pos, buffer.limit());
+
+		return n;
 	}
 
+	int write(ByteBuffer buffer) throws IOException {
+		if(!buffer.hasRemaining()) {
+			buffer.clear();
+			return 0;
+		}
+		
+		boolean success = false;
+		try {
+			long pos = DEBUG_ENABLED ? position() : -1;
+
+			int n = IOUtils.write(buffer, file, false);
+			success = true;
+			position.addAndGet(n);
+
+			if(DEBUG_ENABLED)
+				LOGGER.debug("WRITTEN: pos: {}, size: {}", pos, n);
+			return n;
+		} finally {
+			if(!success)
+				resetPosition();
+		}
+	}
 	/**
 	 *  write every buffer supplied by buffers, until buffers returns null (end of input)
 	 */
-	public DataMeta write(IOExceptionSupplier<ByteBuffer> buffers) throws IOException {
+	public DataMeta write(BufferSupplier buffers) throws IOException {
 		long pos = position();
 		int size = write2(buffers);
 
@@ -108,33 +130,39 @@ class InFileImpl implements AutoCloseable {
 	/**
 	 *  write every buffer supplied by buffers, until buffers returns null (end of input)
 	 */
-	public int write2(IOExceptionSupplier<ByteBuffer> buffers) throws IOException {
+	private int write2(BufferSupplier buffers) throws IOException {
 		int size = 0;
 		boolean success = false;
 
 		try {
-			ByteBuffer buffer; 
 			int loops = 0;
 
-			while((buffer = buffers.get()) != null) {
-				if(!buffer.hasRemaining()) 
+			while(true) {
+				ByteBuffer buffer = buffers.next();
+				if(!buffer.hasRemaining()) { 
 					LOGGER.debug("EMPTY buffer return by buffers");
-				else 
-					size += IOUtils.write(buffer,file, false);	
+					buffer.clear();
+				} else 
+					size = IOUtils.write(buffer, file, false);
+				
+				if(buffers.isEndOfInput())
+					break;
 			}
+			
 			LOGGER.debug("WRITTEN: {} bytes, loops: {}", size, loops);
 			success = true;
 			position.addAndGet(size);
 			return size;
 		} finally {
 			if(!success)
-				position.set(file.size());
+				resetPosition();
 		}
 	}
 
 	public ByteBuffer read(DataMeta meta, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(meta);
 		IOUtils.ensureCleared(buffer);
+		verifyDataMeta(meta);
 
 		if(meta.size == 0)
 			return (buffer == null ? ByteBuffer.allocate(0) : buffer);
@@ -142,13 +170,14 @@ class InFileImpl implements AutoCloseable {
 		if(buffer == null || buffer.capacity() < meta.size) {
 			ByteBuffer old = buffer;
 			buffer = ByteBuffer.allocate(meta.size);
-			LOGGER.debug("Buffer created: {} -> buffer({})", old == null ? null : "buffer("+old.capacity()+")", meta.size);
+			if(DEBUG_ENABLED)
+				LOGGER.debug("Buffer created: {} -> buffer({})", old == null ? null : "buffer("+old.capacity()+")", meta.size);
 		}
 
 		buffer.clear();
 		buffer.limit(meta.size);
 
-		while(buffer.hasRemaining() && read(buffer, meta.position + buffer.position()) != -1) {
+		while(buffer.hasRemaining() && read(buffer, meta.position + buffer.position(), false) != -1) {
 		}
 
 		if(buffer.hasRemaining()) 
@@ -166,9 +195,7 @@ class InFileImpl implements AutoCloseable {
 		if(size == 0)
 			bufferConsumer.accept(buffer == null ? ByteBuffer.allocate(0) : buffer);
 		else {
-			if(meta.position + meta.size > size()) 
-				throw new IOException("DataMeta out of bounds: (meta.position("+meta.position+") + meta.size("+meta.size+")) = ("+(meta.position + meta.size)+") > size("+size()+")");
-			
+			verifyDataMeta(meta);
 			if(buffer == null) {
 				buffer = ByteBuffer.allocate(Math.min(size, DEFAULT_BUFFER_SIZE));
 				LOGGER.debug("Buffer created capacity: {}", buffer.capacity());
@@ -176,145 +203,131 @@ class InFileImpl implements AutoCloseable {
 
 			int loops = 0;
 			long pos = meta.position;
-			
+
 			while(size > 0) {
 				loops++;
-				buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
-				int n = read(buffer, pos);
+				int n = read(buffer, pos, size, true);
 				if(n == -1)
 					throw new IOException("all bytes not found, remaining: "+size);
 
 				pos += n;
 				size -= n;
-				buffer.flip();
+
 				bufferConsumer.accept(buffer);
 
 				if(size > 0 && !buffer.hasRemaining())
 					throw new IOException("buffer not cosumed");
 			}
-			
+
 			if(size != 0)
 				throw new IOException("size("+size+") != 0");
-			
+
 			LOGGER.debug("READ bytes: {}, loops: {}", meta.size, loops);
 		}
 	}
 
-	public void transfer(Iterable<DataMeta> metas, WritableByteChannel target, ByteBuffer buffer) throws IOException {
-		Objects.requireNonNull(metas, "metas cannot be null");
-		IOUtils.ensureCleared(buffer);
-
-		List<DataMeta> list;
-		if(metas instanceof List)
-			list = (List<DataMeta>) metas;
-		else if(metas instanceof Collection)
-			list = Arrays.asList(((Collection<DataMeta>) metas).toArray(new DataMeta[0]));
-		else {
-			Iterator<DataMeta> itr = metas.iterator();
-
-			if(!itr.hasNext())
-				return;
-
-			list = new ArrayList<>();
-			itr.forEachRemaining(list::add);
-		}
-
-		transferList(list, target, buffer);
-	}
-
-	/**
-	 * ordered and checked.
-	 * i dont see any use for it now, maybe later
-	 * -- NOTE: untested
-	 * 
-	 * possible uses: 
-	 *   - when order is required
-	 *     - compress infile
-	 *     - tranfer to other infile
-	 *     both of these need to modify DataMeta(s) thus old DataMeta(s) will needed to be changed 
-	 * 
-	 * @param metas
-	 * @param target
-	 * @param buffer
-	 * @return
-	 * @throws IOException
-	 */
-	@SuppressWarnings({ "rawtypes", "unchecked", "unused" })
-	private long transferOrdered(Iterable<DataMeta> metas, WritableByteChannel target, ByteBuffer buffer) throws IOException {
-		IOUtils.ensureCleared(buffer);
-
-		Objects.requireNonNull(metas);
-		List<DataMeta> list;
-
-		if(metas instanceof Collection) {
-			Collection col = (Collection)metas;
-			list = col.isEmpty() ? Collections.emptyList() : new ArrayList<>(col);
-		} else {
-			Iterator<DataMeta> itr = metas.iterator();
-
-			if(!itr.hasNext())
-				list = Collections.emptyList();
-			else {
-				list = new ArrayList<>();
-				itr.forEachRemaining(list::add);
-			}
-		}
-
-		if(list.isEmpty()) 
-			return 0;
-		else if(list.size() == 1) 
-			return IOUtils.write(read(list.get(0), buffer), target, false);
-		else {
-			list.sort(Comparator.comparingLong(d -> d.position));
-			List<DataMeta> conflicts = null;
-
-			for (int i = 0; i < list.size(); i++) {
-				DataMeta current = list.get(i);
-				if(i + 1 != list.size()) {
-					DataMeta next = list.get(i);
-
-					if(next.position < current.position + current.size) {
-						if(conflicts == null)
-							conflicts = new ArrayList<>();
-
-						conflicts.add(current);
-						conflicts.add(next);
-					}
-				}
-			}
-			if(Checker.isNotEmpty(conflicts))
-				throw new IOException("DataMeta conflicts: "+conflicts);
-
-			return transferList(list, target, buffer);
-		}
-	}
-
-	private long transferList(List<DataMeta> list, WritableByteChannel target, ByteBuffer buffer) throws IOException {
+	private void verifyDataMetas(List<DataMeta> list) throws IOException {
 		long size = position();
 
 		if(list.stream().anyMatch(d -> d.position + d.size > size))
 			throw new IOException("out of bounds: filesize:"+size+" "+list.stream().filter(d -> d.position + d.size > size).collect(Collectors.toList()));
+	}
+	private void verifyDataMeta(DataMeta d) throws IOException {
+		long size = position();
 
-		buffer = buffer(buffer);
-		buffer.clear();
-		AtomicLong read = new AtomicLong();
+		if(d.position + d.size > size)
+			throw new IOException("DataMeta out of bounds: "+d+", size: "+size);
+	}
 
-		int index = 0;
-		while((index = transferSublist(list, target, buffer, read, index)) < list.size()){
+	public IdentityHashMap<DataMeta, DataMeta> transferTo(Iterable<DataMeta> metas, InFileImpl target) throws IOException {
+		Objects.requireNonNull(metas);
+
+		if(this.equals(target))
+			throw new IOException("source cannot be the target");
+
+		List<DataMeta> list = toList(metas);
+		if(list.isEmpty())
+			return new IdentityHashMap<>();
+
+		verifyDataMetas(list);
+
+		long tpos = target.position();
+		boolean success = false;
+
+		try {
+			transferList(list, target.file);
+			IdentityHashMap<DataMeta, DataMeta> map = new IdentityHashMap<>();
+
+			for (DataMeta old : list) {
+				DataMeta neww = new DataMeta(tpos, old.size);
+				map.put(old, neww);
+				tpos += old.size;
+			}
+
+			if(DEBUG_ENABLED) {
+				StringBuilder sb = new StringBuilder();
+				list.forEach(c -> sb.append("transfered: ").append(c).append(" -> ").append(map.get(c)).append('\n'));
+				LOGGER.debug(() -> sb.toString());
+			}
+
+			target.position.set(tpos);
+			success = true;
+			return map;
+		} finally {
+			if(!success)
+				target.resetPosition();
 		}
 
-		return read.get();
 	}
-	private ByteBuffer buffer(ByteBuffer buffer) {
-		if(buffer == null) {
-			buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
-			LOGGER.debug(() -> "buffer created: ByteBuffer.allocate("+DEFAULT_BUFFER_SIZE+")"); 
-		}
-		return buffer;
-	}
-	private int transferSublist(List<DataMeta> list, WritableByteChannel target, ByteBuffer buffer, AtomicLong transferCount, int index) throws IOException {
-		IOUtils.ensureCleared(buffer);
 
+	public long transferTo(Iterable<DataMeta> metas, WritableByteChannel target) throws IOException {
+		Objects.requireNonNull(metas, "metas cannot be null");
+
+		List<DataMeta> list = toList(metas);
+		return transferList(list, target);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private List<DataMeta> toList(Iterable<DataMeta> metas) {
+		if(metas instanceof Collection && ((Collection) metas).isEmpty())
+			return Collections.emptyList();
+
+		if(metas instanceof List)
+			return (List<DataMeta>) metas;
+		else if(metas instanceof Collection)
+			return Arrays.asList(((Collection<DataMeta>) metas).toArray(new DataMeta[0]));
+		else {
+			Iterator<DataMeta> itr = metas.iterator();
+
+			if(!itr.hasNext())
+				return Collections.emptyList();
+
+			List<DataMeta> list = new ArrayList<>();
+			itr.forEachRemaining(list::add);
+			return list;
+		}
+	}
+
+	private long transferList(List<DataMeta> list, WritableByteChannel target) throws IOException {
+		if(list.isEmpty())
+			return 0;
+		else if(list.size() == 1) {
+			DataMeta d = list.get(0);
+			verifyDataMeta(d);
+			return transfer(d.position, d.size, target);
+		} else {
+
+			AtomicLong read = new AtomicLong();
+
+			int index = 0;
+			while((index = transferSublist(list, target, read, index)) < list.size()){
+			}
+
+			return read.get();	
+		}
+	}
+
+	private int transferSublist(List<DataMeta> list, WritableByteChannel target, AtomicLong transferCount, int index) throws IOException {
 		int nextIndex = index + 1;
 		for (; nextIndex < list.size(); nextIndex++) {
 			DataMeta current = list.get(nextIndex - 1);
@@ -323,44 +336,44 @@ class InFileImpl implements AutoCloseable {
 				break;
 		}
 
-		long initPos = list.get(index).position;
-		long pos = initPos;
 		long size = 0;
 		for (int i = index; i < nextIndex; i++) 
 			size += list.get(i).size();
 
-		long size2 = size;
-		int loops = 0;
-
-		while(size > 0) {
-			read(pos, size, buffer);
-			int n = IOUtils.write(buffer, target, false);
-			size -= n;
-			pos  += n;
-			loops++;
-		}
-
-		if(pos - initPos != size2)
-			throw new IOException("expected to write: "+size2+", was-written:"+(pos - initPos));
-
-		LOGGER.debug("WRITTEN: bytes-written:{}, loopCount:{}, range: [{}, {}], dataMeta: {}", size2, loops, index, nextIndex, list.subList(index, nextIndex));
-
+		long size2 = transfer(list.get(index).position, size, target);
 		transferCount.addAndGet(size2);
+
+		if(DEBUG_ENABLED) {
+			if(index + 1 == nextIndex)
+				LOGGER.debug("WRITTEN: bytes-written:{}, index: {}, dataMeta: {}", size2, index, list.get(index));		
+			else
+				LOGGER.debug("WRITTEN: bytes-written:{}, range: [{}, {}], dataMeta: {}", size2, index, nextIndex, list.subList(index, nextIndex));	
+		}
 		return nextIndex;
 	}
 
-	private void read(long pos, long size, ByteBuffer buffer) throws IOException {
-		buffer.limit((int) Math.min(buffer.limit(), size));
-		LOGGER.debug("READ file: position: {}, size: {}", pos, buffer.limit());
-		read(buffer, pos);
-		buffer.flip();
+	private long transfer(long pos, long size, WritableByteChannel target) throws IOException {
+		long initPos = pos;
+		long size2 = size;
+
+		while(size > 0) {
+			long n = file.transferTo(pos, size, target);
+			size -= n;
+			pos  += n;
+		}
+
+		if(size != 0)
+			throw new IOException("expected to write: "+size2+", was-written:"+(pos - initPos));
+
+		return pos - initPos;
 	}
 
 	@Override
 	public void close() throws IOException {
 		file.close();
 		Files.move(temp, filepath, StandardCopyOption.REPLACE_EXISTING);
-		LOGGER.debug("moved: \"{}\" -> \"{}\"", temp, filepath);	
-	}
 
+		if(DEBUG_ENABLED)
+			LOGGER.debug("moved: \"{}\" -> \"{}\"", temp, filepath);	
+	}
 }

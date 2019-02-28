@@ -15,6 +15,7 @@ ext.TRUTH_VERSION = '0.42'
 dependencies {
   compile files('myutils.jar')
 
+  testCompile 'com.thedeanda:lorem:2.1'
   testCompile 'org.junit.jupiter:junit-jupiter-api:'+JUNIT_VERSION
   // required for Parameterized test
   // testCompile 'org.junit.jupiter:junit-jupiter-params:'+JUNIT_VERSION

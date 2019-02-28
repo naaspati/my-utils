@@ -1,69 +1,65 @@
 package sam.io.serilizers;
 
 import static java.nio.charset.CodingErrorAction.REPORT;
-import static sam.io.IOConstants.defaultBufferSize;
+import static sam.io.BufferSupplier.DEFAULT_BUFFER_SIZE;
 import static sam.io.IOConstants.defaultCharset;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import sam.io.BufferConsumer;
-import sam.io.BufferFiller;
-import sam.io.IOUtils;
+import sam.io.BufferSupplier;
+import sam.logging.Logger;
 
 public final class StringIOUtils {
-	public static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
+	private static final Logger LOGGER = Logger.getLogger(StringIOUtils.class);
+	private static final boolean DEBUG_ENABLED = LOGGER.isDebugEnabled();
 
-	public static int computeBufferSize(double averageBytesPerChar, int charSequenceLength) {
-		int buffersize = (int) (charSequenceLength * averageBytesPerChar);
-
-		buffersize = buffersize > DEFAULT_BUFFER_SIZE ? DEFAULT_BUFFER_SIZE : buffersize;
-		if(buffersize < 50)
-			buffersize = 50;
-
-		if(buffersize%averageBytesPerChar != 0)
-			buffersize = (int) (averageBytesPerChar*(buffersize/averageBytesPerChar + 1));
-
-		return buffersize;
-	}
-	public static int computeBufferSize(CharsetEncoder encoder, CharSequence chars) {
-		return computeBufferSize(encoder.averageBytesPerChar(), chars.length());
-	}
 	public static void write(BufferConsumer consumer, CharSequence s) throws IOException {
-		write(consumer, s, defaultCharset().newEncoder(), REPORT, REPORT);
+		write(consumer, s, (ByteBuffer)null);
 	}
-	public static BufferConsumer consumer(WritableByteChannel channel) {
-		return buffer -> IOUtils.write(buffer, channel, true);
+	public static void write(BufferConsumer consumer, CharSequence s, ByteBuffer buffer) throws IOException {
+		write(consumer, s, null, buffer, null, null);
 	}
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder) throws IOException {
-		write(consumer, s, encoder, REPORT, REPORT);
+		write(consumer, s, encoder, null, null);
 	}
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		write(consumer, s, encoder, ByteBuffer.allocate(computeBufferSize(encoder, s)), onUnmappableCharacter, onMalformedInput);
+		write(consumer, s, encoder, null, onUnmappableCharacter, onMalformedInput);
 	}
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		if(s.length() == 0) return;
 
 		CharBuffer chars = s instanceof CharBuffer ? (CharBuffer) s : CharBuffer.wrap(s);
+		encoder = orElse(encoder, () -> defaultCharset().newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
+		encoder.reset();
+		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);
+		onMalformedInput = orElse(onMalformedInput, REPORT);
+
+		float avg = encoder.averageBytesPerChar();
+		buffer = orElse(buffer, () -> ByteBuffer.allocate((int)Math.min(avg*chars.length() + 100, DEFAULT_BUFFER_SIZE)), b -> LOGGER.debug("ByteBuffer created: {}", b.capacity()));
 
 		while(true) {
 			CoderResult c = encoder.encode(chars, buffer, true);
 			checkResult(c, onUnmappableCharacter, onMalformedInput);
 
+			buffer.flip();
 			consumer.consume(buffer);
 
 			if(!chars.hasRemaining()) {
 				while(true) {
 					c = encoder.flush(buffer);
+					buffer.flip();
 					consumer.consume(buffer);
 					if(c.isUnderflow()) break;
 				}
@@ -72,110 +68,134 @@ public final class StringIOUtils {
 		}
 	}
 
-	public static StringBuilder read(BufferFiller filler) throws IOException {
+	public static StringBuilder read(BufferSupplier filler) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		read(filler, sb);
 		return sb;
 	}
 
-	public static void read(BufferFiller filler, Appendable sink) throws IOException {
+	public static void read(ByteBuffer buf, Appendable sink) throws IOException {
+		read(buf, sink, null, null, null);
+	}
+	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder) throws IOException {
+		read(buf, sink, decoder, null, null);
+	}
+	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		read(buf, sink, decoder, null, onUnmappableCharacter, onMalformedInput);
+	}
+	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder, CharBuffer chars, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		read(BufferSupplier.of(buf), sink, decoder, chars, onUnmappableCharacter, onMalformedInput);
+	}
+	public static void read(BufferSupplier filler, Appendable sink) throws IOException {
 		read(filler, sink, null, null, null);
 	}
-	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder) throws IOException {
+	public static void read(BufferSupplier filler, Appendable sink, CharsetDecoder decoder) throws IOException {
 		read(filler, sink, decoder, null, null);
 	}
-	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		read(filler, sink, decoder, null, null, onUnmappableCharacter, onMalformedInput);
+	public static void read(BufferSupplier filler, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		read(filler, sink, decoder, null, onUnmappableCharacter, onMalformedInput);
 	}
-	public static void read(BufferFiller filler, Appendable sink, CharsetDecoder decoder, CharBuffer chars, ByteBuffer buf, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+	public static void read(BufferSupplier supplier, Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(sink);
-		int size0 = filler.remaining();
 
-		if(size0 == 0) 
+		if(supplier.isEmpty())
 			return;
 
-		int size = size0 < 0 ? DEFAULT_BUFFER_SIZE : size0;
+		StringBuilder debug = DEBUG_ENABLED ? new StringBuilder() : null; 
+
+		long n = supplier.size(); 
+		int size = n < 0 ? DEFAULT_BUFFER_SIZE : (int)n;
 
 		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);
 		onMalformedInput = orElse(onMalformedInput, REPORT);
 
-		decoder = orElse(decoder, () -> defaultCharset().newDecoder());
+		decoder = orElse(decoder, () -> defaultCharset().newDecoder(), !DEBUG_ENABLED ? d -> {} : d -> debug.append("decoder created: ").append(d.charset().name()).append(", "));
 		decoder.reset();
-		double d = decoder.averageCharsPerByte();
-		int bytesPer = (int) Math.round(d);
+		int charsSize = (int) (size/decoder.averageCharsPerByte());
 
-		chars = orElse(chars, () -> CharBuffer.allocate(size/bytesPer > 100 ? 100 : size/bytesPer));
-		buf = orElse(buf, () -> ByteBuffer.allocate(size));
+		charsBuffer = orElse(charsBuffer, () -> CharBuffer.allocate(charsSize > 100 ? 100 : charsSize), !DEBUG_ENABLED ? b -> {} : b -> debug.append("BytBuffer created: ").append(b.capacity()).append(", "));
 
-		if(size != DEFAULT_BUFFER_SIZE) {
+		int initLength = -1;
+		int cap = -1, dcap = -1;
+		
+		if(size == n) {
 			if(sink instanceof StringBuilder) {
-				StringBuilder sb = (StringBuilder) sink; 
-				sb.ensureCapacity(sb.length() + (int) (size/bytesPer)+10);
-			}
-			else if(sink instanceof StringBuffer) {
+				StringBuilder sb = (StringBuilder) sink;
+				cap = sb.capacity();
+				sb.ensureCapacity(sb.length() + charsSize+10);
+				dcap = sb.capacity();
+				initLength = sb.length();
+			} else if(sink instanceof StringBuffer) {
 				StringBuffer sb = (StringBuffer) sink; 
-				sb.ensureCapacity(sb.length() + (int) (size/bytesPer)+10);
+				cap = sb.capacity();
+				sb.ensureCapacity(sb.length() + charsSize+10);
+				dcap = sb.capacity();
+				initLength = sb.length();
 			}
 		}
 
+		int bufloop = 0, charloop = 0;
 		while(true) {
-			int read = filler.fillNFlip(buf);
-			boolean endOfInput = read == -1;
+			bufloop++;
+			ByteBuffer buffer = supplier.next();
+			boolean endOfInput = supplier.isEndOfInput();
 
 			while(true) {
-				CoderResult c = decoder.decode(buf, chars, endOfInput);
+				charloop++;
+				CoderResult c = decoder.decode(buffer, charsBuffer, endOfInput);
+
 				if(c.isUnderflow())
 					break;
 				else if(c.isOverflow())
-					append(chars, sink);
+					append(charsBuffer, sink);
 				else 
 					c.throwException();
 			}
 
 			if(endOfInput) {
-				if(buf.hasRemaining())
-					throw new IOException("no full converted");
+				if(buffer.hasRemaining())
+					throw new IOException("not full converted");
 
 				while(true) {
-					CoderResult c = decoder.flush(chars);
+					charloop++;
+					CoderResult c = decoder.flush(charsBuffer);
 
 					if(c.isUnderflow())
 						break;
 					else if(c.isOverflow())
-						append(chars, sink);
+						append(charsBuffer, sink);
 					else 
 						c.throwException();					
 				}
 				break;
 			}
-
-			if(buf.hasRemaining())
-				buf.compact();
-			else
-				buf.clear();
 		}
-		append(chars, sink);
-	}
-	
-	public static void decode(ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		read(new BufferFiller() {
-			@Override
-			public int remaining() throws IOException {
-				return buffer.remaining();
+		
+		append(charsBuffer, sink);
+		
+		if(DEBUG_ENABLED) {
+			if(initLength != -1) { 
+				debug.append(sink.getClass().getSimpleName())
+				.append("[ cap:").append(cap).append("->").append(dcap).append(", ")
+				.append("len:").append(initLength).append("->").append(((CharSequence)sink).length()).append("], ");
 			}
+			debug.append("bufloops: ").append(bufloop).append(", charloops: ").append(charloop);
 			
-			@Override
-			public int fillNFlip(ByteBuffer buffer) throws IOException {
-				return -1;
-			}
-		}, sink, decoder, charBuffer, buffer, onUnmappableCharacter, onMalformedInput);
+			LOGGER.debug(debug.toString());
+		}
 	}
 
 	private static <E> E orElse(E e, E defaultValue) {
 		return e != null ? e : defaultValue;
 	}
-	private static <E> E orElse(E e, Supplier<E> defaultValue) {
-		return e != null ? e : defaultValue.get();
+	private static <E> E orElse(E e, Supplier<E> defaultValue, Consumer<E> onCreate) {
+		if(e == null) {
+			e = defaultValue.get();
+			onCreate.accept(e);
+			return e;
+		}
+		return e;
 	}
 	private static void append(CharBuffer chars, Appendable sb) throws IOException {
 		chars.flip();

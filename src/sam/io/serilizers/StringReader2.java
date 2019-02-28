@@ -18,7 +18,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 import sam.functions.IOExceptionFunction;
-import sam.io.BufferFiller;
+import sam.io.BufferSupplier;
 
 public class StringReader2 {
 	private static final Charset DEFAULT_CHARSET = defaultCharset();
@@ -116,7 +116,7 @@ public class StringReader2 {
 	}
 	public static StringBuilder getText0(ReadableByteChannel c, ReaderConfig config, StringBuilder sink) throws IOException {
 		StringBuilder sb = new StringBuilder();
-		StringIOUtils.read(BufferFiller.of(c), sink, config.decoder(), config.onUnmappableCharacter, config.onMalformedInput);
+		StringIOUtils.read(BufferSupplier.of(c,null), sink, config.decoder(), config.onUnmappableCharacter, config.onMalformedInput);
 		return sb;
 	}
 }

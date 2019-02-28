@@ -6,16 +6,22 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.util.ConcurrentModificationException;
+import java.util.IdentityHashMap;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import sam.functions.IOExceptionConsumer;
 import sam.functions.IOExceptionSupplier;
+import sam.io.BufferSupplier;
 
+/*
+ * using delegate, rather than subclass, so that lock does not effect InFileImpl's internal access of methods
+ */ 
 public class InFile implements AutoCloseable {
-	private final AtomicBoolean inUse = new AtomicBoolean();
+	private final AtomicBoolean lock = new AtomicBoolean(false);
 	private final AtomicBoolean closed = new AtomicBoolean();
 	private final InFileImpl file;
-	
+
 	public InFile(Path path, boolean createIfNotExits) throws IOException {
 		this.file = new InFileImpl(path, createIfNotExits);
 	}
@@ -36,98 +42,70 @@ public class InFile implements AutoCloseable {
 		checkClosed();
 		return file.acutualSize();
 	}
+
+	public IdentityHashMap<DataMeta, DataMeta> transferTo(Iterable<DataMeta> metas, InFile target) throws IOException {
+		Objects.requireNonNull(target);
+		Objects.requireNonNull(metas);
+		
+		if(file.equals(target.file))
+			throw new IOException("source cannot be the target");
+		
+		return wrap(() -> target.wrap(() -> file.transferTo(metas, target.file)));
+	}
+
+	int write0(ByteBuffer buffer) throws IOException {
+		return wrap(() -> file.write(buffer));
+	}
 	public DataMeta write(ByteBuffer buffer) throws IOException {
-		checkClosed();
-		lock();
-
-		try {
-			return file.write(buffer);	
-		} finally {
-			unlock();
-		}
+		return wrap(() -> {
+			long pos = file.position();
+			int size = file.write(buffer);
+			return new DataMeta(pos, size);
+		});
 	}
-	public DataMeta write(IOExceptionSupplier<ByteBuffer> buffers) throws IOException {
-		checkClosed();
-		lock();
-
-		try {
-			return file.write(buffers);	
-		} finally {
-			unlock();
-		}
-		
-	}
-	public int write2(IOExceptionSupplier<ByteBuffer> buffers) throws IOException {
-		checkClosed();
-		lock();
-
-		try {
-			return file.write2(buffers);	
-		} finally {
-			unlock();
-		}
-		
+	public DataMeta write(BufferSupplier buffers) throws IOException {
+		return wrap(() -> file.write(buffers));
 	}
 	public ByteBuffer read(DataMeta meta, ByteBuffer buffer) throws IOException {
-		checkClosed();
-		lock();
-
-		try {
-			return file.read(meta, buffer);	
-		} finally {
-			unlock();
-		}
-		
+		return wrap(() -> file.read(meta, buffer));
 	}
 	public void read(DataMeta meta, ByteBuffer buffer, IOExceptionConsumer<ByteBuffer> bufferConsumer) throws IOException {
+		wrap(() -> {
+			file.read(meta, buffer, bufferConsumer);
+			return null;
+		});
+	}
+	public long transferTo(Iterable<DataMeta> metas, WritableByteChannel target) throws IOException {
+		return wrap(() -> file.transferTo(metas, target));
+	}
+	
+	private <E> E wrap(IOExceptionSupplier<E> action) throws IOException {
 		checkClosed();
-		lock();
-
-		try {
-			file.read(meta, buffer, bufferConsumer);	
-		} finally {
-			unlock();
-		}
 		
-	}
-	public void transfer(Iterable<DataMeta> metas, WritableByteChannel target, ByteBuffer buffer) throws IOException {
-		checkClosed();
-		lock();
-
-		try {
-			file.transfer(metas, target, buffer);
-		} finally {
-			unlock();
-		}
-
-	}
-
-	/**
-	 * never use inside try block, 
-	 * if used finally block will unlock(), regardless lock was obtained
-	 */
-	private void lock() {
-		if(!this.inUse.compareAndSet(false, true))
+		if(lock.compareAndSet(!false, true))
 			throw new ConcurrentModificationException("already in use");
+		
+		try {
+			return action.get();
+		} finally {
+			lock.set(false);
+		}
 	}
-	private void unlock() {
-		this.inUse.set(false);
+	
+	int read(ByteBuffer buffer, long pos, int size, boolean flip) throws IOException {
+		return wrap(() -> file.read(buffer, pos, size, flip));
 	}
-
 	public void close() throws IOException {
 		if(closed.get())
 			return;
 
-		lock();
-
-		try {
+		wrap(() -> {
 			if(closed.get())
-				return;
+				return null;
 
 			file.close();
 			closed.set(true);
-		} finally {
-			unlock();
-		}
+			return null;
+		});
 	}
 }

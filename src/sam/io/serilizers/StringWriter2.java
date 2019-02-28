@@ -22,6 +22,8 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+
+import sam.io.IOUtils;
 public class StringWriter2 {
 	private static final Charset DEFAULT_CHARSET = defaultCharset();
 
@@ -104,7 +106,7 @@ public class StringWriter2 {
 		.write(s);
 	}
 	public static void writeText(WritableByteChannel channel, CharSequence s, WriterConfig config) throws IOException {
-		StringIOUtils.write(StringIOUtils.consumer(channel), s, config.encoder(), config.onUnmappableCharacter, config.onMalformedInput);
+		StringIOUtils.write(buffer -> IOUtils.write(buffer, channel, false), s, config.encoder(), config.onUnmappableCharacter, config.onMalformedInput);
 	}
  	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {
 		appendTextAtBegining(path, s, Charset.forName(charset));
