@@ -67,55 +67,7 @@ public class StringUtils {
 		Spliterator<String> sp = Spliterators.spliteratorUnknownSize(new StringSplitIterator(string, c, limit), Spliterator.IMMUTABLE);
 		return StreamSupport.stream(sp, false);
 	}
-
-	public static class StringSplitIterator implements Iterator<String> {
-		String current;
-		int start = 0;
-		int count = 0;
-		private final String string;
-		private final char c;
-		private final int limit;
-
-		public StringSplitIterator(String string, char c, int limit) {
-			this.string = string;
-			this.c = c;
-			this.limit = limit - 1;
-			current = next0();
-		}
-
-		private String next0() {
-			if(count < limit) {
-				for (int end = start; end < string.length(); end++) {
-					if(string.charAt(end) == c) {
-						String s = string.substring(start, end); 
-						start = end + 1;
-						count++;
-						return s;
-					}
-				}        			
-			}
-			if(start < string.length()) {
-				String s = string.substring(start, string.length());
-				start = string.length();
-				count++;
-				return s;
-			}
-			return null;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return current != null;
-		}
-
-		@Override
-		public String next() {
-			String ss = current;
-			this.current = next0();
-			return ss;
-		}
-	}
-	/**
+/**
 	 * joinIfNotEndsWithSeparator("anime", "sanam", "/") -> anime/sanam
 	 * joinIfNotEndsWithSeparator("anime/", "sanam", "/") -> anime/sanam
 	 * 
