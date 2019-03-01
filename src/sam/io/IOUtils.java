@@ -3,6 +3,7 @@ package sam.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
@@ -90,7 +91,7 @@ public interface IOUtils {
 		return n;
 	}
 
-	public static void ensureCleared(ByteBuffer buffer) throws IOException {
+	public static void ensureCleared(Buffer buffer) throws IOException {
 		if(buffer != null && (buffer.position() != 0 || buffer.limit() != buffer.capacity()))
 			throw new IOException("unclear buffer: buffer.position("+buffer.position()+") != 0 || defaultBuffer.limit("+buffer.limit()+") != defaultBuffer.capacity("+buffer.capacity()+")");
 	}

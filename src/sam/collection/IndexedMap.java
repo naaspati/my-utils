@@ -31,6 +31,7 @@ public final class IndexedMap<E> implements Iterable<E> {
 		Objects.requireNonNull(indexOf);
 
 		ToIntFunction<E> func = e -> {
+			Objects.requireNonNull(e);
 			int n = indexOf.applyAsInt(e);
 			if(n < 0)
 				throw new IllegalArgumentException("index cannot be < 0: index: "+n+", of: "+e);
@@ -49,7 +50,7 @@ public final class IndexedMap<E> implements Iterable<E> {
 		this.max = func.applyAsInt(array[array.length - 1]);
 		this.min = func.applyAsInt(array[0]);
 
-		this.indexOf = indexOf;
+		this.indexOf = func;
 	}
 
 	private static final Object MARKER = new Object();
@@ -109,7 +110,6 @@ public final class IndexedMap<E> implements Iterable<E> {
 	}
 
 	public void put(E e) {
-		Objects.requireNonNull(e);
 		int index = indexOf.applyAsInt(e);
 
 		if(isInRange(index)) {

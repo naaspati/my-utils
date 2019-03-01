@@ -139,6 +139,9 @@ class InFileImpl implements AutoCloseable {
 
 			while(true) {
 				ByteBuffer buffer = buffers.next();
+				if(buffer == null && buffers.isEndOfInput())
+					break;
+				
 				if(!buffer.hasRemaining()) { 
 					LOGGER.debug("EMPTY buffer return by buffers");
 					buffer.clear();
