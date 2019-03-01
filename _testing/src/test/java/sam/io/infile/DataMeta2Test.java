@@ -48,9 +48,9 @@ public class DataMeta2Test {
 			DataMeta2.save(expected, p, buffer);
 			assertEquals(Files.size(p), Long.BYTES + Integer.BYTES);
 
-			List<DataMeta2> actual = DataMeta2.read(p, buffer);
-			assertEquals(expected, actual);
-			assertTrue(actual.isEmpty());
+			DataMeta2[] actual = DataMeta2.read(p, buffer);
+			assertEquals(expected.size() == 0, actual.length == 0);
+			assertTrue(actual.length == 0);
 
 			for (int i = 0; i < 1000; i++) {
 				Files.deleteIfExists(p); 
@@ -60,11 +60,11 @@ public class DataMeta2Test {
 				assertEquals(Files.size(p), Long.BYTES + Integer.BYTES + expected.size() * DataMeta2.BYTES);
 
 				actual = DataMeta2.read(p, buffer);
-				assertEquals(expected.size(), actual.size());
+				assertEquals(expected.size(), actual.length);
 				
 				for (int n = 0; n < expected.size(); n++) {
-					assertNotSame(expected.get(n), actual.get(n));
-					assertEquals(expected.get(n), actual.get(n));
+					assertNotSame(expected.get(n), actual[n]);
+					assertEquals(expected.get(n), actual[n]);
 				} 
 				
 				System.out.println();
@@ -130,12 +130,12 @@ public class DataMeta2Test {
 				
 				try(FileChannel fc = FileChannel.open(p, READ)) {
 					for (List<DataMeta2> expected : expecteds) {
-						List<DataMeta2> actual = DataMeta2.read(fc, buffer);
+						DataMeta2[] actual = DataMeta2.read(fc, buffer);
 				
-						assertEquals(expected.size(), actual.size());
+						assertEquals(expected.size(), actual.length);
 						for (int n = 0; n < expected.size(); n++) {
-							assertNotSame(expected.get(n), actual.get(n));
-							assertEquals(expected.get(n), actual.get(n));
+							assertNotSame(expected.get(n), actual[n]);
+							assertEquals(expected.get(n), actual[n]);
 						} 
 							
 					}

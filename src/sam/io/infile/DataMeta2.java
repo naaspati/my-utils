@@ -11,7 +11,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -79,7 +78,7 @@ public class DataMeta2 extends DataMeta {
 		
 		IOUtils.write(buffer, fc, true);
 	}
-	public static ArrayList<DataMeta2> read(Path p, ByteBuffer buffer) throws IOException {
+	public static DataMeta2[] read(Path p, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(p);
 		IOUtils.ensureCleared(buffer);
 
@@ -88,7 +87,7 @@ public class DataMeta2 extends DataMeta {
 		try(FileChannel fc = FileChannel.open(p, READ)) {
 			long filesize = fc.size();
 			if(filesize == 0)
-				return new ArrayList<>();
+				return new DataMeta2[0];
 
 			buffer = buffer(buffer, (int)filesize);
 
@@ -100,12 +99,9 @@ public class DataMeta2 extends DataMeta {
 		if(buffer != null)
 			return buffer;
 
-		ByteBuffer b = ByteBuffer.allocate((int)Math.min(maxsize, BufferSupplier.DEFAULT_BUFFER_SIZE));
-
-		//LOGGER.debug("buffer created: {}", b.capacity());
-		return b;
+		return ByteBuffer.allocate((int)Math.min(maxsize, BufferSupplier.DEFAULT_BUFFER_SIZE));
 	}
-	public static ArrayList<DataMeta2> read(ReadableByteChannel fc, ByteBuffer buffer) throws IOException {
+	public static DataMeta2[] read(ReadableByteChannel fc, ByteBuffer buffer) throws IOException {
 		ByteBuffer b = ByteBuffer.allocate(Long.BYTES);
 		int n = fc.read(b);
 		b.flip();
@@ -124,7 +120,7 @@ public class DataMeta2 extends DataMeta {
 
 		int count = b.getInt();
 		if(count == 0)
-			return new ArrayList<>();
+			return new DataMeta2[0];
 
 		int size = count * BYTES;
 		buffer = buffer(buffer, size);
@@ -132,7 +128,8 @@ public class DataMeta2 extends DataMeta {
 		if(buffer.capacity() < size && buffer.capacity() < BYTES * 2)
 			throw new IOException("buffer.capacity("+buffer.capacity()+") < BYTES * 2 ("+(BYTES * 2)+")");
 		
-		ArrayList<DataMeta2> list = new ArrayList<>();
+		DataMeta2[] list = new DataMeta2[count];
+		int index = 0;
 
 		while(size > 0) {
 			buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
@@ -149,7 +146,7 @@ public class DataMeta2 extends DataMeta {
 			size -= n;
 
 			while(buffer.remaining() >= BYTES) 
-				list.add(new DataMeta2(buffer.getInt(), buffer.getLong(), buffer.getInt()));
+				list[index++] = new DataMeta2(buffer.getInt(), buffer.getLong(), buffer.getInt());
 
 			if(buffer.hasRemaining())
 				buffer.compact();
