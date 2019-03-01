@@ -7,10 +7,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,7 +35,8 @@ class InFileImpl implements AutoCloseable {
 
 	private static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
 	private final FileChannel file;
-	private final Path temp, filepath;
+	private final Path filepath;
+	private final FileLock lock;
 	private final AtomicLong position = new AtomicLong();
 
 	public InFileImpl(Path path, boolean createIfNotExits) throws IOException {
@@ -45,16 +46,13 @@ class InFileImpl implements AutoCloseable {
 		if(!createIfNotExits && !Files.isRegularFile(path))
 			throw new FileNotFoundException("file not found: "+path);
 
-		this.temp = Files.createTempFile("InFile-", "-"+path.getFileName());
-
-		if(Files.exists(path)) {
-			Files.copy(path, temp, StandardCopyOption.REPLACE_EXISTING);
-			LOGGER.debug("created a copy: \"{}\" -> \"{}\"", path, temp);
-		} else {
-			LOGGER.debug("created: \"{}\"", temp);
+		file = FileChannel.open(path, READ, WRITE);
+		lock = file.tryLock();
+		if(lock == null) {
+			file.close();
+			throw new IOException("failed to accuire lock");
 		}
-
-		file = FileChannel.open(temp, READ, WRITE);
+		
 		long pos = file.size();
 		position.set(pos);
 		file.position(pos);
@@ -374,9 +372,6 @@ class InFileImpl implements AutoCloseable {
 	@Override
 	public void close() throws IOException {
 		file.close();
-		Files.move(temp, filepath, StandardCopyOption.REPLACE_EXISTING);
-
-		if(DEBUG_ENABLED)
-			LOGGER.debug("moved: \"{}\" -> \"{}\"", temp, filepath);	
+		lock.release();
 	}
 }

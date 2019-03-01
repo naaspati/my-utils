@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -61,10 +62,11 @@ public interface Junk {
 	}
 	public static Stream<Method> getters(Class cls) {
 		return Stream.of(cls.getMethods())
-				.filter(m -> m.getName().startsWith("get") && 
+				.filter(m -> (m.getName().startsWith("get") || m.getName().startsWith("is")) && 
 						Modifier.isPublic(m.getModifiers()) && 
 						!Modifier.isStatic(m.getModifiers()) &&
-						m.getParameterCount() == 0
+						m.getParameterCount() == 0 && 
+						(m.getReturnType() != Void.class || m.getReturnType() != void.class)
 						);
 	}
 	public static void invokeGetters(Object object, Appendable sink) throws IOException {
@@ -108,5 +110,17 @@ public interface Junk {
 	public static <K, V> StringBuilder append(Map<K, V> map, StringBuilder sb, Function<K, CharSequence> key, Function<V, CharSequence> value) {
 		map.forEach((k,v) -> sb.append(key.apply(k)).append(" = ").append(value.apply(v)).append('\n'));
 		return sb;
+	}
+	public static StackTraceElement stackLocation() {
+		return Thread.currentThread().getStackTrace()[2];
+	}
+	public static void printstackLocation(String msg) {
+		System.out.println((msg == null ? "" : msg+" ")+Thread.currentThread().getStackTrace()[2]);
+	}
+	public static void printstackLocation() {
+		System.out.println(Thread.currentThread().getStackTrace()[2]);
+	}
+	public static void printTrack(int depth) {
+		System.out.println(Arrays.stream(Thread.currentThread().getStackTrace()).skip(2).limit(depth).map(String::valueOf).collect(Collectors.joining("\n  ")));
 	}
 }

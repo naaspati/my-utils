@@ -3,9 +3,6 @@ package sam.io.fileutils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -36,7 +33,7 @@ public interface FilesUtilsIO {
 	public static FileWalkResult listDirsFiles(Path path) throws IOException {
 		return FilesWalker.listDirsFiles(path);
 	}
-public static void deleteDir(Path dir) throws IOException {
+	public static void deleteDir(Path dir) throws IOException {
 		if(Files.notExists(dir)) return;
 
 		Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
@@ -171,12 +168,6 @@ public static void deleteDir(Path dir) throws IOException {
 				delete(f);
 		}
 		return file.delete();
-	}
-	public static FileLock createFileLock(Path lockFile) throws IOException {
-		FileChannel c = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-		FileLock fl =  c.tryLock();
-		c.write(ByteBuffer.wrap(new byte[]{1}));
-		return fl;
 	}
 	@SuppressWarnings("rawtypes")
 	public static void writeAsString(Path path, Iterable itr, StandardOpenOption...options) throws IOException {
