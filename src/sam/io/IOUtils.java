@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -89,6 +90,22 @@ public interface IOUtils {
 
 		buffer.clear();
 		return n;
+	}
+	
+	public static int read(ByteBuffer buffer, boolean clear, ReadableByteChannel source) throws IOException {
+		if(clear)
+			buffer.clear();
+		
+		int n = source.read(buffer);
+		buffer.flip();
+		
+		return n;
+	}
+	public static void compactOrClear(ByteBuffer buffer) {
+		if(buffer.hasRemaining())
+			buffer.compact();
+		else
+			buffer.clear();
 	}
 
 	public static void ensureCleared(Buffer buffer) throws IOException {
