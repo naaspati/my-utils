@@ -13,5 +13,10 @@ if [%1]==[index] (
   goto:eof
 )
 
+if [%1]==[jacoco] (
+  gradle report
+  explorer "build\jacoco.html\index.html"
+  goto:eof
+)
+
 gradle test --tests %*
-choms
