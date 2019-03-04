@@ -18,20 +18,24 @@ dependencies {
 
   testCompile 'com.thedeanda:lorem:2.1'
   testCompile 'org.junit.jupiter:junit-jupiter-api:'+JUNIT_VERSION
-  // required for Parameterized test
-  // testCompile 'org.junit.jupiter:junit-jupiter-params:'+JUNIT_VERSION
+  
+   testCompile 'org.junit.jupiter:junit-jupiter-params:'+JUNIT_VERSION
    testRuntime 'org.junit.jupiter:junit-jupiter-engine:'+JUNIT_VERSION
    
    implementation 'org.jacoco:org.jacoco.core:0.8.2'
    implementation 'org.jacoco:org.jacoco.report:0.8.2'
    
-  // testCompile 'com.google.truth:truth:'+TRUTH_VERSION
-  // testCompile 'com.google.truth.extensions:truth-java8-extension:'+TRUTH_VERSION
+   testCompile 'com.google.truth:truth:'+TRUTH_VERSION
+   testCompile 'com.google.truth.extensions:truth-java8-extension:'+TRUTH_VERSION
 }
 
 test {
   useJUnitPlatform()
   systemProperty 'java.util.logging.config.file','test-logging.properties'
+}
+
+test.doLast {
+    ReportGen.main(null);
 }
 
 task report {

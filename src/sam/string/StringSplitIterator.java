@@ -10,7 +10,10 @@ public class StringSplitIterator implements Iterator<String> {
 	private final char c;
 	private final int limit;
 
-	public StringSplitIterator(String string, char c, int limit) {
+	public StringSplitIterator(CharSequence string, char c) {
+		this(string, c, Integer.MAX_VALUE);
+	}
+	public StringSplitIterator(CharSequence string, char c, int limit) {
 		this.string = string;
 		this.c = c;
 		this.limit = limit - 1;

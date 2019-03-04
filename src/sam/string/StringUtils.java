@@ -3,7 +3,6 @@ package sam.string;
 import static sam.myutils.Checker.isEmpty;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -14,52 +13,60 @@ import sam.myutils.Checker;
 //VERSION = 0.004;
 public class StringUtils {
 
-
-	public static boolean contains(String s, char c) {
-		return s.indexOf(c) >= 0;	
+	public static boolean contains(CharSequence s, char c) {
+		Objects.requireNonNull(s);
+		if(s.length() == 0)
+			return false;
+		
+		for (int i = 0; i < s.length(); i++) {
+			if(s.charAt(i) == c)
+				return true;
+		}
+		
+		return false;
 	}
-	public static boolean containsAny(String s, char...cs) {
+	public static boolean containsAny(CharSequence s, char...cs) {
 		for (char c : cs) {
-			if(s.indexOf(c) >= 0)
+			if(contains(s, c))
 				return true;
 		}
 		return false;
 	}
-	public static boolean containsAll(String s, char...cs) {
+	public static boolean containsAll(CharSequence s, char...cs) {
 		for (char c : cs) {
-			if(s.indexOf(c) < 0)
+			if(!contains(s, c))
 				return false;
 		}
 		return true;
 	}
 
-	public static String[] split(String string, char c) {
+	public static String[] split(CharSequence string, char c) {
 		return split(string, c, Integer.MAX_VALUE);
 	}
-	public static String[] split(String string, char c, int limit) {
+	public static String[] split(CharSequence string, char c, int limit) {
 		Objects.requireNonNull(string);
 		if(isEmpty(string))
 			return new String[0];
 
 		return splitStream(string, c, limit).toArray(String[]::new);
 	}
-	public static Stream<String> splitStream(String string, char c) {
+	public static Stream<String> splitStream(CharSequence string, char c) {
 		return splitStream(string, c, Integer.MAX_VALUE);
 	}
-	public static String[] splitAtNewline(String string) {
+	public static String[] splitAtNewline(CharSequence string) {
 		return splitAtNewline(string, Integer.MAX_VALUE);
 	}
-	public static String[] splitAtNewline(String string, int limit) {
+	public static String[] splitAtNewline(CharSequence string, int limit) {
 		return splitAtNewlineStream(string).toArray(String[]::new);
 	}
 
-	public static Stream<String> splitAtNewlineStream(String string) {
+	public static Stream<String> splitAtNewlineStream(CharSequence string) {
 		return splitAtNewlineStream(string, Integer.MAX_VALUE);
 	}
-	public static Stream<String> splitAtNewlineStream(String string, int limit) {
+	public static Stream<String> splitAtNewlineStream(CharSequence string, int limit) {
 		return splitStream(string, '\n', limit).map(s -> s.isEmpty() || s.charAt(s.length() - 1) != '\r' ? s : s.substring(0, s.length() - 1));
 	}
-	public static Stream<String> splitStream(String string, char c, int limit) {
+	public static Stream<String> splitStream(CharSequence string, char c, int limit) {
 		Objects.requireNonNull(string);
 		if(isEmpty(string))
 			return Stream.empty();
@@ -114,7 +121,7 @@ public class StringUtils {
 		return sb.toString();
 	}
 
-	public static String joinWithSeparator(String separator, Object...data) {
+	public static String joinWithSeparator(CharSequence separator, Object...data) {
 		if(data == null || data.length == 0) return null;
 		if(data.length == 1) return String.valueOf(data[0]);
 
@@ -151,7 +158,7 @@ public class StringUtils {
 	 * @return
 	 */
 	public static String repeat(String s, int times) {
-		Checker.mustBeTrue(times >= 0, () -> "bad value for times: "+times);
+		Checker.assertTrue(times >= 0, () -> "bad value for times: "+times);
 		Objects.requireNonNull(s);
 
 		if(times == 0 || s.isEmpty())
@@ -179,7 +186,7 @@ public class StringUtils {
 		return cs;
 	}
 	public static StringBuilder repeat(char c, int times, StringBuilder sb) {
-		Checker.mustBeTrue(times >= 0, () -> "bad value for times: "+times);
+		Checker.assertTrue(times >= 0, () -> "bad value for times: "+times);
 		Objects.requireNonNull(sb);
 		
 		if(times == 0)
@@ -192,7 +199,7 @@ public class StringUtils {
 	}
 
 	public static StringBuilder repeat(CharSequence s, int times, StringBuilder sink) {
-		Checker.mustBeTrue(times >= 0, () -> "bad value for times: "+times);
+		Checker.assertTrue(times >= 0, () -> "bad value for times: "+times);
 		Objects.requireNonNull(s);
 
 		for (int i = 0; i < times; i++) 

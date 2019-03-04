@@ -14,7 +14,6 @@ if [%1]==[index] (
 )
 
 if [%1]==[jacoco] (
-  gradle report
   explorer "build\jacoco.html\index.html"
   goto:eof
 )

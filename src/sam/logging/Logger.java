@@ -26,6 +26,7 @@
 package sam.logging;
 
 import java.util.function.Supplier;
+// import sam.logging.SamPrefixLogFilter;
 
 /**
  * copy paste of org.slf4j.Logger
@@ -46,7 +47,46 @@ public interface Logger {
 					throw new RuntimeException(cls, e);
 				}
 			}
+			
+			if(System.getProperty("java.util.logging.config.file") != null)
 			return new DefaultLoggerManager();
+			else {
+				System.out.println("System.getProperty(\"java.util.logging.config.file\") == null, using no-op logger");
+				
+				Logger log = new Logger() {
+					public boolean isDebugEnabled(){ return false; }
+					public void debug(String msg){}
+					public void debug(Supplier<String> msgSupplier){}
+					public void debug(String format, Object arg){}
+					public void debug(String format, Object arg1, Object arg2){}
+					public void debug(String format, Object... arguments){}
+					public void debug(String msg, Throwable t){}
+
+					public boolean isInfoEnabled(){return false; }
+					public void info(String msg){}
+					public void info(Supplier<String> msgSupplier){}
+					public void info(String format, Object arg){}
+					public void info(String format, Object arg1, Object arg2){}
+					public void info(String format, Object... arguments){}
+					public void info(String msg, Throwable t){}
+
+					public boolean isWarnEnabled(){return false; }
+					public void warn(String msg){}
+					public void warn(String format, Object arg){}
+					public void warn(String format, Object... arguments){}
+					public void warn(String format, Object arg1, Object arg2){}
+					public void warn(String msg, Throwable t){}
+
+					public boolean isErrorEnabled(){ return false; }
+					public void error(String msg){}
+					public void error(String format, Object arg){}
+					public void error(String format, Object arg1, Object arg2){}
+					public void error(String format, Object... arguments){}
+					public void error(String msg, Throwable t){}
+				};
+				
+				return s -> log;
+			}
 		}
 	}).get();  
 

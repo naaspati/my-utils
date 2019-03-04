@@ -11,7 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.logging.Logger;
+
+import sam.logging.Logger;
 
 public final class LoadConfig {
 	public static void load() throws URISyntaxException, IOException {
@@ -26,24 +27,38 @@ public final class LoadConfig {
 			p = null;
 			URL u = ClassLoader.getSystemResource(".config.properties");
 			if(u != null) {
-				Logger.getLogger(LoadConfig.class.getName()).fine(() -> "config_file: "+u);
+				logger().debug("config_file: {}", u);
 				load(u.openStream());
 				return;
 			} else {
-				Logger.getLogger(LoadConfig.class.getName()).warning("\".config.properties\" not found");
+				logger().warn("\".config.properties\" not found");
 			}
 		} else {
-			Logger.getLogger(LoadConfig.class.getName()).fine("config_file: " + p);
 			load(Files.newInputStream(p));
+			logger().debug("config_file: {}", p);
 		}
 	}
+	private static Logger logger() {
+		return Logger.getLogger(LoadConfig.class);
+	}
 	public static void load(InputStream is) throws IOException {
-		Properties2 p = new Properties2(is);
+		Properties2 p = new Properties2(is, false);
 		p.setSystemLookup(true, true);
 		
 		HashMap<String, String> map = new HashMap<>();
 		p.forEach((s,t) -> map.put(s, t));
+		
+		if(map.isEmpty())
+			return;
+		
 		map.forEach(System::setProperty);
+		
+		Logger logger = logger();
+		if(logger.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder().append('\n');
+			map.forEach((s,t) -> sb.append("  ").append(s).append('=').append('"').append(t).append('"').append('\n'));
+			logger.debug(sb.substring(0, sb.length() - 1));
+		}
 	}
 
 }

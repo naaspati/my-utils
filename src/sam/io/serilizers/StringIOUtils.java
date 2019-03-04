@@ -14,7 +14,6 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import sam.io.BufferConsumer;
@@ -41,6 +40,7 @@ public final class StringIOUtils {
 		if(s.length() == 0) return;
 
 		CharBuffer chars = s instanceof CharBuffer ? (CharBuffer) s : CharBuffer.wrap(s);
+		
 		encoder = orElse(encoder, () -> defaultCharset().newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
 		encoder.reset();
 		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);

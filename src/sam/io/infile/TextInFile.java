@@ -1,5 +1,6 @@
 package sam.io.infile;
 
+import static java.nio.charset.CodingErrorAction.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -20,6 +21,9 @@ public class TextInFile extends InFile {
 		super(path, createIfNotExits);
 	}
 
+	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink) throws IOException {
+		readText(meta, buffer, charBuffer, decoder, sink, REPORT, REPORT);
+	}
 	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		if(meta.size == 0)
 			return;

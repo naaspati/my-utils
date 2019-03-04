@@ -32,7 +32,7 @@ public final class UrlsPrefixImpl {
 		this.combined = protocol.concat(":").concat(prefix).concat(prefix.charAt(prefix.length() - 1) == '/' ? "" : "/");
 	}
 	UrlsPrefixImpl(String url, String column_name) throws MalformedURLException{
-		Checker.mustBeTrue(Checker.isEmptyTrimmed(column_name), () -> "bad value for column_name:\""+column_name+"\"");
+		Checker.assertTrue(Checker.isEmptyTrimmed(column_name), () -> "bad value for column_name:\""+column_name+"\"");
 		
 		url = url.replace('\\', '/');
 		this.column_name = column_name;

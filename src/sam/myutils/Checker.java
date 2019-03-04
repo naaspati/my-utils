@@ -10,24 +10,33 @@ import java.util.function.Supplier;
 
 public final class Checker {
 	private Checker() {}
-
-	/**
-	 * 
-	 * @param condition if not true, throw new IllegalArgumentException(msg);
-	 * @param msg
-	 */
-	public static void mustBeTrue(boolean condition, String msg) {
-		if(!condition)
-			throw new IllegalArgumentException(msg);
+	
+	@FunctionalInterface
+	public static interface MessageSupplier {
+		String get();
 	}
-	/**
-	 * 
-	 * @param condition if not true, throw new IllegalArgumentException(msg);
-	 * @param msgSupplier
-	 */
-	public static void mustBeTrue(boolean condition, Supplier<String> msgSupplier) {
-		if(!condition)
-			throw new IllegalArgumentException(msgSupplier.get());
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void assertIsNull(Object obj) {
+		assertTrue(obj == null, (Supplier)null);
+	}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void assertTrue(boolean condition) {
+		assertTrue(condition, (Supplier)null);
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void assertTrue(boolean condition, MessageSupplier messageSupplier) {
+		assertTrue(condition, (Supplier)() -> new AssertionError(messageSupplier.get()));
+	}
+	
+	public static void assertTrue(boolean condition, Supplier<RuntimeException> exceptionSupplier) {
+		if(!condition) {
+			if(exceptionSupplier == null)
+				throw new AssertionError();
+			else
+				throw exceptionSupplier.get();
+		}
 	}
 
 	public static boolean isEmpty(CharSequence s) {
@@ -148,7 +157,7 @@ public final class Checker {
 	 * @param variables
 	 */
 	public static void requireNonNull(String variableNames, Object...variables) {
-		mustBeTrue(isNotEmpty(variables), "args no speficied");
+		assertTrue(isNotEmpty(variables), () -> new IllegalArgumentException("args not speficied"));
 
 		if(variables.length == 1) {
 			if(variables[0] == null)

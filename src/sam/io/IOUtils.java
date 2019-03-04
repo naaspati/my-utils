@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
@@ -92,11 +93,32 @@ public interface IOUtils {
 		return n;
 	}
 	
+	public static int write(ByteBuffer buffer, long pos, FileChannel channel, boolean flip) throws IOException {
+		if(flip)
+			buffer.flip();
+		
+		int n = 0;
+		while(buffer.hasRemaining())
+			n += channel.write(buffer, pos + n);
+
+		buffer.clear();
+		return n;
+	}
+	
 	public static int read(ByteBuffer buffer, boolean clear, ReadableByteChannel source) throws IOException {
 		if(clear)
 			buffer.clear();
 		
 		int n = source.read(buffer);
+		buffer.flip();
+		
+		return n;
+	}
+	public static int read(ByteBuffer buffer, long pos, boolean clear, FileChannel source) throws IOException {
+		if(clear)
+			buffer.clear();
+		
+		int n = source.read(buffer, pos);
 		buffer.flip();
 		
 		return n;

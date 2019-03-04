@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Properties2 {
-	private static final Logger LOGGER = Logger.getLogger(Properties2.class.getName()) ;
+	private final Logger logger;
 
 	private final Properties properties = new Properties();
 	private final HashMap<String, String> parsed = new HashMap<>();
@@ -28,7 +28,11 @@ public class Properties2 {
 		this.propertyLooup = propertyLooup;
 	}
 	public Properties2(InputStream inStream) throws IOException {
+		this(inStream, true);
+	}
+	Properties2(InputStream inStream, boolean createLogger) throws IOException {
 		properties.load(inStream);
+		logger = createLogger ? Logger.getLogger(Properties2.class.getName())  : null;
 	}
 	public void load(Reader reader) throws IOException {
 		properties.load(reader);
@@ -68,10 +72,12 @@ public class Properties2 {
 	public String get(String key) {
 		String s = find(key);
 		
-		if(s == null)
-			LOGGER.config("value not found for key: "+key);
-		else 
-			LOGGER.fine(() -> key.concat(s == null ? "=" : "=".concat(s)));
+		if(logger != null) {
+			if(s == null)
+				logger.config("value not found for key: "+key);
+			else 
+				logger.fine(() -> key.concat(s == null ? "=" : "=".concat(s)));	
+		}
 		return s;
 	}
 	private  String find(String key) {
