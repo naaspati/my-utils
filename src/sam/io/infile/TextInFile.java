@@ -69,6 +69,9 @@ public class TextInFile extends InFile {
 		StringIOUtils.read(fill, sink, decoder, charBuffer, onUnmappableCharacter, onMalformedInput);
 	}
 	
+	public DataMeta write(CharSequence s, CharsetEncoder encoder, ByteBuffer buffer) throws IOException {
+		return write(s, encoder, buffer, REPORT, REPORT);
+	}
 	public DataMeta write(CharSequence s, CharsetEncoder encoder, ByteBuffer buffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		long pos = size();
 		

@@ -4,9 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sam.myutils.Checker.isEmptyTrimmed;
+import static sam.myutils.Checker.*;
 import static sam.myutils.Checker.isInteger;
-import static sam.myutils.Checker.mustBeTrue;
 import static sam.myutils.Checker.requireNonNull;
 
 import java.util.Random;
@@ -17,7 +16,7 @@ public class CheckerTest {
 
 	@Test
 	public void testMustBeTrueBooleanString() {
-		assertThrows(IllegalArgumentException.class, () -> mustBeTrue(false, "msg"));
+		assertThrows(IllegalArgumentException.class, () -> assertTrue(false, "msg"));
 	}
 	
 	@Test
