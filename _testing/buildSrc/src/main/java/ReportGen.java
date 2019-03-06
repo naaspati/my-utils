@@ -129,6 +129,7 @@ public class ReportGen {
 	public static void main(String[] args) throws IOException {
 		final ReportGen generator = new ReportGen();
 		generator.create();
+		System.out.println("report generated");
 	}
 
 }

@@ -1,6 +1,4 @@
 package sam.io.infile;
-
-import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -11,14 +9,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,116 +27,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import sam.io.BufferSupplier;
+// import static org.junit.jupiter.api.Assertions.*;
 
-public class InFileTest extends InFileTestUtils {
-	protected static int DEFAULT_SAMPLE_SIZE = Optional.ofNullable(System.getProperty("DEFAULT_SAMPLE_SIZE")).map(Integer::parseInt).orElse(100);
-	protected static final Logger LOGGER = Logger.getLogger(InFileTestUtils.class.getName());
 
-	private static Path tempDir;
-	private static AtomicInteger counter;
+//import sam.logging.SamPrefixLogFilter;
 
-	@BeforeAll
-	static void setup() throws IOException {
-		tempDir = Files.createTempDirectory(InFileTest.class.getSimpleName());
-		counter = new AtomicInteger(0);
-
-		LOGGER.info(() -> "CREATE: "+tempDir);
-	}
-
-	@AfterAll
-	static void cleanup() throws IOException {
-		File file = tempDir == null ? null : tempDir.toFile();
-		String[] files = file == null ? null : file.list();
-
-		if(files != null) {
-			for (String s : files) {
-				if(!new File(file, s).delete())
-					LOGGER.warning("failed to delete: "+file.getName()+"\\"+s);
-			} 
-		}
-
-		counter.set(0);
-		LOGGER.info(() -> "DELETE: "+tempDir+(files == null ? "" : ", ["+String.join(",", files)+"]"));
-	}
-
-	private Path nextPath() {
-		Path p = tempDir.resolve(String.valueOf(counter.incrementAndGet()));
-		assertFalse(Files.exists(p));
-		LOGGER.info(() -> "NextPath: "+p);
-		return p;
-	}
-
-	private void assertEql(ByteBuffer expected, ByteBuffer actual) {
-		assertEquals(expected.remaining(), expected.capacity());
-		assertEquals(actual.remaining(), expected.capacity());
-		assertEquals(expected, actual);
-	}
-
-	@Test
-	public void testGeneral() throws IOException {
-		logMethod();
-
-		Path p1 = nextPath();
-		Path p2 = nextPath();
-
-		assertThrows(IOException.class, () -> new InFileImpl(p1, false));
-		assertTrue(Files.notExists(p1));
-
-		assertDoesNotThrow(() ->  {
-			try(InFileImpl file = new InFileImpl(p2, true);) { }
-		});
-
-		Files.deleteIfExists(p2);
-
-		assertThrows(Exception.class, () ->  {
-			try(InFileImpl file = new InFileImpl(p2, true);
-					InFileImpl file2 = new InFileImpl(p2, true);) {
-			}
-		});
-
-		assertTrue(Files.exists(p2));
-	}
-
-	@Test
-	public void testReadWrite() throws IOException {
-		try(InFileImpl file = new InFileImpl(nextPath(), true)) {
-			ByteBuffer bb = file.read(new DataMeta(0, 0), null);
-			assertEquals(0, bb.capacity());
-
-			Random rand = new Random();
-			ByteBuffer expected = fill(ByteBuffer.allocate(8000), rand, true);
-
-			long pos = file.size();
-			int size = file.write(expected);
-
-			checkRead(expected, file, new DataMeta(pos, size));
-
-			expected.clear();
-			fill(expected, rand, true);
-
-			DataMeta dm = file.write(bufferSupplier(expected, 1000));
-
-			checkRead(expected, file, dm);
-		}
-	}
-
-	private void checkRead(ByteBuffer expected, InFileImpl file, DataMeta d) throws IOException {
-		assertEquals(expected.capacity(), d.size);
-		ByteBuffer actual = file.read(d, null);
-
-		expected.clear();
-		assertEql(expected, actual);
-	}
+@Deprecated
+public class InFileTest_old extends InFileTestUtils {
 
 	@Test
 	public void testLargeReadWrite() throws IOException {
@@ -207,17 +107,17 @@ public class InFileTest extends InFileTestUtils {
 		testTransfer(Type.FILE);
 	}
 	@Test
-	public void testTransferInFileImpl() throws IOException {
+	public void testTransferInFile() throws IOException {
 		testTransfer(Type.INFILE);
 
 		common(50000, (map, file) -> {
 			assertThrows(IOException.class, () -> file.transferTo(Collections.emptyList(), file));
 
 			List<DataMeta> list = shuffled(map);
-			Path temp = nextPath();
+			Path temp = Files.createTempFile("testTransferINFILE-2", null);
 			final long size = file.acutualSize();
 
-			try(InFileImpl fc = new InFileImpl(temp, true)) {
+			try(InFile fc = new InFile(temp, true)) {
 				IdentityHashMap<DataMeta, DataMeta> map1 = file.transferTo(list, fc);
 				Collections.shuffle(list);
 				IdentityHashMap<DataMeta, DataMeta> map2 = file.transferTo(list, fc);
@@ -249,7 +149,7 @@ public class InFileTest extends InFileTestUtils {
 
 		common(10000, (map, file) -> {
 			List<DataMeta> list = shuffled(map);
-			Path temp = nextPath();
+			Path temp = Files.createTempFile("testTransfer_"+type, null);
 
 			try {
 				logMethod("test transfer(shuffled)");
@@ -287,19 +187,19 @@ public class InFileTest extends InFileTestUtils {
 		FILE, INFILE
 	}
 
-	private void testTrasfer(Path temp, Map<DataMeta, ByteBuffer> map, List<DataMeta> list, InFileImpl file, Type type) throws IOException {
+	private void testTrasfer(Path temp, Map<DataMeta, ByteBuffer> map, List<DataMeta> list, InFile file, Type type) throws IOException {
 		long size;
 
 		switch (type) {
 			case FILE:
-				try(FileChannel fc = FileChannel.open(temp, CREATE, WRITE, TRUNCATE_EXISTING)) {
+				try(FileChannel fc = FileChannel.open(temp, WRITE, TRUNCATE_EXISTING)) {
 					size = file.transferTo(list, fc);
 				}	
 				break;
 			case INFILE:
 				Files.deleteIfExists(temp);
 				Map<DataMeta, DataMeta> map2;
-				try(InFileImpl fc = new InFileImpl(temp, true)) {
+				try(InFile fc = new InFile(temp, true)) {
 					map2 = file.transferTo(list, fc);
 
 					for (Entry<DataMeta, DataMeta> m : map2.entrySet())
@@ -351,113 +251,30 @@ public class InFileTest extends InFileTestUtils {
 	private int sizeSum(Collection<DataMeta> list) {
 		return list.stream().mapToInt(d -> d.size).sum();
 	}
-
+	
 	@Test
 	public void replaceTest() throws IOException {
-		Path p = nextPath();
-		try(InFileImpl file = new InFileImpl(p, true)) {
+		Path p = Files.createTempFile(null, null);
+		try(InFile file = new InFile(p, true)) {
 			assertEquals(0, file.size());
-
-			final int CAP = 800;
-
-			Random r = new Random();
-			ByteBuffer expected = ByteBuffer.allocate(CAP);
-
-			long pos = file.size();
-			fill(expected, r, true);
-			DataMeta dm = new DataMeta(pos, file.write(expected));
-			checkRead(expected, file, dm);
-
-			ByteBuffer expected2 = ByteBuffer.allocate(CAP);
-			fill(expected2, r, true);
-			DataMeta d2 = file.replace(dm, expected2);
-			checkRead(expected2, file, d2);
-
-			expected2 = ByteBuffer.allocate(CAP/2);
-			fill(expected2, r, true);
-			d2 = file.replace(dm, expected2);
-			checkRead(expected2, file, d2);
-
-			DataMeta d3 = d2;
-			assertThrows(IOException.class, () -> file.replace(d3, ByteBuffer.allocate(CAP + 1)));
-
-			DataMeta d = new DataMeta(0, 0);
-			assertSame(file.replace(d, ByteBuffer.allocate(0)), d);
-
-			d = new DataMeta(pos, 40);
-			d2 = file.replace(d, ByteBuffer.allocate(0));
-			assertEquals(d.position, d2.position);
-			assertEquals(0, d2.size);
-		}
-	}
-	
-	@Test
-	public void replaceTest2() throws IOException {
-		Path p = nextPath();
-		try(InFileImpl file = new InFileImpl(p, true)) {
-			assertEquals(0, file.size());
-
-			final int CAP = 800;
-
-			Random r = new Random();
-			ByteBuffer expected = ByteBuffer.allocate(CAP);
-
-			long pos = file.size();
-			fill(expected, r, true);
-			DataMeta dm = file.write(bufferSupplier(expected, CAP/10));
-			assertEquals(dm, new DataMeta(pos, CAP));
-			checkRead(expected, file, dm);
 			
-			for (int i = CAP; i >= 0; i-=100) {
-				LOGGER.info("size: "+i);
-				ByteBuffer expected2 = ByteBuffer.allocate(i);
-				fill(expected2, r, true);
-				DataMeta d2 = file.replace(dm, bufferSupplier(expected2, CAP/10));
-				
-				expected2.flip();
-				ByteBuffer buffer = file.read(d2, null);
-				
-				assertEquals(expected2, buffer);
-			}
-		}
-	}
-	
-	@Test
-	public void checkBufferSupplier() throws IOException {
-		ByteBuffer expected2 = ByteBuffer.allocate(1000);
-		Random r = new Random();
-		fill(expected2, r, true);
-		
-		BufferSupplier bs = bufferSupplier(expected2, 19);
-		ByteBuffer actual = ByteBuffer.allocate(1000);
-		
-		int size = 0;
-		int loops = 0;
-
-		while(true) {
-			loops++;
-			ByteBuffer buffer = bs.next();
-			if(buffer == null && bs.isEndOfInput())
-				break;
-
-			if(!buffer.hasRemaining()) { 
-				buffer.clear();
-			} else {
-				size += buffer.remaining();
-				actual.put(buffer);
-				buffer.clear();
-			}
-
-			if(bs.isEndOfInput())
-				break;
+			
+			Random r = new Random();
+			ByteBuffer expected = ByteBuffer.allocate(800);
+			expected.flip();
+			
+			fill(expected, r, true);
+			DataMeta dm = file.write(expected);
+			expected.clear();
+			
+			assertEquals(dm.position, 0);
+			assertEquals(dm.size, expected.capacity());
+			
+			ByteBuffer expected2 = ByteBuffer.allocate(400);
+			
+			
+			
 		}
 		
-		System.out.println(loops);
-		
-		assertEquals(size, 1000);
-		actual.flip();
-		expected2.clear();
-		assertEql(expected2, actual);
 	}
 }
-

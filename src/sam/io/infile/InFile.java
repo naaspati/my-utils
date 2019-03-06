@@ -31,6 +31,10 @@ public class InFile implements AutoCloseable {
 			throw new ClosedChannelException();
 	}
 
+	
+	public DataMeta replace(DataMeta d, BufferSupplier buffers) throws IOException {
+		return wrap(() -> file.replace(d, buffers));
+	}
 	public Path getPath() {
 		return file.getPath();
 	}
@@ -57,11 +61,7 @@ public class InFile implements AutoCloseable {
 		return wrap(() -> file.write(buffer));
 	}
 	public DataMeta write(ByteBuffer buffer) throws IOException {
-		return wrap(() -> {
-			long pos = file.position();
-			int size = file.write(buffer);
-			return new DataMeta(pos, size);
-		});
+		return wrap(() -> file.write2(buffer));
 	}
 	public DataMeta write(BufferSupplier buffers) throws IOException {
 		return wrap(() -> file.write(buffers));

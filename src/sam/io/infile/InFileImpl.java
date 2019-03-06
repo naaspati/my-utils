@@ -48,7 +48,7 @@ class InFileImpl implements AutoCloseable {
 			file.close();
 			throw new IOException("failed to accuire lock");
 		}
-		
+
 		long pos = file.size();
 		position.set(pos);
 		file.position(pos);
@@ -86,12 +86,17 @@ class InFileImpl implements AutoCloseable {
 		return n;
 	}
 
+	DataMeta write2(ByteBuffer buffer) throws IOException {
+		long pos = position();
+		int size = write(buffer);
+		return new DataMeta(pos, size);
+	}
 	int write(ByteBuffer buffer) throws IOException {
 		if(!buffer.hasRemaining()) {
 			buffer.clear();
 			return 0;
 		}
-		
+
 		boolean success = false;
 		try {
 			long pos = DEBUG_ENABLED ? position() : -1;
@@ -121,6 +126,62 @@ class InFileImpl implements AutoCloseable {
 		return d;
 	}
 
+	public DataMeta replace(DataMeta d, ByteBuffer buffer) throws IOException {
+		Objects.requireNonNull(d);
+		Objects.requireNonNull(buffer);
+		verifyDataMeta(d);
+
+		if(buffer.remaining() > d.size)
+			throw new IOException("new size ("+(buffer.remaining())+"), exceeds old size ("+d.size+")");
+
+		if(d.size == 0)
+			return d;
+		if(!buffer.hasRemaining())
+			return new DataMeta(d.position, 0);
+
+		DataMeta dm = new DataMeta(d.position, buffer.remaining());
+
+		long pos = d.position;
+		while(buffer.hasRemaining()) 
+			pos += file.write(buffer, pos);
+
+		LOGGER.debug("REPLACED: {} -> {}", d, dm);
+		return dm;
+	}
+
+	public DataMeta replace(DataMeta d, BufferSupplier buffers) throws IOException {
+		Objects.requireNonNull(d);
+		Objects.requireNonNull(buffers);
+
+		long pos = 0;
+		int loops = 0;
+
+		while(true) {
+			loops++;
+			ByteBuffer buffer = buffers.next();
+			if(buffer == null && buffers.isEndOfInput())
+				break;
+
+			if(!buffer.hasRemaining()) { 
+				LOGGER.debug("EMPTY buffer return by buffers");
+				buffer.clear();
+			} else {
+				if(buffer.remaining() + pos > d.size + d.position)
+					throw new IOException("new size ("+(buffer.remaining() + pos - d.position)+"), exceeds old size ("+d.size+")");
+
+				pos += IOUtils.write(buffer, pos, file, false);
+			}
+
+			if(buffers.isEndOfInput())
+				break;
+		}
+
+		DataMeta d2 = new DataMeta(d.position, (int) (pos - d.position));
+		LOGGER.debug("REPLACED: {} -> {}, loops: {}", d, d2, loops);
+
+		return d2;
+	}
+
 	/**
 	 *  write every buffer supplied by buffers, until buffers returns null (end of input)
 	 */
@@ -135,17 +196,18 @@ class InFileImpl implements AutoCloseable {
 				ByteBuffer buffer = buffers.next();
 				if(buffer == null && buffers.isEndOfInput())
 					break;
-				
+
 				if(!buffer.hasRemaining()) { 
 					LOGGER.debug("EMPTY buffer return by buffers");
 					buffer.clear();
-				} else 
-					size = IOUtils.write(buffer, file, false);
-				
+				} else {
+					size += IOUtils.write(buffer, file, false);
+				}
+
 				if(buffers.isEndOfInput())
 					break;
 			}
-			
+
 			LOGGER.debug("WRITTEN: {} bytes, loops: {}", size, loops);
 			success = true;
 			position.addAndGet(size);

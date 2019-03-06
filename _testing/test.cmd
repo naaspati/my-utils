@@ -10,10 +10,6 @@ if [%1]==[] (
 
 if [%1]==[index] (
   explorer "build\reports\tests\test\index.html"
-  goto:eof
-)
-
-if [%1]==[jacoco] (
   explorer "build\jacoco.html\index.html"
   goto:eof
 )
