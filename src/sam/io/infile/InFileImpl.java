@@ -1,15 +1,14 @@
 package sam.io.infile;
 
+import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.WritableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,10 +42,7 @@ class InFileImpl implements AutoCloseable {
 		Objects.requireNonNull(path);
 		this.filepath = path;
 
-		if(!createIfNotExits && !Files.isRegularFile(path))
-			throw new FileNotFoundException("file not found: "+path);
-
-		file = FileChannel.open(path, READ, WRITE);
+		file =  createIfNotExits ? FileChannel.open(path, CREATE, READ, WRITE) : FileChannel.open(path, READ, WRITE);
 		lock = file.tryLock();
 		if(lock == null) {
 			file.close();
@@ -371,7 +367,7 @@ class InFileImpl implements AutoCloseable {
 
 	@Override
 	public void close() throws IOException {
-		file.close();
 		lock.release();
+		file.close();
 	}
 }

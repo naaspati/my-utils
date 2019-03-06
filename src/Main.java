@@ -13,11 +13,6 @@ import sam.string.StringSplitIterator;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		String s = "a\nb\nc";
-		StringSplitIterator itr = new StringSplitIterator(s, '\n');
-		
-		itr.forEachRemaining(t -> System.out.printf("\"%s\"\n", t));
-		System.out.println("------------------");
-		Pattern.compile("\n").splitAsStream(s).forEach(t -> System.out.printf("\"%s\"\n", t));
+		System.out.println(new Random().nextLong());
 	}
 }

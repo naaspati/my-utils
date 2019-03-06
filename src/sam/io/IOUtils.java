@@ -132,8 +132,6 @@ public interface IOUtils {
 
 	public static void ensureCleared(Buffer buffer) throws IOException {
 		if(buffer != null && (buffer.position() != 0 || buffer.limit() != buffer.capacity()))
-			throw new IOException("unclear buffer: buffer.position("+buffer.position()+") != 0 || defaultBuffer.limit("+buffer.limit()+") != defaultBuffer.capacity("+buffer.capacity()+")");
+			throw new IOException("uncleared buffer: buffer.position("+buffer.position()+") != 0 || defaultBuffer.limit("+buffer.limit()+") != defaultBuffer.capacity("+buffer.capacity()+")");
 	}
-
-	
 }
