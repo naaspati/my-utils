@@ -123,11 +123,22 @@ public interface IOUtils {
 		
 		return n;
 	}
+	public static int read(ByteBuffer buffer, long pos, int size, FileChannel source) throws IOException {
+		buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
+		int n = source.read(buffer, pos);
+		buffer.flip();
+		
+		return n;
+	}
 	public static void compactOrClear(ByteBuffer buffer) {
 		if(buffer.hasRemaining())
 			buffer.compact();
 		else
 			buffer.clear();
+	}
+	public static void setFilled(Buffer buffer) {
+		buffer.position(buffer.capacity());
+		buffer.limit(buffer.capacity());
 	}
 
 	public static void ensureCleared(Buffer buffer) throws IOException {

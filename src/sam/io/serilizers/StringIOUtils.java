@@ -7,6 +7,7 @@ import static sam.io.IOConstants.defaultCharset;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -18,12 +19,16 @@ import java.util.function.Supplier;
 
 import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
+import sam.io.IOUtils;
 import sam.logging.Logger;
 
 public final class StringIOUtils {
 	private static final Logger LOGGER = Logger.getLogger(StringIOUtils.class);
 	private static final boolean DEBUG_ENABLED = LOGGER.isDebugEnabled();
 
+	public static BufferConsumer writer(WritableByteChannel target) {
+		return b -> IOUtils.write(b, target, false);
+	}
 	public static void write(BufferConsumer consumer, CharSequence s) throws IOException {
 		write(consumer, s, (ByteBuffer)null);
 	}

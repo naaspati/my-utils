@@ -8,6 +8,7 @@ import static sam.myutils.Checker.*;
 import static sam.myutils.Checker.isInteger;
 import static sam.myutils.Checker.requireNonNull;
 
+import java.nio.CharBuffer;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
@@ -124,6 +125,34 @@ public class CheckerTest {
 		
 		System.out.println(sb);
 
+	}
+	
+	@Test
+	public void testIsEqual() {
+		String s = "anime";
+		String s2 = "jotan";
+		
+		assertTrue(isEqual(null, null));
+		assertTrue(isEqual("", ""));
+		assertTrue(isEqual("", new String()));
+		assertTrue(isEqual("", new StringBuilder()));
+		assertTrue(isEqual("", CharBuffer.allocate(0)));
+		assertTrue(isEqual(new String(), ""));
+		assertTrue(isEqual(new StringBuilder(), ""));
+		assertTrue(isEqual(CharBuffer.allocate(0), ""));
+		assertTrue(isEqual(s, s));
+		assertTrue(isEqual(s, new StringBuilder(s)));
+		assertTrue(isEqual(s, CharBuffer.wrap(s)));
+		assertTrue(isEqual(new StringBuilder(s), s));
+		assertTrue(isEqual(CharBuffer.wrap(s), s));
+		
+		assertFalse(isEqual(null, s));
+		assertFalse(isEqual(s, null));
+		assertFalse(isEqual("", "a"));
+		assertFalse(isEqual(s, new StringBuilder(s2)));
+		assertFalse(isEqual(s, CharBuffer.wrap(s2)));
+		assertFalse(isEqual(new StringBuilder(s2), s));
+		assertFalse(isEqual(CharBuffer.wrap(s2), s));
 	}
 
 	private void append(StringBuilder sb, String string, int start) {

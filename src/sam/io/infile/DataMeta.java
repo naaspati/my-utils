@@ -3,6 +3,8 @@ package sam.io.infile;
 import java.util.Arrays;
 
 public class DataMeta {
+	public static final int BYTES = Long.BYTES + Integer.BYTES;
+	
 	public final long position;
 	public final int size;
 
