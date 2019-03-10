@@ -10,8 +10,8 @@ import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import sam.functions.IOExceptionConsumer;
 import sam.functions.IOExceptionSupplier;
+import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
 
 /*
@@ -69,7 +69,7 @@ public class InFile implements AutoCloseable {
 	public ByteBuffer read(DataMeta meta, ByteBuffer buffer) throws IOException {
 		return wrap(() -> file.read(meta, buffer));
 	}
-	public void read(DataMeta meta, ByteBuffer buffer, IOExceptionConsumer<ByteBuffer> bufferConsumer) throws IOException {
+	public void read(DataMeta meta, ByteBuffer buffer, BufferConsumer bufferConsumer) throws IOException {
 		wrap(() -> {
 			file.read(meta, buffer, bufferConsumer);
 			return null;

@@ -1,15 +1,14 @@
 package sam.io.serilizers;
 import static java.nio.file.StandardOpenOption.READ;
-import static sam.io.IOConstants.defaultCharset;
 import static sam.io.IOConstants.defaultOnMalformedInput;
 import static sam.io.IOConstants.defaultOnUnmappableCharacter;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -19,9 +18,10 @@ import java.util.Objects;
 
 import sam.functions.IOExceptionFunction;
 import sam.io.BufferSupplier;
+import sam.io.IOConstants;
 
 public class StringReader2 {
-	private static final Charset DEFAULT_CHARSET = defaultCharset();
+	private static final Charset DEFAULT_CHARSET = IOConstants.defaultCharset();
 
 	public static ReaderConfig reader() {
 		return new ReaderConfig();
@@ -90,7 +90,7 @@ public class StringReader2 {
 		return getText0(path, Charset.forName(charset));
 	}
 	public static StringBuilder getText0(Path path) throws IOException {
-		return getText0(path, defaultCharset());
+		return getText0(path, DEFAULT_CHARSET);
 	}
 
 	public static String getText(Path path, Charset charset) throws IOException {
@@ -100,23 +100,26 @@ public class StringReader2 {
 		return getText(path, Charset.forName(charset));
 	}
 	public static String getText(Path path) throws IOException {
-		return getText(path, defaultCharset());
+		return getText(path, DEFAULT_CHARSET);
 	}
 
 	public static String getText(ReadableByteChannel channel, ReaderConfig config) throws IOException {
 		if(channel instanceof FileChannel) {
 			FileChannel fc = (FileChannel) channel;
-			long size = fc.size();
-			if(size == 0)
+			long size = fc.size() - fc.position();
+			if(size <= 0)
 				return "";
+
+			ByteBuffer buffer = ByteBuffer.allocate((int)size + 2);
+			while(fc.read(buffer) != -1) {}
+			buffer.flip();
 			
-			return config.decoder().decode(fc.map(MapMode.READ_ONLY, fc.position(), size)).toString();
+			return config.decoder().decode(buffer).toString();
 		}
 		return getText0(channel, config, new StringBuilder()).toString();
 	}
 	public static StringBuilder getText0(ReadableByteChannel c, ReaderConfig config, StringBuilder sink) throws IOException {
-		StringBuilder sb = new StringBuilder();
 		StringIOUtils.read(BufferSupplier.of(c,null), sink, config.decoder(), config.onUnmappableCharacter, config.onMalformedInput);
-		return sb;
+		return sink;
 	}
 }

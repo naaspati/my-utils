@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -30,7 +29,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.AfterAll;
@@ -38,57 +36,43 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import sam.io.BufferSupplier;
+import sam.io.IOConstants;
+import sam.test.commons.TempDir;
 
 public class InFileTest extends InFileTestUtils {
 	protected static int DEFAULT_SAMPLE_SIZE = Optional.ofNullable(System.getProperty("DEFAULT_SAMPLE_SIZE")).map(Integer::parseInt).orElse(100);
 	protected static final Logger LOGGER = Logger.getLogger(InFileTestUtils.class.getName());
-
-	private static Path tempDir;
-	private static AtomicInteger counter;
-
+	private static TempDir tempdir;
+	
 	@BeforeAll
-	static void setup() throws IOException {
-		tempDir = Files.createTempDirectory(InFileTest.class.getSimpleName());
-		counter = new AtomicInteger(0);
-
-		LOGGER.info(() -> "CREATE: "+tempDir);
+	public static void setup() throws IOException {
+		tempdir = new TempDir(InFileTest.class.getSimpleName()) {
+			@Override
+			protected Logger logger() {
+				return LOGGER;
+			}
+		};
 	}
-
+	
 	@AfterAll
-	static void cleanup() throws IOException {
-		File file = tempDir == null ? null : tempDir.toFile();
-		String[] files = file == null ? null : file.list();
-
-		if(files != null) {
-			for (String s : files) {
-				if(!new File(file, s).delete())
-					LOGGER.warning("failed to delete: "+file.getName()+"\\"+s);
-			} 
-		}
-
-		counter.set(0);
-		LOGGER.info(() -> "DELETE: "+tempDir+(files == null ? "" : ", ["+String.join(",", files)+"]"));
+	public static void cleanup() throws IOException {
+		tempdir.close();
+		tempdir = null;
 	}
-
-	private Path nextPath() {
-		Path p = tempDir.resolve(String.valueOf(counter.incrementAndGet()));
-		assertFalse(Files.exists(p));
-		LOGGER.info(() -> "NextPath: "+p);
-		return p;
-	}
-
+	
 	private void assertEql(ByteBuffer expected, ByteBuffer actual) {
 		assertEquals(expected.remaining(), expected.capacity());
 		assertEquals(actual.remaining(), expected.capacity());
 		assertEquals(expected, actual);
 	}
+	
 
 	@Test
 	public void testGeneral() throws IOException {
 		logMethod();
 
-		Path p1 = nextPath();
-		Path p2 = nextPath();
+		Path p1 = tempdir.nextPath();
+		Path p2 = tempdir.nextPath();
 
 		assertThrows(IOException.class, () -> new InFileImpl(p1, false));
 		assertTrue(Files.notExists(p1));
@@ -110,7 +94,7 @@ public class InFileTest extends InFileTestUtils {
 
 	@Test
 	public void testReadWrite() throws IOException {
-		try(InFileImpl file = new InFileImpl(nextPath(), true)) {
+		try(InFileImpl file = new InFileImpl(tempdir.nextPath(), true)) {
 			ByteBuffer bb = file.read(new DataMeta(0, 0), null);
 			assertEquals(0, bb.capacity());
 
@@ -214,7 +198,7 @@ public class InFileTest extends InFileTestUtils {
 			assertThrows(IOException.class, () -> file.transferTo(Collections.emptyList(), file));
 
 			List<DataMeta> list = shuffled(map);
-			Path temp = nextPath();
+			Path temp = tempdir.nextPath();
 			final long size = file.acutualSize();
 
 			try(InFileImpl fc = new InFileImpl(temp, true)) {
@@ -249,7 +233,7 @@ public class InFileTest extends InFileTestUtils {
 
 		common(10000, (map, file) -> {
 			List<DataMeta> list = shuffled(map);
-			Path temp = nextPath();
+			Path temp = tempdir.nextPath();
 
 			try {
 				logMethod("test transfer(shuffled)");
@@ -354,7 +338,7 @@ public class InFileTest extends InFileTestUtils {
 
 	@Test
 	public void replaceTest() throws IOException {
-		Path p = nextPath();
+		Path p = tempdir.nextPath();
 		try(InFileImpl file = new InFileImpl(p, true)) {
 			assertEquals(0, file.size());
 
@@ -382,10 +366,10 @@ public class InFileTest extends InFileTestUtils {
 			assertThrows(IOException.class, () -> file.replace(d3, ByteBuffer.allocate(CAP + 1)));
 
 			DataMeta d = new DataMeta(0, 0);
-			assertSame(file.replace(d, ByteBuffer.allocate(0)), d);
+			assertSame(file.replace(d, IOConstants.EMPTY_BUFFER), d);
 
 			d = new DataMeta(pos, 40);
-			d2 = file.replace(d, ByteBuffer.allocate(0));
+			d2 = file.replace(d, IOConstants.EMPTY_BUFFER);
 			assertEquals(d.position, d2.position);
 			assertEquals(0, d2.size);
 		}
@@ -393,7 +377,7 @@ public class InFileTest extends InFileTestUtils {
 	
 	@Test
 	public void replaceTest2() throws IOException {
-		Path p = nextPath();
+		Path p = tempdir.nextPath();
 		try(InFileImpl file = new InFileImpl(p, true)) {
 			assertEquals(0, file.size());
 

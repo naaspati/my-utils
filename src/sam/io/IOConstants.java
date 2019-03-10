@@ -4,6 +4,7 @@ import static java.nio.charset.CodingErrorAction.IGNORE;
 import static java.nio.charset.CodingErrorAction.REPLACE;
 import static java.nio.charset.CodingErrorAction.REPORT;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import sam.logging.Logger;
@@ -53,6 +54,7 @@ public final class IOConstants {
 		return DEFAULT_CHARSET;
 	}
 	private final static int DEFAULT_BUFFER_SIZE = db();
+	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
 	private static int db() {
 		String s = System2.lookupAny("buffer_size", "BUFFER_SIZE", "buffer.size");

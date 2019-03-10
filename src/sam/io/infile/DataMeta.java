@@ -1,9 +1,12 @@
 package sam.io.infile;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class DataMeta {
-	public static final int BYTES = Long.BYTES + Integer.BYTES;
+public class DataMeta implements Serializable {
+	private static final long serialVersionUID = 5037265506963712673L;
+
+	public transient static final int BYTES = Long.BYTES + Integer.BYTES;
 	
 	public final long position;
 	public final int size;

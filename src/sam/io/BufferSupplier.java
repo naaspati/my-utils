@@ -22,6 +22,8 @@ public abstract class BufferSupplier {
 	public boolean isEmpty() {
 		return false;
 	}
+	public void onComplete() {
+	}
 
 	public static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 
@@ -40,10 +42,10 @@ public abstract class BufferSupplier {
 		if(position + size > fc.size())
 			throw new IOException(String.format("position(%s) + size(%s) = (%s) > file.size(%s)", position, size, position + size, fc.size()));
 
-		IOUtils.ensureCleared(buffer);
-		IOUtils.setFilled(buffer);
 		ByteBuffer buf = buffer(buffer, size);
-
+		IOUtils.ensureCleared(buf);
+		IOUtils.setFilled(buf);
+		
 		if(size == 0)
 			return EMPTY;
 
@@ -61,7 +63,11 @@ public abstract class BufferSupplier {
 
 				return buf;
 			}
-
+			@Override
+			public long size() throws IOException {
+				return size;
+			}
+			
 			@Override
 			public boolean isEndOfInput() throws IOException {
 				return remaining <= 0;
@@ -79,44 +85,33 @@ public abstract class BufferSupplier {
 	}
 	public static BufferSupplier of(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(channel);
-
-		final long size;
-
+		
 		if(channel instanceof FileChannel) {
 			FileChannel f = (FileChannel) channel;
-			size = f.size() - f.position();
-
-			if(size == 0)
-				return EMPTY;
-		} else {
-			size = -1;
+			return of(f, buffer, f.position(), (int) (f.size() - f.position()));
 		}
 
-		ByteBuffer bf = buffer(buffer, (int)size);
-		IOUtils.ensureCleared(bf);
-		IOUtils.setFilled(bf);
+		ByteBuffer buf = buffer(buffer, -1);
+		IOUtils.ensureCleared(buf);
+		IOUtils.setFilled(buf);
 
 		return new BufferSupplier() {
 			int n = 0;
 
-			@Override public long size() throws IOException { return size; }
+			@Override public long size() throws IOException { return -1; }
 
 			@Override
 			public ByteBuffer next() throws IOException {
-				IOUtils.compactOrClear(buffer);
-				n = channel.read(bf);
-				bf.flip();
+				IOUtils.compactOrClear(buf);
+				n = channel.read(buf);
+				buf.flip();
 
-				return bf;
+				return buf;
 			}
 
 			@Override
 			public boolean isEndOfInput() throws IOException {
 				return n == -1;
-			}
-			@Override
-			public boolean isEmpty() {
-				return size == 0;
 			}
 		};
 	}

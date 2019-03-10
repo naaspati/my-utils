@@ -93,6 +93,15 @@ class InFileTestUtils {
 			buffer.put((byte)random.nextInt(Byte.MAX_VALUE));
 		if(flip)
 			buffer.flip();
+		
+		
+		long sum = 0;
+		byte[] bytes = buffer.array();
+		for (int i = buffer.position(); i < buffer.limit(); i++) 
+			sum += bytes[i];
+		
+		LOGGER.fine(String.format("buffer filled: pos:%s, limit:%s, capacity:%s, sum:%s ", buffer.position(), buffer.limit(), buffer.capacity(), sum));
+		
 		return buffer;
 	}
 

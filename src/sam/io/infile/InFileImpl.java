@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import sam.functions.IOExceptionConsumer;
+import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
@@ -224,7 +224,7 @@ class InFileImpl implements AutoCloseable {
 		verifyDataMeta(meta);
 
 		if(meta.size == 0)
-			return (buffer == null ? ByteBuffer.allocate(0) : buffer);
+			return (buffer == null ? IOConstants.EMPTY_BUFFER : buffer);
 
 		if(buffer == null || buffer.capacity() < meta.size) {
 			ByteBuffer old = buffer;
@@ -249,10 +249,10 @@ class InFileImpl implements AutoCloseable {
 
 	}
 
-	public void read(DataMeta meta, ByteBuffer buffer, IOExceptionConsumer<ByteBuffer> bufferConsumer) throws IOException {
+	public void read(DataMeta meta, ByteBuffer buffer, BufferConsumer bufferConsumer) throws IOException {
 		int size = meta.size;
 		if(size == 0)
-			bufferConsumer.accept(buffer == null ? ByteBuffer.allocate(0) : buffer);
+			bufferConsumer.consume(buffer == null ? IOConstants.EMPTY_BUFFER : buffer);
 		else {
 			verifyDataMeta(meta);
 			if(buffer == null) {
@@ -272,7 +272,7 @@ class InFileImpl implements AutoCloseable {
 				pos += n;
 				size -= n;
 
-				bufferConsumer.accept(buffer);
+				bufferConsumer.consume(buffer);
 
 				if(size > 0 && !buffer.hasRemaining())
 					throw new IOException("buffer not cosumed");

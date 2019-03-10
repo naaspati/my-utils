@@ -3,9 +3,10 @@ package sam.io.serilizers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static sam.io.serilizers.StringIOUtils.write;
+import static sam.io.serilizers.StringIOUtils.*;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
@@ -14,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 import com.thedeanda.lorem.LoremIpsum;
+
+import sam.io.BufferSupplier;
 
 public class StringIOUtilsTest {
 

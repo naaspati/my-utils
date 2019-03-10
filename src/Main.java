@@ -1,18 +1,10 @@
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.util.Random;
-import java.util.regex.Pattern;
-import java.util.stream.IntStream;
+import java.nio.file.Paths;
 
-import sam.io.infile.DataMeta;
-import sam.io.infile.InFile;
-import sam.string.StringSplitIterator;
+import sam.io.serilizers.StringReader2;
 
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		System.out.println(new Random().nextLong());
+		System.out.println(StringReader2.getText0(Paths.get("D:\\Downloads\\10.txt")));
 	}
 }

@@ -17,8 +17,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import sam.functions.IOExceptionConsumer;
 import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
+import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.logging.Logger;
 
@@ -45,7 +47,7 @@ public final class StringIOUtils {
 		if(s.length() == 0) return;
 
 		CharBuffer chars = s instanceof CharBuffer ? (CharBuffer) s : CharBuffer.wrap(s);
-		
+
 		encoder = orElse(encoder, () -> defaultCharset().newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
 		encoder.reset();
 		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);
@@ -71,6 +73,8 @@ public final class StringIOUtils {
 				break;
 			}
 		}
+
+		consumer.onComplete();
 	}
 
 	public static StringBuilder read(BufferSupplier filler) throws IOException {
@@ -100,60 +104,186 @@ public final class StringIOUtils {
 	public static void read(BufferSupplier filler, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		read(filler, sink, decoder, null, onUnmappableCharacter, onMalformedInput);
 	}
-	public static void read(BufferSupplier supplier, Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+
+	public static abstract class ReadConfig extends BufferSupplier {
+		protected CharsetDecoder decoder; 
+		protected CharBuffer charsBuffer;
+		protected CodingErrorAction onUnmappableCharacter;
+		protected CodingErrorAction onMalformedInput;
+		StringBuilder debug;
+		int charsCount;
+
+		protected void postStart() {}
+
+		public ReadConfig decoder(CharsetDecoder decoder) {
+			this.decoder = decoder;
+			return this;
+		}
+		public CharsetDecoder decoder() {
+			return this.decoder = orElse(this.decoder, () -> {
+				return defaultCharset().newDecoder()
+						.onMalformedInput(orElse(onMalformedInput(), REPORT))
+						.onUnmappableCharacter(orElse(onUnmappableCharacter(), REPORT));
+
+			}, debug == null ? d -> {} : d -> debug.append("decoder created: ").append(d.charset().name()).append(", "));
+		}
+		public ReadConfig charsBuffer(CharBuffer charsBuffer) {
+			this.charsBuffer = charsBuffer;
+			return this;
+		}
+		public CharBuffer charsBuffer() {
+			return this.charsBuffer = orElse(charsBuffer, () -> CharBuffer.allocate(charsCount > 100 || charsCount < 10 ? 100 : charsCount), debug == null ? b -> {} : b -> debug.append("CharBuffer created: ").append(b.capacity()).append(", "));
+		}
+		public ReadConfig onUnmappableCharacter(CodingErrorAction onUnmappableCharacter) {
+			this.onUnmappableCharacter = onUnmappableCharacter;
+			return this;
+		}
+		public CodingErrorAction onUnmappableCharacter() {
+			return this.onUnmappableCharacter;
+		}
+		public ReadConfig onMalformedInput(CodingErrorAction onMalformedInput) {
+			this.onMalformedInput = onMalformedInput;
+			return this;
+		}
+		public CodingErrorAction onMalformedInput() {
+			return this.onMalformedInput;
+		}
+		public abstract void consume(CharBuffer chars) throws IOException;
+	}
+
+	public static abstract class DefaultReadConfig extends ReadConfig {
+		int bufloop = 0, charloop = 0;
+		private final BufferSupplier supplier;
+
+		public DefaultReadConfig(BufferSupplier supplier) {
+			this.supplier = supplier;
+			if(DEBUG_ENABLED)
+				debug = new StringBuilder();
+		}
+
+		@Override
+		public ByteBuffer next() throws IOException {
+			bufloop++;
+			return supplier.next();
+		}
+		@Override
+		public boolean isEndOfInput() throws IOException {
+			return supplier.isEndOfInput();
+		}
+
+		@Override
+		public void onComplete() {
+			if(debug == null)
+				return;
+
+			debug.append("bufloops: ").append(bufloop).append(", charloops: ").append(charloop);
+
+			LOGGER.debug(debug.toString());
+			supplier.onComplete();
+		}
+	}
+
+	public static void read(BufferSupplier supplier, IOExceptionConsumer<CharBuffer> resultConsumer, CharsetDecoder decoder, CharBuffer charsBuffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+		Objects.requireNonNull(supplier);
+		Objects.requireNonNull(resultConsumer);
+
+		read(new DefaultReadConfig(supplier) {
+
+			@Override
+			public void consume(CharBuffer chars) throws IOException {
+				charloop++;
+				resultConsumer.accept(chars);
+			}
+		});
+	}
+
+	public static void read(BufferSupplier supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(sink);
 
-		if(supplier.isEmpty())
+		ReadConfig config = new DefaultReadConfig(supplier) {
+			int initLength = -1;
+			int cap = -1, dcap = -1;
+			int charAppended = 0;
+
+			@Override
+			public void postStart() {
+				if(charsCount < 10)
+					return;
+				
+				if(sink instanceof StringBuilder) {
+					StringBuilder sb = (StringBuilder) sink;
+					cap = sb.capacity();
+					sb.ensureCapacity(sb.length() + charsCount+10);
+					dcap = sb.capacity();
+					initLength = sb.length();
+				} else if(sink instanceof StringBuffer) {
+					StringBuffer sb = (StringBuffer) sink; 
+					cap = sb.capacity();
+					sb.ensureCapacity(sb.length() + charsCount+10);
+					dcap = sb.capacity();
+					initLength = sb.length();
+				}
+			}
+
+			@Override
+			public void consume(CharBuffer chars) throws IOException {
+				charloop++;
+				charAppended += chars.remaining();
+				sink.append(chars);
+				chars.clear();
+			}
+			@Override
+			public void onComplete() {
+				if(debug == null)
+					return;
+
+				if(initLength != -1) { 
+					debug.append(sink.getClass().getSimpleName())
+					.append("[ cap:").append(cap).append("->").append(dcap).append(", ")
+					.append("len:").append(initLength).append("->").append(((CharSequence)sink).length()).append("], ");
+				}
+				debug.append("charAppended: ").append(charAppended).append(", ");
+				super.onComplete();
+			}
+		};
+
+		read(config);
+	}
+
+	public static void read(ReadConfig reader) throws IOException {
+		Objects.requireNonNull(reader);
+
+		if(reader.isEmpty())
 			return;
 
-		StringBuilder debug = DEBUG_ENABLED ? new StringBuilder() : null; 
-
-		long n = supplier.size(); 
+		long n = reader.size(); 
 		int size = n < 0 ? DEFAULT_BUFFER_SIZE : (int)n;
 
-		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);
-		onMalformedInput = orElse(onMalformedInput, REPORT);
-
-		decoder = orElse(decoder, () -> defaultCharset().newDecoder(), !DEBUG_ENABLED ? d -> {} : d -> debug.append("decoder created: ").append(d.charset().name()).append(", "));
+		CharsetDecoder decoder = Objects.requireNonNull(reader.decoder());
 		decoder.reset();
-		int charsSize = (int) (size/decoder.averageCharsPerByte());
-
-		charsBuffer = orElse(charsBuffer, () -> CharBuffer.allocate(charsSize > 100 ? 100 : charsSize), !DEBUG_ENABLED ? b -> {} : b -> debug.append("BytBuffer created: ").append(b.capacity()).append(", "));
-
-		int initLength = -1;
-		int cap = -1, dcap = -1;
 		
-		if(size == n) {
-			if(sink instanceof StringBuilder) {
-				StringBuilder sb = (StringBuilder) sink;
-				cap = sb.capacity();
-				sb.ensureCapacity(sb.length() + charsSize+10);
-				dcap = sb.capacity();
-				initLength = sb.length();
-			} else if(sink instanceof StringBuffer) {
-				StringBuffer sb = (StringBuffer) sink; 
-				cap = sb.capacity();
-				sb.ensureCapacity(sb.length() + charsSize+10);
-				dcap = sb.capacity();
-				initLength = sb.length();
-			}
-		}
+		if(size == n) 
+			reader.charsCount = (int) (size/decoder.averageCharsPerByte());	
+		 else 
+			reader.charsCount = -1;
+		
+		CharBuffer charsBuffer = Objects.requireNonNull(reader.charsBuffer());
+		reader.postStart();
 
-		int bufloop = 0, charloop = 0;
 		while(true) {
-			bufloop++;
-			ByteBuffer buffer = supplier.next();
-			boolean endOfInput = supplier.isEndOfInput();
-
+			ByteBuffer buffer = reader.next();
+			if(buffer == null)
+				buffer = IOConstants.EMPTY_BUFFER;
+			boolean endOfInput = reader.isEndOfInput();
+			
 			while(true) {
-				charloop++;
 				CoderResult c = decoder.decode(buffer, charsBuffer, endOfInput);
 
 				if(c.isUnderflow())
 					break;
 				else if(c.isOverflow())
-					append(charsBuffer, sink);
+					consume(charsBuffer, reader);
 				else 
 					c.throwException();
 			}
@@ -163,32 +293,21 @@ public final class StringIOUtils {
 					throw new IOException("not full converted");
 
 				while(true) {
-					charloop++;
 					CoderResult c = decoder.flush(charsBuffer);
 
 					if(c.isUnderflow())
 						break;
 					else if(c.isOverflow())
-						append(charsBuffer, sink);
+						consume(charsBuffer, reader);
 					else 
 						c.throwException();					
 				}
 				break;
 			}
 		}
-		
-		append(charsBuffer, sink);
-		
-		if(DEBUG_ENABLED) {
-			if(initLength != -1) { 
-				debug.append(sink.getClass().getSimpleName())
-				.append("[ cap:").append(cap).append("->").append(dcap).append(", ")
-				.append("len:").append(initLength).append("->").append(((CharSequence)sink).length()).append("], ");
-			}
-			debug.append("bufloops: ").append(bufloop).append(", charloops: ").append(charloop);
-			
-			LOGGER.debug(debug.toString());
-		}
+
+		consume(charsBuffer, reader);
+		reader.onComplete();
 	}
 
 	private static <E> E orElse(E e, E defaultValue) {
@@ -202,13 +321,12 @@ public final class StringIOUtils {
 		}
 		return e;
 	}
-	private static void append(CharBuffer chars, Appendable sb) throws IOException {
+	private static void consume(CharBuffer chars, ReadConfig config) throws IOException {
 		chars.flip();
-		if(chars.hasRemaining())
-			sb.append(chars);
-		chars.clear();
+		config.consume(chars);
+		if(!chars.hasRemaining())
+			throw new IOException("buffer not consumed");
 	}
-
 	private static void checkResult(CoderResult c, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws CharacterCodingException {
 		if((c.isUnmappable() && onUnmappableCharacter == REPORT) || (c.isMalformed() && onMalformedInput == REPORT))
 			c.throwException();

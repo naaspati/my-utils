@@ -1,41 +1,78 @@
 package sam.io.serilizers;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.util.logging.Logger;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.thedeanda.lorem.LoremIpsum;
 
+import sam.io.infile.InFileTest;
+import sam.test.commons.TempDir;
 public class StringReader2Test {
-	
+	private static final Logger LOGGER = Logger.getLogger(StringReader2Test.class.getSimpleName());
+	private static TempDir tempdir;
+
+	@BeforeAll
+	public static void setup() throws IOException {
+		tempdir = new TempDir(InFileTest.class.getSimpleName()) {
+			@Override
+			protected Logger logger() {
+				return LOGGER;
+			}
+		};
+	}
+
+	@AfterAll
+	public static void cleanup() throws IOException {
+		tempdir.close();
+		tempdir = null;
+	}
+
 	@Test
-	public void writeTest() throws IOException {
-		Path p = Files.createTempFile(null, null);
+	public void readTest() throws IOException {
+		Path p = tempdir.nextPath();
 		try {
 			String expected = LoremIpsum.getInstance().getParagraphs(5, 15);
-			
-			Files.write(p, expected.getBytes("utf-8"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+			Files.write(p, expected.getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
 			String actual = StringReader2.getText(p);
 			assertEquals(expected, actual);
-			
-			Files.write(p, "".getBytes("utf-8"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+			Files.write(p, "".getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
 			actual = StringReader2.getText(p);
-			
+
 			assertEquals("", actual);
-			
-			assertThrows(NullPointerException.class, () -> StringReader2.getText(p));
 		} finally {
-			try {
-				Files.deleteIfExists(p);
-			} catch (Exception e) { }
+			tempdir.deleteQuietly(p);
 		}
-		
+	}
+	
+	@Test
+	public void readTest2() throws IOException {
+		Path p = tempdir.nextPath();
+		try {
+			String expected = LoremIpsum.getInstance().getParagraphs(5, 15);
+
+			Files.write(p, expected.getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
+			StringBuilder actual = StringReader2.getText0(p);
+			assertEquals(expected, actual.toString());
+
+			Files.write(p, "".getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
+			actual = StringReader2.getText0(p);
+
+			assertEquals("", actual.toString());
+		} finally {
+			tempdir.deleteQuietly(p);
+		}
 	}
 
 }
