@@ -1,14 +1,5 @@
 package pkg;
 
-import static sam.console.ANSI.green;
-import static sam.console.ANSI.magenta;
-import static sam.console.ANSI.red;
-import static sam.console.ANSI.yellow;
-import static sam.io.serilizers.StringWriter2.setText;
-import static sam.myutils.MyUtilsPath.TEMP_DIR;
-import static sam.string.StringUtils.splitStream;
-import static sam.myutils.Checker.*;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +30,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,10 +38,10 @@ import com.sampullara.cli.Args;
 import com.sampullara.cli.Argument;
 
 import pkg.Package2.Class2;
-import sam.myutils.Checker;
 
 public class Main {
 
+	private final Path logDir = Paths.get(System.getenv("LOG_DIR")); 
     private static final double VERSION = 0.17;
     static StringBuilder sb, sb2 = new StringBuilder(500);
 
@@ -74,8 +67,24 @@ public class Main {
     public static void main(String[] args) throws URISyntaxException, IOException {
         new Main(args);
     }
+    
+    private static boolean isNotEmpty(String s) {
+    	return !isEmpty(s);
+    } 
+    private static boolean isEmpty(String s) {
+		return s == null || s.isEmpty();
+	}
+    private static boolean isNotEmpty(String[] s) {
+    	return !isEmpty(s);
+    } 
+    private static boolean isEmpty(String[] s) {
+		return s == null || s.length == 0;
+	}
+    private static boolean isEmptyTrimmed(String s) {
+		return isEmpty(s) || s.trim().isEmpty();
+	}
 
-    private List<String> unparsed;
+	private List<String> unparsed;
     private final Path myUtilsDir;
 
     public Main(String[] args) throws URISyntaxException, IOException {
@@ -88,10 +97,10 @@ public class Main {
             Function<String, Optional<String>> c = key -> {
             	return Optional.ofNullable(config.getProperty(key))
         		.map(String::trim)
-        		.filter(Checker::isNotEmpty);
+        		.filter(Main::isNotEmpty);
             };
             src = c.apply("src")
-            		.map(s -> splitStream(s, ';').map(String::trim).filter(Checker::isNotEmpty).map(File::new).toArray(File[]::new))
+            		.map(s -> Pattern.compile(";", Pattern.LITERAL).splitAsStream(s).map(String::trim).filter(Main::isNotEmpty).map(File::new).toArray(File[]::new))
             		.orElse(src);
             
             out = c.apply("target").map(File::new).orElse(out);
@@ -199,7 +208,8 @@ public class Main {
         .filter(Package2::anyFound)
         .sorted(Comparator.comparing(p1 -> p1.pkgName))
         .forEach(p -> {
-        	yellow(sb, p.pkgName).append(" (").append(p.classes.stream().filter(Class2::isFound).count()).append('/').append(p.getCount()).append(")\n");
+        	sb.append(yellow(p.pkgName))
+        	.append(" (").append(p.classes.stream().filter(Class2::isFound).count()).append('/').append(p.getCount()).append(")\n");
             for (Class2 c : p.classes) {
                 if(c.isFound())
                     about(c);
@@ -224,10 +234,13 @@ public class Main {
             list.forEach(s -> sb.append("    ").append(subpath(f.getNameCount(), s)).append('\n'));
         });
 
-        setText(TEMP_DIR.resolve("summery.log"), sb);
-        setText(TEMP_DIR.resolve("console.log"), sb2);
+        setText(logDir.resolve("summery.log"), sb);
+        setText(logDir.resolve("console.log"), sb2);
     }
-    private void println(StringBuilder sb) {
+    private void setText(Path p, StringBuilder sb) throws IOException {
+    	Files.write(p, sb.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+	}
+	private void println(StringBuilder sb) {
     	System.out.println(sb);
 		sb2.append(sb);
 	}
@@ -251,7 +264,7 @@ public class Main {
     List<Path> addedRequired;
     Path bin;
     private String packJar() throws IOException {
-        Path temp = TEMP_DIR.resolve("temp-myutils.jar");
+        Path temp = logDir.resolve("temp-myutils.jar");
         bin = myUtilsDir.resolve("bin");
 
         addedRequired = new ArrayList<>();
@@ -331,7 +344,7 @@ public class Main {
         sb.append("]\n");
     }
 
-    String comma = yellow(", ");
+	String comma = yellow(", ");
 
     private void append(String title, String[] values) {
         if(isEmpty(values))
@@ -437,4 +450,25 @@ public class Main {
 
         return Collections.unmodifiableCollection(list);
     }
+    
+    private static String ansi_wrap(String prefix, Object obj) { return prefix + obj + "\u001b[0m";}
+    public static String black(Object obj) {return ansi_wrap("\u001b[30m",obj);}
+    public static String red(Object obj) {return ansi_wrap("\u001b[31m",obj);}
+    public static String green(Object obj) {return ansi_wrap("\u001b[32m",obj);}
+    public static String yellow(Object obj) {return ansi_wrap("\u001b[33m",obj);}
+    public static String blue(Object obj) {return ansi_wrap("\u001b[34m",obj);}
+    public static String magenta(Object obj) {return ansi_wrap("\u001b[35m",obj);}
+    public static String cyan(Object obj) {return ansi_wrap("\u001b[36m",obj);}
+    public static String white(Object obj) {return ansi_wrap("\u001b[37m",obj);}
+
+    private StringBuilder magenta(StringBuilder sb, String string) {
+    	sb.append(magenta(string));
+		return sb;
+	}
+
+	private StringBuilder yellow(StringBuilder sb, String string) {
+		sb.append(yellow(string));
+		return sb;
+		
+	}
 }

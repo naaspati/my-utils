@@ -75,7 +75,7 @@ public class TextInFileTestUtils {
 			return write(s, null);
 		}
 		public DataMeta write(String s, ByteBuffer buffer) throws IOException {
-			return file.write(s, encoder, buffer, REPORT, REPORT);
+			return file.write(s, encoder, buffer);
 		}
 		@Override
 		public void close() throws IOException {
@@ -90,16 +90,16 @@ public class TextInFileTestUtils {
 			return file.size();
 		}
 		public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer chars, Appendable sink) throws IOException {
-			file.readText(meta, buffer, chars, decoder, sink, REPORT, REPORT);
+			file.readText(meta, buffer, chars, decoder, sink);
 		}
 
 		public String readText(DataMeta meta) throws IOException {
 			StringBuilder sb = new StringBuilder();
-			file.readText(meta, null, null, decoder, sb, REPORT, REPORT);
+			file.readText(meta, null, null, decoder, sb);
 			return sb.toString();
 		}
 		public void readText(DataMeta d, StringBuilder sb, ByteBuffer buffer, CharBuffer chars) throws IOException {
-			file.readText(d, buffer, chars, decoder, sb, REPORT, REPORT);
+			file.readText(d, buffer, chars, decoder, sb);
 		}
 
 		public IdentityHashMap<DataMeta, DataMeta> transferTo(List<DataMeta> metas, Temp file) throws IOException {

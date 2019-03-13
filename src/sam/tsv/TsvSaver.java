@@ -33,6 +33,7 @@ class TsvSaver {
 	public void append(String string, Appendable sink, boolean tab) throws IOException {
 		if(Checker.isNotEmpty(string))
 			escape(string, sink);
+		
 		if(tab)
 			sink.append('\t');
 	}

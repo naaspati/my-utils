@@ -48,11 +48,35 @@ public final class StringIOUtils {
 		CharsetEncoder e = encoder;
 		buffer = orElse(buffer, () -> ByteBuffer.allocate((int)Math.min(e.averageBytesPerChar()*chars.length() + 5, DEFAULT_BUFFER_SIZE)), b -> LOGGER.debug("ByteBuffer created: {}", b.capacity()));
 		
-		WriterImpl w = new WriterImpl(consumer, buffer, chars, false, encoder);
-		w.close();
+		while(chars.hasRemaining()) {
+			CoderResult c = encoder.encode(chars, buffer, true);
+			
+			if(c.isUnderflow()) {
+				while(true) {
+					c = encoder.flush(buffer);
+					consume(consumer, buffer);
+					
+					if(c.isUnderflow()) 
+						break;
+					else if(!c.isOverflow())
+						c.throwException();
+				}
+				break;
+			} else if(c.isOverflow())
+				consume(consumer, buffer);
+			else
+				c.throwException();
+		}
+		
 		consumer.onComplete();
 	}
 
+	private static void consume(BufferConsumer consumer, ByteBuffer buffer) throws IOException {
+		buffer.flip();
+		consumer.consume(buffer);
+		if(!buffer.hasRemaining())
+			throw new IOException("buffer not consumed");
+	}
 	public static StringBuilder read(BufferSupplier filler) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		read(filler, sb);

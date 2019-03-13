@@ -44,11 +44,11 @@ public class StringReader2Test {
 			String expected = LoremIpsum.getInstance().getParagraphs(5, 15);
 
 			Files.write(p, expected.getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
-			String actual = StringReader2.getText(p);
+			String actual = getText(p);
 			assertEquals(expected, actual);
 
 			Files.write(p, "".getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
-			actual = StringReader2.getText(p);
+			actual = getText(p);
 
 			assertEquals("", actual);
 		} finally {
@@ -63,16 +63,23 @@ public class StringReader2Test {
 			String expected = LoremIpsum.getInstance().getParagraphs(5, 15);
 
 			Files.write(p, expected.getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
-			StringBuilder actual = StringReader2.getText0(p);
+			StringBuilder actual = getText0(p);
 			assertEquals(expected, actual.toString());
 
 			Files.write(p, "".getBytes("utf-8"), CREATE, TRUNCATE_EXISTING);
-			actual = StringReader2.getText0(p);
+			actual = getText0(p);
 
 			assertEquals("", actual.toString());
 		} finally {
 			tempdir.deleteQuietly(p);
 		}
+	}
+
+	private String getText(Path p) throws IOException {
+		return getText0(p).toString(); 
+	}
+	private StringBuilder getText0(Path p) throws IOException {
+		return new StringReader2().getText(p);
 	}
 
 }

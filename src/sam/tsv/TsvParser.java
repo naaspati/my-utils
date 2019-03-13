@@ -8,8 +8,8 @@ import sam.myutils.Checker;
 import sam.string.StringSplitIterator;
 
 class TsvParser {
-	private StringBuilder rawCol;
-	private StringBuilder unEscaped;
+	private final StringBuilder rawCol = new StringBuilder();
+	private final StringBuilder unEscaped = new StringBuilder();
 	
 	public Iterator<String> iterator(String line) {
 		return Checker.isEmpty(line) ? Collections.emptyIterator() : new UnEscapedSplitter(line);

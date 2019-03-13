@@ -16,30 +16,23 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import sam.myutils.Checker;
 import sam.reference.ReferenceUtils;
 
-//FIXME testing remains
 public class Tsv  implements Iterable<Row>, Rows, Columns {
 	void addFromBuilder(Row row){
 		rows.add(row);
 	}
 
-	final Collection<Row> rows;
+	final Collection<Row> rows = rowCollectionImpl();
 	final Map<String, Column> columns = new HashMap<>();
-	
-	Tsv(Class<Collection<Row>> sinkImplemetation, String...columnNames) {
-		this.rows = create(sinkImplemetation);
+
+	Tsv(String...columnNames) {
 		addColumns(columnNames);
 	}
-	private Collection<Row> create(Class<Collection<Row>> sinkImplemetation) {
-		try {
-			return Objects.requireNonNull(sinkImplemetation).newInstance();
-		} catch (InstantiationException | IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
+	protected Collection<Row> rowCollectionImpl() {
+		return new ArrayList<>();
 	}
 	/**
 	 * read a file and replace any existing data 
@@ -49,43 +42,45 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	 * 
 	 * 
 	 */  
-	public Tsv(Class<Collection<Row>> sinkImplemetation, BufferedReader source) throws IOException {
-		this.rows = create(sinkImplemetation);
+	public Tsv(BufferedReader source) throws IOException {
 		load(source);
 	}
-	
 	public void load(BufferedReader source) throws IOException {
 		rows.clear();
-		
+
 		TsvParser parser = new TsvParser();
 		boolean first = true;
 		List<String> list = new ArrayList<>();
-		
+
 		while(true) {
 			String line = source.readLine();
+
 			if(first && line == null)
-				return;
-			
-			Iterator<String> itr = line == null ? null : parser.iterator(line);
-			
-			if(first && itr == null)
 				throw new IOException("columnames not found");  // empty file
-			
+
+			Iterator<String> itr = line == null ? null : parser.iterator(line);
+
+			if(first && (itr == null || !itr.hasNext()))
+				throw new IOException("columnames not found");  // empty file
+
 			if(line == null)
 				break;
-			
+
 			list.clear();
 			itr.forEachRemaining(list::add);
 			String[] values = list.isEmpty() ? Row.EMPTY_ARRAY : list.toArray(new String[list.size()]);
-			
-			rows.add(new RowImpl(line, values));
+
+			if(first)
+				addColumns(values);
+			else
+				rows.add(new RowImpl(line, values));
 			first = false;
 		}
 	}
 	Row newRow(String[] values) {
 		return new RowImpl(values);
 	}
-	
+
 	protected class RowImpl extends Row {
 		private WeakReference<String> line;
 
@@ -102,7 +97,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 		}
 		public RowImpl(Row s) {
 			super(s);
-			
+
 			if(s instanceof RowImpl)
 				this.line = ((RowImpl) s).line;
 		}
@@ -111,7 +106,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 			return Tsv.this;
 		}
 	}
-	
+
 	/**
 	 * merge two different tsv tables
 	 * @param tsv2 other tsv 
@@ -143,7 +138,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	public synchronized void save(Appendable target) throws IOException {
 		TsvSaver t = new TsvSaver();
 		t.append(getColumnNames(), target);
-		
+
 		for (Row row : rows) {
 			if(row instanceof RowImpl) {
 				String line = ReferenceUtils.get(((RowImpl) row).line);

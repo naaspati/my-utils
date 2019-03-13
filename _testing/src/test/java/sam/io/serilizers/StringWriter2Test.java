@@ -17,17 +17,19 @@ public class StringWriter2Test {
 	public void writeTest() throws IOException {
 		Path p = Files.createTempFile(null, null);
 		try {
-			String s = LoremIpsum.getInstance().getParagraphs(5, 15);
-			System.out.println("write text length: "+s.length());
+			String expexted = LoremIpsum.getInstance().getParagraphs(5, 15);
+			System.out.println("write text length: "+expexted.length());
 			
-			StringWriter2.setText(p, s);
+			new StringWriter2().write(expexted, p);
 			
-			assertEquals(s, new String(Files.readAllBytes(p), "utf-8"));
+			String actual = new String(Files.readAllBytes(p), "utf-8");
+			assertEquals(expexted.length(), actual.length());
+			assertEquals(expexted, actual);
 			
-			StringWriter2.setText(p, "");
+			new StringWriter2().write("", p);
 			assertEquals(0, Files.size(p));
 			
-			assertThrows(NullPointerException.class, () -> StringWriter2.setText(p, null));
+			assertThrows(NullPointerException.class, () -> new StringWriter2().write(null, p));
 		} finally {
 			Files.deleteIfExists(p);
 		}

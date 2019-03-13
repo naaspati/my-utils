@@ -21,23 +21,27 @@ public class WriterImpl extends Writer {
 	private final boolean synced;
 	private final Object lock;
 	private final CharsetEncoder encoder;
+	private volatile boolean flushed = true;
 
-	public WriterImpl(WritableByteChannel target, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) {
+	public WriterImpl(WritableByteChannel target, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
 		this(b -> IOUtils.write(b, target, false), buffer, chars, syncronized, encoder);
 	}
-	public WriterImpl(BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) {
+	public WriterImpl(BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
 		Checker.requireNonNull("consumer, buffer, chars, syncronized, encoder", consumer, buffer, chars, syncronized, encoder);
-		
+
 		this.consumer = consumer;
 		this.encoder = encoder;
 		this.buffer = buffer;
 		this.chars = chars;
 		this.synced = syncronized;
 		this.lock = syncronized ? new Object() : null;
-		
+
 		encoder.reset();
+		
+		IOUtils.ensureCleared(buffer);
+		IOUtils.ensureCleared(chars);
 	}
-	
+
 	@Override
 	public void write(int c) throws IOException {
 		append((char)c);
@@ -56,12 +60,12 @@ public class WriterImpl extends Writer {
 		append(new CharSequence() {
 			@Override public CharSequence subSequence(int start, int end) { return ThrowException.illegalAccessError(); }
 			@Override public int length() { return len; }
-			
+
 			@Override
 			public char charAt(int index) {
 				if(index >= len)
 					throw new NoSuchElementException();
-				
+
 				return cbuf[off+index];
 			}
 		});
@@ -89,37 +93,41 @@ public class WriterImpl extends Writer {
 	private void _append(int c) throws IOException {
 		if(!chars.hasRemaining())
 			_write();
-		
+
 		chars.put((char) c);
 	}
 	private Writer _append(CharSequence csq, int start, int end) throws IOException {
 		if(start > end)
 			ThrowException.illegalArgumentException("start("+start+") > end("+end+")");
-		
+
 		while(start < end) {
 			if(!chars.hasRemaining())
 				_write();
-			
+
 			chars.put(csq.charAt(start++));
 		}
 		return this;
 	}
 	private void _write() throws IOException {
+		_write(false);
+	}
+	private void _write(boolean end) throws IOException {
 		chars.flip();
-		
+
 		while(chars.hasRemaining()) {
-			CoderResult c = encoder.encode(chars, buffer, false);
-			
+			CoderResult c = encoder.encode(chars, buffer, end);
+			flushed = false;
+
 			if(c.isUnderflow())
 				break;
 			else if(c.isOverflow()) 
 				consume();
-			 else
+			else
 				c.throwException();
 		}
 		chars.clear();
 	}
-	
+
 	private void consume() throws IOException {
 		buffer.flip();
 		consumer.consume(buffer);
@@ -135,14 +143,21 @@ public class WriterImpl extends Writer {
 		}
 	}
 	private void _flush() throws IOException {
-		_write();
+		_write(true);
+		
+		if(flushed)
+			return;
+		
+		flushed = true;
 		
 		while(true) {
 			CoderResult c = encoder.flush(buffer);
 			consume();
+
 			if(c.isUnderflow()) 
 				break;
 		}
+		encoder.reset();
 	}
 	@Override
 	public void close() throws IOException {
