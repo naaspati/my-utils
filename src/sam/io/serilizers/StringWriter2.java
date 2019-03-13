@@ -1,127 +1,64 @@
 package sam.io.serilizers;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
-import static sam.io.IOConstants.defaultCharset;
-import static sam.io.IOConstants.defaultOnMalformedInput;
-import static sam.io.IOConstants.defaultOnUnmappableCharacter;
+import static sam.io.IOUtils.ensureCleared;
+import static sam.io.serilizers.StringIOUtils.writer;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.channels.Channels;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import sam.io.IOUtils;
+import sam.io.IOConstants;
+
+
 public class StringWriter2 {
-	private static final Charset DEFAULT_CHARSET = defaultCharset();
+	private CharsetEncoder encoder;
+	private boolean append;
+	private ByteBuffer buffer;
 
-	public StringWriter2() {}
+	public void encoder(Charset charset) {
+		this.encoder = IOConstants.newEncoder(charset);
+	}
+	public StringWriter2 encoder(CharsetEncoder encoder) {
+		this.encoder = Objects.requireNonNull(encoder);
+		return this;
+	}
 
-	public static WriterConfig writer() {
-		return new WriterConfig();
+	public StringWriter2 buffer(ByteBuffer buffer) { 
+		this.buffer = buffer; 
+		return this; 
 	}
-	public static class WriterConfig {
-		Object target;
-		Charset charset;
+	public StringWriter2 append(boolean append) { 
+		this.append = append; 
+		return this; 
+	}
 
-		CodingErrorAction onMalformedInput;
-		CodingErrorAction onUnmappableCharacter;
+	public void encoder(Charset charset, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) {
+		this.encoder = charset.newEncoder()
+				.onMalformedInput(onMalformedInput)
+				.onUnmappableCharacter(onUnmappableCharacter);
+	}
 
-		boolean append;
-		
-		private WriterConfig() {}
+	public void write(CharSequence data, WritableByteChannel target) throws IOException {
+		ensureCleared(buffer);
+		StringIOUtils.write(writer(target), data, encoder, buffer);
 
-		public WriterConfig target(WritableByteChannel target){ this.target=target;  return this; }
-		public WriterConfig target(OutputStream target){ this.target=Channels.newChannel(target);  return this; }
-		public WriterConfig target(Path target, boolean append){ 
-			this.target= target;
-			this.append = append;
-			return this; 
+		if(buffer != null)
+			buffer.clear();
+	}
+	public void write(CharSequence data, Path target) throws IOException {
+		try(FileChannel fc = FileChannel.open(target, CREATE, WRITE,  append ? APPEND : TRUNCATE_EXISTING)) {
+			write(data, fc);
 		}
-		public WriterConfig target(File target, boolean append){ 
-			this.target= target.toPath();
-			this.append = append;
-			return this; 
-		}
-		public WriterConfig charset(Charset charset){ this.charset=charset;  return this; } 
-		public WriterConfig onMalformedInput(CodingErrorAction onMalformedInput){ this.onMalformedInput=onMalformedInput;  return this; }
-		public WriterConfig onUnmappableCharacter(CodingErrorAction onUnmappableCharacter){ this.onUnmappableCharacter=onUnmappableCharacter;  return this; }
+	}
 
-		public void write(CharSequence data) throws IOException {
-			Objects.requireNonNull(target, "target not set");
-			
-			if(target instanceof WritableByteChannel) {
-				writeText((WritableByteChannel)target, data, this);
-			} else {
-				try(FileChannel fc = FileChannel.open((Path)target, CREATE,WRITE, append ? APPEND : TRUNCATE_EXISTING)) {
-					writeText(fc, data, this);
-				}
-			}
-		}
-		
-		private CharsetEncoder encoder() {
-			return charset()
-					.newEncoder()
-					.onMalformedInput(onMalformedInput == null ? defaultOnMalformedInput() : onMalformedInput)
-					.onUnmappableCharacter(onUnmappableCharacter == null ? defaultOnUnmappableCharacter() : onUnmappableCharacter);
-		}
-		public Charset charset() {
-			return (charset == null ? DEFAULT_CHARSET : charset);
-		}
-	} 
-	public static void setText(Path path, CharSequence s, String charset) throws IOException {
-		setText(path, s, Charset.forName(charset));
-	}
-	public static void setText(Path path, CharSequence s) throws IOException {
-		setText(path, s, DEFAULT_CHARSET);
-	}
-	public static void setText(Path path, CharSequence s, Charset charset) throws IOException {
-		writeText(path, s, charset, false);
-	}
-	public static void appendText(Path path, CharSequence s, String charset) throws IOException {
-		appendText(path, s, Charset.forName(charset));
-	}
-	public static void appendText(Path path, CharSequence s) throws IOException {
-		appendText(path, s, DEFAULT_CHARSET);
-	}
-	public static void appendText(Path path, CharSequence s, Charset charset) throws IOException {
-		writeText(path, s, charset, true);
-	}
-	public static void writeText(Path path, CharSequence s, Charset charset, boolean append) throws IOException {
-		writer()
-		.charset(charset)
-		.target(path, append)
-		.write(s);
-	}
-	public static void writeText(WritableByteChannel channel, CharSequence s, WriterConfig config) throws IOException {
-		StringIOUtils.write(buffer -> IOUtils.write(buffer, channel, false), s, config.encoder(), config.onUnmappableCharacter, config.onMalformedInput);
-	}
- 	public static void appendTextAtBegining(Path path, CharSequence s, String charset) throws IOException {
-		appendTextAtBegining(path, s, Charset.forName(charset));
-	}
-	public static void appendTextAtBegining(Path path, CharSequence s) throws IOException {
-		appendTextAtBegining(path, s, DEFAULT_CHARSET);
-	}
-	public static void appendTextAtBegining(Path path, CharSequence s, Charset charset) throws IOException {
-		Path temp = Files.createTempFile(path.getFileName().toString(), null);
-		
-		try(FileChannel fc = FileChannel.open(temp, CREATE,WRITE);
-				FileChannel target = FileChannel.open(path, READ)) {
-			writer().charset(charset).target(fc).write(s);
-			target.transferTo(0, target.size(), fc);
-		}
-		Files.move(temp, path, REPLACE_EXISTING); 
-	}
 }

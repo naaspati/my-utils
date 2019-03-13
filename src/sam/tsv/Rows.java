@@ -18,11 +18,12 @@ interface Rows {
         return (Tsv)this;
     }
     default Row addRow(String...values){
-        Row row = new Row(Arrays.copyOf(values, tsv().columns.size()), tsv());
+        Row row = tsv().newRow(Arrays.copyOf(values, tsv().columns.size()));
         tsv().rows.add(row);
         return row;
     }
-    default Row addRow(Row row){
+    
+	default Row addRow(Row row){
         if(tsv() != row.getTsv())
             return addRow(row.values());
 
@@ -39,7 +40,7 @@ interface Rows {
         String[] str = new String[ tsv().columns.size()];
         columnNameValueMap.forEach((key, value) -> str[tsv().getColumn(key).index] = value);
 
-        Row row = new Row(str, tsv());
+        Row row = tsv().newRow(str);
         tsv().rows.add(row);
         return row;
     }
@@ -49,7 +50,7 @@ interface Rows {
         for (RowCell cv : rowCells)
             str[tsv().getColumn(cv.columnName).index] = cv.value;
         
-        Row row = new Row(str, tsv());
+        Row row = tsv().newRow(str);
         tsv().rows.add(row);
         return row;
     }

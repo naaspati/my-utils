@@ -316,7 +316,7 @@ public class ChapterUtils {
 
 			Path path = Paths.get(FileNameSanitizer.sanitize(MyUtilsThread.stackLocation().toString())+".dump");
 			try {
-				StringWriter2.setText(path, sb);
+				new StringWriter2().write(sb, path);
 				LOGGER.info("created: "+path.toAbsolutePath());
 			} catch (IOException e) {
 				LOGGER.error("failed to write: {}", path.toAbsolutePath(), e);

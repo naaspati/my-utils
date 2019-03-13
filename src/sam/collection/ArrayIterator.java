@@ -1,35 +1,17 @@
 package sam.collection;
 
-import java.util.NoSuchElementException;
+import java.util.Objects;
 
-public abstract class ArrayIterator<E> implements IteratorWithSize<E> {
-	private int index = 0;
-	private final int to;
-	private final int size;
+public class ArrayIterator<E> extends IndexGetterIterator<E> {
+	private final E[] values;
 	
-	public ArrayIterator(int from, int to) {
-		this.index = from;
-		this.to = to;
-		this.size = to - from;
+	public ArrayIterator(E[] values) {
+		super(0, values.length);
+		this.values = Objects.requireNonNull(values);
 	}
-	
-	public abstract E at(int index);
-	public ArrayIterator(int size) {
-		this.to = size;
-		this.size = size;
-	}
+
 	@Override
-	public int size() {
-		return size;
-	}
-	@Override
-	public boolean hasNext() {
-		return index < to;
-	}
-	@Override
-	public E next() {
-		if(!hasNext())
-			throw new NoSuchElementException();
-		return at(index++);
+	public E at(int index) {
+		return values[index];
 	}
 }

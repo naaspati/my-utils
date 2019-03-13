@@ -2,21 +2,11 @@ package sam.tsv;
 
 
 import static java.util.Objects.requireNonNull;
-import static sam.io.IOConstants.defaultCharset;
-import static sam.io.IOConstants.defaultOnMalformedInput;
-import static sam.io.IOConstants.defaultOnUnmappableCharacter;
-import static sam.tsv.TsvUtils.escape;
-import static sam.tsv.TsvUtils.unescape;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.CodingErrorAction;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -24,193 +14,74 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import sam.myutils.Checker;
-import sam.tsv.tsvmap.Converter;
+import sam.collection.Pair;
 
+// FIXME testing remains 
 public class TsvMap<K, V> implements Map<K, V> {
 	private final Map<K, V> map;
-	private String keyColumnName, valueColumnName;
-	private final Converter<K> keyConverter;
-	private final Converter<V> valueConverter;
-	private final boolean firstRowIsColumnNames;
-	private final Charset charset;
-
-	public static class Builder<K, V> {
-		Map<K, V> map;
-		String keyName, valueName;
-		Converter<K> keyC;
-		Converter<V> valueC;
-		boolean firstRowIsColumnNames;
-		Charset charset = defaultCharset();
-
-		public Builder<K, V> map(Map<K, V> map) {this.map = map; return this;}
-		public Builder<K, V> columnName(String key, String value) {
-			this.keyName = Objects.requireNonNull(key);
-			this.valueName = Objects.requireNonNull(value);
-
-			if(Objects.equals(key, value))
-				throw new IllegalArgumentException("keyColumnName, valueColumnName  cannot be same");
-			return this;
+	private final Pair<String, String> cols;
+	private final Pair<Converter<K>, Converter<V>> converters;
+	
+	private TsvMap(BufferedReader source, String keyCol, String valueCol, Class<? extends Map<K, V>> mapImplemetation, Converter<K> keyConverter, Converter<V> valueConverter) throws IOException {
+		if(keyCol == null && valueCol == null)
+			this.cols  = new Pair<String, String>(keyCol, valueCol);
+		else if(keyCol != null && valueCol != null)
+			this.cols = null;
+		else 
+			throw new IllegalArgumentException("keyCol("+keyCol+") == null || valueCol("+valueCol+") == null");
+		
+		this.converters = new Pair<Converter<K>, Converter<V>>(Objects.requireNonNull(keyConverter), Objects.requireNonNull(valueConverter));
+		
+		try {
+			this.map = mapImplemetation.newInstance();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
-		public Builder(Converter<K> key, Converter<V> value) {
-			this.keyC = Objects.requireNonNull(key);
-			this.valueC = Objects.requireNonNull(value);
-		}
-		public Builder<K, V> charset(Charset charset) {
-			this.charset = charset;
-			return this;
-		}
-		public TsvMap<K, V> build() {
-			if(keyName == null || valueName == null)
-				return new TsvMap<>(map(), keyC, valueC);
-			else
-				return new TsvMap<>(map(), keyName, valueName, keyC, valueC, true, charset);
-		}
-		Map<K, V> map() {
-			return map == null ? new LinkedHashMap<>() : map;
-		}
-		public TsvMap<K, V> load(InputStream is, boolean firstRowIsColumnNames) throws IOException {
-			return new TsvMap<>(firstRowIsColumnNames, map(), is, charset, keyC, valueC);
-		}
-		public TsvMap<K, V> load(Path path, boolean firstRowIsColumnNames) throws IOException {
-			try(InputStream is = Files.newInputStream(path)) {
-				return new TsvMap<>(firstRowIsColumnNames, map(), is, charset, keyC, valueC);	
-			}
-		}
+		load(source);
 	}
-	public static <K, V> Builder<K, V> builder(Converter<K> key, Converter<V> value) {
-		return new Builder<>(key, value);
-	} 
-	public TsvMap(boolean firstRowIsColumnNames, Map<K, V> sink, Path path, Charset charset, Converter<K> keyConverter, Converter<V> valueConverter) throws IOException {
-		this(firstRowIsColumnNames, sink, Files.newInputStream(path), charset, keyConverter, valueConverter);
-	}
-	public TsvMap(boolean firstRowIsColumnNames, Map<K, V> sink, InputStream is, Charset charset, Converter<K> keyConverter, Converter<V> valueConverter) throws IOException {
-		this.keyConverter = requireNonNull(keyConverter);
-		this.valueConverter = requireNonNull(valueConverter);
-
-		this.map = requireNonNull(sink);
-		this.firstRowIsColumnNames = firstRowIsColumnNames;
-		boolean firstLine[] = {true};
-		this.charset = charset;
-
-		new LineReader() {
-			@Override
-			public void accept(String line) {
-				int n = line.indexOf('\t');
-				if(n < 0) return;
-				String k = unescape(subSequence(line, 0, n)).toString();
-				String v = unescape(subSequence(line, n+1, line.length())).toString();
-
-				if(firstRowIsColumnNames && firstLine[0]) {
-					firstLine[0] = false;
-					keyColumnName = k;
-					valueColumnName = v;
-				} else {
-					map.put(keyConverter.fromString(k), valueConverter.fromString(v));	
-				}
-			}
-		}.parse(is, charset);
-
-		if(firstRowIsColumnNames && firstLine[0]) 
-			throw new TsvException("no column name found in file");
-	}
-	public TsvMap(Map<K, V> map, Charset charset,  String keyColumnName, String valueColumnName, Converter<K> keyConverter, Converter<V> valueConverter) {
-		Checker.requireNonNull("keyColumnName valueColumnName keyConverter valueConverter",
-				keyColumnName,
-				valueColumnName,
-				keyConverter,
-				valueConverter
-				); 
-
-		this.map = map;
-		this.keyColumnName = keyColumnName;
-		this.valueColumnName = valueColumnName;
-		this.charset = charset;
-
-		if(Objects.equals(keyColumnName, valueColumnName))
-			throw new IllegalArgumentException("keyColumnName, valueColumnName  cannot be same");
-
-		this.keyConverter = keyConverter;
-		this.valueConverter = valueConverter;
-		this.firstRowIsColumnNames = true;
-	}
-
-	protected CharSequence subSequence(String line, int i, int n) {
-		return new CharSequence() {
-			@Override
-			public CharSequence subSequence(int start, int end) {
-				return null;
-			}
-			@Override
-			public int length() {
-				return n;
-			}
-
-			@Override
-			public char charAt(int index) {
-				return line.charAt(index);
-			}
-			@Override
-			public String toString() {
-				return line.substring(i, n);
-			}
-		};
-	}
-
-	public TsvMap( Map<K, V> map, Converter<K> keyConverter, Converter<V> valueConverter) {
-		this(map, null, null, keyConverter, valueConverter, false, defaultCharset());
-	}
-	private TsvMap(Map<K, V> map, String keyColumnName, String valueColumnName, Converter<K> keyConverter, Converter<V> valueConverter, boolean firstRowIsColumnNames, Charset charset) {
-		super();
-		this.map = map;
-		if(firstRowIsColumnNames) {
-			this.keyColumnName = Objects.requireNonNull(keyColumnName);
-			this.valueColumnName = Objects.requireNonNull(valueColumnName);
+	public void load(BufferedReader source) throws IOException {
+		map.clear();
+		
+		TsvParser parser = new TsvParser();
+		boolean first = true;
+		
+		while(true) {
+			String line = source.readLine();
+			if(first && line == null)
+				return;
 			
-			if(Objects.equals(keyColumnName, valueColumnName))
-				throw new IllegalArgumentException("keyColumnName, valueColumnName  cannot be same");
-		} else {
-			this.keyColumnName = null;
-			this.valueColumnName = null;
+			Iterator<String> itr = line == null ? null : parser.iterator(line);
+			
+			if(first && cols != null) {
+				if(itr == null) // empty file
+					return;
+				
+				String k = itr.next();
+				String v = itr.next();
+				
+				if(!k.equals(cols.key) || !v.equals(cols.value))
+					throw new IOException(String.format("\"%s\" != \"%s\" || \"%s\" != \"%s\"", k, cols.key, v, cols.value));
+			} else if(itr.hasNext()) {
+				K k = converters.key.fromString(itr.next());
+				V v = converters.value.fromString(itr.next());
+				map.put(k, v);
+			}
+			
+			if(line == null)
+				break;
+			
+			first = false;
 		}
-		this.keyConverter = Objects.requireNonNull(keyConverter);
-		this.valueConverter = Objects.requireNonNull(valueConverter);
-		this.firstRowIsColumnNames = firstRowIsColumnNames;
-		this.charset = Objects.requireNonNull(charset);
-	}
-	public void save(Path p) throws IOException {
-		save(p, charset, defaultOnMalformedInput(), defaultOnUnmappableCharacter());
 	}
 
-	private Iterator<Entry<K, V>> itr;
-	public void save(Path p, Charset charset, CodingErrorAction onMalformedInput, CodingErrorAction onUnmappableCharacter) throws IOException {
-		StringBuilder sb = TsvUtils.wsb.poll();
-		sb.setLength(0);
-
-		itr = map.entrySet().iterator();
-
-		if(firstRowIsColumnNames) 
-			append(sb, keyColumnName, valueColumnName);
-		while (itr.hasNext()) {
-			Map.Entry<K, V> e = itr.next();
-			append(sb, keyConverter.toString(e.getKey()), valueConverter.toString(e.getValue()));
-		}
-		TsvUtils.save(sb, p, charset, onMalformedInput, onUnmappableCharacter);
-		TsvUtils.wsb.offer(sb);
-	}
-	private void append(StringBuilder sb, String k, String v) {
-		sb.append(k == null ? "" : escape(k))
-		.append('\t')
-		.append(v == null ? "" : escape(v));
-		if(itr.hasNext())
-			sb.append('\n');
-	}
-
-	public String getKeyColumnName() {
-		return keyColumnName;
-	}
-	public String getValueColumnName() {
-		return valueColumnName;
+	public void save(Appendable target) throws IOException {
+		TsvSaver saver = new TsvSaver();
+		
+		if(cols != null) 
+			saver.append(cols.key, cols.value, target);
+		
+		for (Entry<K, V> e : map.entrySet()) 
+			saver.append(converters.key.toString(e.getKey()), converters.value.toString(e.getValue()), target);
 	}
 
 	@Override

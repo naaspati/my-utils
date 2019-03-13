@@ -1,12 +1,10 @@
 package sam.io.infile;
 
-import static java.nio.charset.CodingErrorAction.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CodingErrorAction;
 import java.nio.file.Path;
 
 import sam.io.BufferSupplier;
@@ -20,11 +18,8 @@ public class TextInFile extends InFile {
 	public TextInFile(Path path, boolean createIfNotExits) throws IOException {
 		super(path, createIfNotExits);
 	}
-
+	
 	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink) throws IOException {
-		readText(meta, buffer, charBuffer, decoder, sink, REPORT, REPORT);
-	}
-	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		if(meta.size == 0)
 			return;
 
@@ -65,21 +60,17 @@ public class TextInFile extends InFile {
 				return size == 0;
 			}
 		};
-		
-		StringIOUtils.read(fill, sink, decoder, charBuffer, onUnmappableCharacter, onMalformedInput);
+		StringIOUtils.read(fill, sink, decoder, charBuffer);
 	}
 	
 	public DataMeta write(CharSequence s, CharsetEncoder encoder, ByteBuffer buffer) throws IOException {
-		return write(s, encoder, buffer, REPORT, REPORT);
-	}
-	public DataMeta write(CharSequence s, CharsetEncoder encoder, ByteBuffer buffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
 		long pos = size();
 		
 		if(s == null || s.length() == 0)
 			return new DataMeta(pos, 0);
 		
 		int[] size = {0};
-		StringIOUtils.write(b -> size[0] += write0(b), s, encoder, buffer, onUnmappableCharacter, onMalformedInput);
+		StringIOUtils.write(b -> size[0] += write0(b), s, encoder, buffer);
 		
 		DataMeta d = new DataMeta(pos, size[0]); 
 		LOGGER.debug("WRITTEN: {}", d);

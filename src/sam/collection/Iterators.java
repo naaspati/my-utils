@@ -103,14 +103,8 @@ public interface Iterators {
 		Objects.requireNonNull(values);
 		if(values.length == 0) 
 			return empty();
-
-		return new ArrayIterator<E>(from, to) {
-
-			@Override
-			public E at(int index) {
-				return values[index];
-			}
-		};
+		
+		return new ArrayIterator<>(values);
 	}
 	public static <E, F> Iterator<F> map(Iterator<E> itr, Function<E, F> mapper) {
 		Objects.requireNonNull(itr);
@@ -132,7 +126,7 @@ public interface Iterators {
 		if(times == 0)
 			return Iterators.empty();
 
-		return new ArrayIterator<E>(times) {
+		return new IndexGetterIterator<E>(times) {
 			@Override
 			public E at(int index) {
 				return e;

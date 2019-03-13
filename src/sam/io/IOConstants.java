@@ -1,11 +1,11 @@
 package sam.io;
 
-import static java.nio.charset.CodingErrorAction.IGNORE;
-import static java.nio.charset.CodingErrorAction.REPLACE;
-import static java.nio.charset.CodingErrorAction.REPORT;
+import static java.nio.charset.CodingErrorAction.*;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import sam.logging.Logger;
 
@@ -27,7 +27,8 @@ public final class IOConstants {
 	private static CodingErrorAction getCodingErrorAction(String...keys) {
 		String s = System2.lookupAny(keys);
 
-		if(s == null) return REPORT;
+		if(s == null) 
+			return REPORT;
 		
 		switch (s.toUpperCase().trim()) {
 			case "IGNORE":
@@ -70,5 +71,22 @@ public final class IOConstants {
 	public static int defaultBufferSize() {
 		return DEFAULT_BUFFER_SIZE;
 	}
-
+	public static CharsetEncoder newEncoder() {
+		return newEncoder(defaultCharset());
+	}
+	public static CharsetDecoder newDecoder() {
+		return newDecoder(defaultCharset());
+	}
+	public static CharsetDecoder newDecoder(Charset charset) {
+		return charset
+				.newDecoder()
+				.onMalformedInput(DEFAULT_ON_MALFORMED)
+				.onUnmappableCharacter(DEFAULT_ON_UNMAPPABLE_CHARACTER);
+	}
+	public static CharsetEncoder newEncoder(Charset charset) {
+		return charset
+		.newEncoder()
+		.onMalformedInput(DEFAULT_ON_MALFORMED)
+		.onUnmappableCharacter(DEFAULT_ON_UNMAPPABLE_CHARACTER);
+	}
 }

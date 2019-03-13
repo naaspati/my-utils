@@ -8,11 +8,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -35,45 +33,23 @@ public final class StringIOUtils {
 		write(consumer, s, (ByteBuffer)null);
 	}
 	public static void write(BufferConsumer consumer, CharSequence s, ByteBuffer buffer) throws IOException {
-		write(consumer, s, null, buffer, null, null);
+		write(consumer, s, null, buffer);
 	}
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder) throws IOException {
-		write(consumer, s, encoder, null, null);
+		write(consumer, s, encoder, null);
 	}
-	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		write(consumer, s, encoder, null, onUnmappableCharacter, onMalformedInput);
-	}
-	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer) throws IOException {
+		Objects.requireNonNull(s);
+		
 		if(s.length() == 0) return;
 
 		CharBuffer chars = s instanceof CharBuffer ? (CharBuffer) s : CharBuffer.wrap(s);
-
-		encoder = orElse(encoder, () -> defaultCharset().newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
-		encoder.reset();
-		onUnmappableCharacter = orElse(onUnmappableCharacter, REPORT);
-		onMalformedInput = orElse(onMalformedInput, REPORT);
-
-		float avg = encoder.averageBytesPerChar();
-		buffer = orElse(buffer, () -> ByteBuffer.allocate((int)Math.min(avg*chars.length() + 100, DEFAULT_BUFFER_SIZE)), b -> LOGGER.debug("ByteBuffer created: {}", b.capacity()));
-
-		while(true) {
-			CoderResult c = encoder.encode(chars, buffer, true);
-			checkResult(c, onUnmappableCharacter, onMalformedInput);
-
-			buffer.flip();
-			consumer.consume(buffer);
-
-			if(!chars.hasRemaining()) {
-				while(true) {
-					c = encoder.flush(buffer);
-					buffer.flip();
-					consumer.consume(buffer);
-					if(c.isUnderflow()) break;
-				}
-				break;
-			}
-		}
-
+		encoder = orElse(encoder, () -> IOConstants.newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
+		CharsetEncoder e = encoder;
+		buffer = orElse(buffer, () -> ByteBuffer.allocate((int)Math.min(e.averageBytesPerChar()*chars.length() + 5, DEFAULT_BUFFER_SIZE)), b -> LOGGER.debug("ByteBuffer created: {}", b.capacity()));
+		
+		WriterImpl w = new WriterImpl(consumer, buffer, chars, false, encoder);
+		w.close();
 		consumer.onComplete();
 	}
 
@@ -84,32 +60,24 @@ public final class StringIOUtils {
 	}
 
 	public static void read(ByteBuffer buf, Appendable sink) throws IOException {
-		read(buf, sink, null, null, null);
+		read(buf, sink, null);
 	}
 	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder) throws IOException {
-		read(buf, sink, decoder, null, null);
+		read(buf, sink, decoder);
 	}
-	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		read(buf, sink, decoder, null, onUnmappableCharacter, onMalformedInput);
-	}
-	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder, CharBuffer chars, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		read(BufferSupplier.of(buf), sink, decoder, chars, onUnmappableCharacter, onMalformedInput);
+	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder, CharBuffer chars) throws IOException {
+		read(BufferSupplier.of(buf), sink, decoder, chars);
 	}
 	public static void read(BufferSupplier filler, Appendable sink) throws IOException {
-		read(filler, sink, null, null, null);
+		read(filler, sink, null);
 	}
 	public static void read(BufferSupplier filler, Appendable sink, CharsetDecoder decoder) throws IOException {
-		read(filler, sink, decoder, null, null);
-	}
-	public static void read(BufferSupplier filler, Appendable sink, CharsetDecoder decoder, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
-		read(filler, sink, decoder, null, onUnmappableCharacter, onMalformedInput);
+		read(filler, sink, decoder, null);
 	}
 
 	public static abstract class ReadConfig extends BufferSupplier {
 		protected CharsetDecoder decoder; 
 		protected CharBuffer charsBuffer;
-		protected CodingErrorAction onUnmappableCharacter;
-		protected CodingErrorAction onMalformedInput;
 		StringBuilder debug;
 		int charsCount;
 
@@ -122,8 +90,8 @@ public final class StringIOUtils {
 		public CharsetDecoder decoder() {
 			return this.decoder = orElse(this.decoder, () -> {
 				return defaultCharset().newDecoder()
-						.onMalformedInput(orElse(onMalformedInput(), REPORT))
-						.onUnmappableCharacter(orElse(onUnmappableCharacter(), REPORT));
+						.onMalformedInput(REPORT)
+						.onUnmappableCharacter(REPORT);
 
 			}, debug == null ? d -> {} : d -> debug.append("decoder created: ").append(d.charset().name()).append(", "));
 		}
@@ -133,20 +101,6 @@ public final class StringIOUtils {
 		}
 		public CharBuffer charsBuffer() {
 			return this.charsBuffer = orElse(charsBuffer, () -> CharBuffer.allocate(charsCount > 100 || charsCount < 10 ? 100 : charsCount), debug == null ? b -> {} : b -> debug.append("CharBuffer created: ").append(b.capacity()).append(", "));
-		}
-		public ReadConfig onUnmappableCharacter(CodingErrorAction onUnmappableCharacter) {
-			this.onUnmappableCharacter = onUnmappableCharacter;
-			return this;
-		}
-		public CodingErrorAction onUnmappableCharacter() {
-			return this.onUnmappableCharacter;
-		}
-		public ReadConfig onMalformedInput(CodingErrorAction onMalformedInput) {
-			this.onMalformedInput = onMalformedInput;
-			return this;
-		}
-		public CodingErrorAction onMalformedInput() {
-			return this.onMalformedInput;
 		}
 		public abstract void consume(CharBuffer chars) throws IOException;
 	}
@@ -183,12 +137,11 @@ public final class StringIOUtils {
 		}
 	}
 
-	public static void read(BufferSupplier supplier, IOExceptionConsumer<CharBuffer> resultConsumer, CharsetDecoder decoder, CharBuffer charsBuffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+	public static void read(BufferSupplier supplier, IOExceptionConsumer<CharBuffer> resultConsumer, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
 		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(resultConsumer);
 
 		read(new DefaultReadConfig(supplier) {
-
 			@Override
 			public void consume(CharBuffer chars) throws IOException {
 				charloop++;
@@ -197,7 +150,7 @@ public final class StringIOUtils {
 		});
 	}
 
-	public static void read(BufferSupplier supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws IOException {
+	public static void read(BufferSupplier supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
 		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(sink);
 
@@ -210,7 +163,7 @@ public final class StringIOUtils {
 			public void postStart() {
 				if(charsCount < 10)
 					return;
-				
+
 				if(sink instanceof StringBuilder) {
 					StringBuilder sb = (StringBuilder) sink;
 					cap = sb.capacity();
@@ -262,12 +215,12 @@ public final class StringIOUtils {
 
 		CharsetDecoder decoder = Objects.requireNonNull(reader.decoder());
 		decoder.reset();
-		
+
 		if(size == n) 
 			reader.charsCount = (int) (size/decoder.averageCharsPerByte());	
-		 else 
+		else 
 			reader.charsCount = -1;
-		
+
 		CharBuffer charsBuffer = Objects.requireNonNull(reader.charsBuffer());
 		reader.postStart();
 
@@ -276,7 +229,7 @@ public final class StringIOUtils {
 			if(buffer == null)
 				buffer = IOConstants.EMPTY_BUFFER;
 			boolean endOfInput = reader.isEndOfInput();
-			
+
 			while(true) {
 				CoderResult c = decoder.decode(buffer, charsBuffer, endOfInput);
 
@@ -309,10 +262,6 @@ public final class StringIOUtils {
 		consume(charsBuffer, reader);
 		reader.onComplete();
 	}
-
-	private static <E> E orElse(E e, E defaultValue) {
-		return e != null ? e : defaultValue;
-	}
 	private static <E> E orElse(E e, Supplier<E> defaultValue, Consumer<E> onCreate) {
 		if(e == null) {
 			e = defaultValue.get();
@@ -326,10 +275,6 @@ public final class StringIOUtils {
 		config.consume(chars);
 		if(!chars.hasRemaining())
 			throw new IOException("buffer not consumed");
-	}
-	private static void checkResult(CoderResult c, CodingErrorAction onUnmappableCharacter, CodingErrorAction onMalformedInput) throws CharacterCodingException {
-		if((c.isUnmappable() && onUnmappableCharacter == REPORT) || (c.isMalformed() && onMalformedInput == REPORT))
-			c.throwException();
 	}
 	public static String concat(String result, CharBuffer cb) {
 		if(result.length() == 0) return cb.toString();
