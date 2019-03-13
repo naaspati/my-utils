@@ -28,9 +28,9 @@ import static sam.manga.mangarock.MangarockMangaMeta.TOTALCHAPTERS;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 
-import sam.collection.IterableWithSize;
 import sam.sql.sqlite.SQLiteDB;
 
 
@@ -147,11 +147,14 @@ public class MangarockManga {
 	private static final String INSERT_SQL = "INSERT INTO " + TABLE_NAME+"("+String.join(",", AUTHOR,CATEGORIES,THUMBNAILURL,DESCRIPTION,SOURCE_ID,NAME,TOTALCHAPTERS,LASTUPDATE,LAST_VIEW,ID,DIRECTION,REMOVED,STATUS,RANK,OID,GENRES,EXTRA,COVER,CHARACTERS,AUTHORS,ARTWORKS,MRS_SERIES,ALIAS)+") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static final int insert(Iterable<MangarockManga> data, SQLiteDB db) throws SQLException {
-		IterableWithSize<MangarockManga> list = IterableWithSize.wrap(data);
-		if(!list.hasNext()) return 0;
+		Iterator<MangarockManga> itr = data.iterator();  
+		if(!itr.hasNext()) 
+			return 0;
 
 		try(PreparedStatement p = db.prepareStatement(INSERT_SQL)) {
-			for (MangarockManga item: list){
+			while (itr.hasNext()) {
+				MangarockManga item = itr.next();
+				
 				p.setString(1,item.author);
 				p.setString(2,item.categories);
 				p.setString(3,item.thumbnailUrl);

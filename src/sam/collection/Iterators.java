@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.PrimitiveIterator.OfDouble;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Function;
@@ -13,37 +15,84 @@ import java.util.stream.StreamSupport;
 
 public interface Iterators {
 
-	public static Iterator<Double> of(double[] values) {
-		Objects.requireNonNull(values);
-		return new ArrayIterator<Double>(values.length) {
-			@Override
-			public Double at(int index) {
-				return values[index];
-			}
-		};
-	}
-	public static Iterator<Integer> of(int[] values) {
+	public static OfDouble of(double[] values) {
 		Objects.requireNonNull(values);
 
-		return new ArrayIterator<Integer>(values.length) {
+		return new OfDouble() {
+			int n = 0;
+
 			@Override
-			public Integer at(int index) {
-				return values[index];
+			public boolean hasNext() {
+				return n < values.length;
+			}
+			@Override
+			public double nextDouble() {
+				if(!hasNext())
+					throw new NoSuchElementException();
+
+				return values[n++];
 			}
 		};
 	}
+	public static OfInt of(int[] values) {
+		Objects.requireNonNull(values);
+
+		return new OfInt() {
+			int n = 0;
+
+			@Override
+			public boolean hasNext() {
+				return n < values.length;
+			}
+			@Override
+			public int nextInt() {
+				if(!hasNext())
+					throw new NoSuchElementException();
+
+				return values[n++];
+			}
+		};
+	}
+	public static OfInt ofInt(char[] values) {
+		Objects.requireNonNull(values);
+
+		return new OfInt() {
+			int n = 0;
+
+			@Override
+			public boolean hasNext() {
+				return n < values.length;
+			}
+			@Override
+			public int nextInt() {
+				if(!hasNext())
+					throw new NoSuchElementException();
+
+				return values[n++];
+			}
+		};
+	}
+	
 	public static Iterator<Character> of(char[] values) {
 		Objects.requireNonNull(values);
 
-		return new ArrayIterator<Character>(values.length) {
+		return new Iterator<Character>() {
+			int n = 0;
+
 			@Override
-			public Character at(int index) {
-				return values[index];
+			public boolean hasNext() {
+				return n < values.length;
+			}
+			@Override
+			public Character next() {
+				if(!hasNext())
+					throw new NoSuchElementException();
+
+				return values[n++];
 			}
 		};
 	}
 
-	
 	public static <E> Iterator<E> empty(){
 		return Collections.emptyIterator();
 	}
@@ -52,8 +101,8 @@ public interface Iterators {
 	}
 	public static <E> Iterator<E> of(E[] values, int from, int to){
 		Objects.requireNonNull(values);
-
-		if(values.length == 0) return empty();
+		if(values.length == 0) 
+			return empty();
 
 		return new ArrayIterator<E>(from, to) {
 
@@ -118,7 +167,7 @@ public interface Iterators {
 		}
 		if(n >= iterators.length)
 			return empty();
-		
+
 		int[] n1 = {n};
 
 		return new Iterator<E>() {
@@ -136,12 +185,12 @@ public interface Iterators {
 			public E next() {
 				if(index >= iterators.length)
 					throw new NoSuchElementException();
-				
+
 				E current = iter().next();
 
 				if(!iter().hasNext())
 					index++;
-				
+
 				return current;
 			}
 		};

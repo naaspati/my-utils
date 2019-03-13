@@ -38,9 +38,6 @@ public interface Iterables {
 	public static <E>  Iterable<E> join(Iterable<E>... itr) {
 		return Iterables.of(Iterators.join(ArraysUtils.map(itr, Iterator[]::new, Iterable::iterator)));
 	}
-	public static <E> IterableWithSize<E> wrap(Iterable<E> iterable) {
-		return iterable == null ? null : iterable instanceof IterableWithSize ? (IterableWithSize<E>) iterable : new IterableWithSize<>(iterable);
-	}
 	public static <E> Iterable<E> filtered(Iterable<E> itr, Predicate<E> filter) {
 		return of(Iterators.filtered(itr.iterator(), filter));
 	}

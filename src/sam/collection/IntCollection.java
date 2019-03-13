@@ -14,5 +14,6 @@ public interface IntCollection {
 	boolean removeAll(int... c);
 	int[] subList(int fromIndex, int toIndex);
 	void forEach(IntConsumer action);
+	
 	boolean removeIf(IntPredicate filter);
 }

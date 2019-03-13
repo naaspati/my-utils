@@ -1,7 +1,5 @@
 package sam.collection;
 
-import java.util.NoSuchElementException;
-
 public abstract class ArrayIterator<E> implements IteratorWithSize<E> {
 	private int index = 0;
 	private final int to;
@@ -28,8 +26,6 @@ public abstract class ArrayIterator<E> implements IteratorWithSize<E> {
 	}
 	@Override
 	public E next() {
-		if(!hasNext())
-			throw new NoSuchElementException();
 		return at(index++);
 	}
 }

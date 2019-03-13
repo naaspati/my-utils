@@ -46,7 +46,6 @@ abstract class IntListBase implements IntCollection {
 	private void modified() {
 		modCount++;
 	}
-	
 	private void move(int srcPos, int destPos, int length) {
 		System.arraycopy(data, srcPos, data, destPos, length);
 		afterMove(srcPos, destPos, length);
@@ -221,15 +220,6 @@ abstract class IntListBase implements IntCollection {
 
 		return Arrays.copyOfRange(data, fromIndex, toIndex);
 	}
-	public void forEach(IntConsumer action) {
-		if(size == 0) return;
-
-		int m = modCount;
-		for (int i = 0; i < size; i++) {
-			checkModified(m);
-			action.accept(data[i]);
-		}
-	}
 	public boolean removeIf(IntPredicate filter) {
 		int oldsize = size;
 		modified();
@@ -291,6 +281,17 @@ abstract class IntListBase implements IntCollection {
 				return false;
 		}
 		return true;
+	}
+	
+	public void forEach(IntConsumer action) {
+		if(size == 0) 
+			return;
+
+		int m = modCount;
+		for (int i = 0; i < size; i++) {
+			checkModified(m);
+			action.accept(data[i]);
+		}
 	}
 	
 }
