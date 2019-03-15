@@ -60,5 +60,11 @@ public class StringWriter2 {
 			write(data, fc);
 		}
 	}
+	public static void setText(Path path, CharSequence data) throws IOException{
+		new StringWriter2().write(data, path);
+	}
+	public static void appendText(Path path, CharSequence data) throws IOException{
+		new StringWriter2().append(true).write(data, path);
+	}
 
 }

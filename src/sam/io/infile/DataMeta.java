@@ -40,4 +40,8 @@ public class DataMeta implements Serializable {
 	public String toString() {
 		return "DataMeta [position=" + position + ", size=" + size + "]";
 	}
+	
+	public static boolean isEmpty(DataMeta d) {
+		return d == null || d.size == 0;
+	}
 }

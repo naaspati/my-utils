@@ -29,7 +29,7 @@ public class FxTextSearch<E> {
 	private Runnable onChange;
 	private static final String JUST_NOTIFY = new String();
 	private final boolean lowercaseKeyword;
-	private boolean disable = true;
+	private boolean disable = false;
 
 	public FxTextSearch(Function<E, String> mapper, int searchDelay, boolean lowercaseKeyword) {
 		if(searchDelay < 0)
