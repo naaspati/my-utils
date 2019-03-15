@@ -15,13 +15,9 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
-class TsvMapTest {
+import com.google.common.base.Converter;
 
-	@Test
-	void initTest () {
-		TsvMap<Long, Long> map = TsvMap.of(Converter.LONG);
-		assertThrows(NullPointerException.class, () -> TsvMap.of(null));
-	}
+class TsvMapTest {
 	
 	@Test
 	void test2() throws IOException {
@@ -49,11 +45,11 @@ class TsvMapTest {
 		expectedMap = Collections.unmodifiableMap(expectedMap);
 		
 		StringReader reader = new StringReader(expected.toString());
-		TsvMap<Long, Long> map = TsvMap.parse(Converter.LONG, new BufferedReader(reader));
-		assertEquals(expectedMap, map.getMap());
+		Map<Long, Long> map = TsvMap.parse(new BufferedReader(reader), Long::parseLong);
+		assertEquals(expectedMap, map);
 		
 		StringBuilder actual = new StringBuilder();
-		map.save(actual);
+		TsvMap.save(actual, map, String::valueOf);
 		
 		assertNotSame(actual, expected);
 		assertEquals(actual.length(), expected.length());
@@ -62,7 +58,7 @@ class TsvMapTest {
 		expected = null;
 		map = null;
 		
-		map = TsvMap.parse(Converter.LONG, new BufferedReader(new StringReader(actual.toString())));
-		assertEquals(expectedMap, map.getMap());
+		map = TsvMap.parse(new BufferedReader(new StringReader(actual.toString())), Long::parseLong);
+		assertEquals(expectedMap, map);
 	}
 }

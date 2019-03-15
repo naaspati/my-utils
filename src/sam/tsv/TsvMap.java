@@ -1,229 +1,111 @@
 package sam.tsv;
 
 
-import static java.util.Objects.requireNonNull;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
-import sam.collection.Pair;
+import sam.myutils.Checker;
 
-public class TsvMap<K, V> implements Map<K, V> {
-	private final Map<K, V> map;
-	private final Pair<Converter<K>, Converter<V>> converters;
+public final class TsvMap {
+	private TsvMap() { }
 	
-	public static <E> TsvMap<E, E> of( Converter<E> converter) {
-		return of(converter, converter);
+	public static Map<String, String> parse(BufferedReader reader) throws IOException {
+		return parse(reader, s -> s);
 	}
-	public static <K, V> TsvMap<K, V> of( Converter<K> keyConverter,Converter<V> valueConverter) {
-		return new TsvMap<K, V>(keyConverter, valueConverter);
-	}
-	
-	public static <E> TsvMap<E, E> parse(Converter<E> converter, BufferedReader reader) throws IOException {
-		return parse(converter, converter, reader);
-	}
-	public static <K, V> TsvMap<K, V> parse(Converter<K> keyConverter,Converter<V> valueConverter, BufferedReader reader) throws IOException {
-		return new TsvMap<K, V>(reader, keyConverter, valueConverter);
+	public static Map<String, String> parse(Path path) throws IOException {
+		return parse(path, s -> s);
 	}
 	
-
-	private TsvMap(Converter<K> keyConverter, Converter<V> valueConverter) {
-		this.converters = pair(keyConverter, valueConverter);
-		this.map = new LinkedHashMap<>();
+	public static <E> Map<E, E> parse(BufferedReader reader, Function<String, E> converter) throws IOException {
+		return parse(reader, converter, converter);
 	}
-
-	private Pair<Converter<K>, Converter<V>> pair(Converter<K> keyConverter, Converter<V> valueConverter) {
-		return new Pair<Converter<K>, Converter<V>>(Objects.requireNonNull(keyConverter), Objects.requireNonNull(valueConverter));
+	public static <K, V> Map<K, V> parse(BufferedReader reader, Function<String, K> keyConverter,Function<String, V> valueConverter) throws IOException {
+		Map<K, V> map = new LinkedHashMap<K,V>();
+		load(reader, map, keyConverter, valueConverter);
+		return map;
 	}
-	private TsvMap(BufferedReader source,  Converter<K> keyConverter, Converter<V> valueConverter) throws IOException {
-		this.converters = pair(keyConverter, valueConverter);
-		map = new LinkedHashMap<>();
-		
-		load(source);
+	public static <E> Map<E, E> parse(Path path, Function<String, E> converter) throws IOException {
+		return parse(path, converter, converter);
 	}
-	public void load(BufferedReader source) throws IOException {
-		map.clear();
-
-		TsvParser parser = new TsvParser();
-
-		while(true) {
-			String line = source.readLine();
-			Iterator<String> itr = line == null ? null : parser.iterator(line);
-			
-			if(itr != null && itr.hasNext()) {
-				K k = converters.key.fromString(itr.next());
-				V v = !itr.hasNext() ? null : converters.value.fromString(itr.next());
-				map.put(k, v);
-			}
-			
-			if(line == null)
-				break;
+	public static <K, V> Map<K, V> parse(Path path, Function<String, K> keyConverter,Function<String, V> valueConverter) throws IOException {
+		try(BufferedReader reader = Files.newBufferedReader(path)) {
+			return parse(reader, keyConverter, valueConverter);
 		}
 	}
+	public static <K,V> void load(BufferedReader source, Map<K, V> sink, Function<String, K> keyConverter,Function<String, V> valueConverter) throws IOException {
+		StringBuilder s1 = new StringBuilder();
+		StringBuilder s2 = new StringBuilder();
 
-	public void save(Appendable target) throws IOException {
+		String line;
+		while((line = source.readLine()) != null) {
+			if(line.isEmpty())
+				continue;
+			
+			int n = line.indexOf('\t');
+			if(n < 0) 
+				sink.put(unescape(keyConverter, line,0, line.length(), s1, s2), null);
+			else {
+				sink.put(
+						unescape(keyConverter, line, 0, n, s1, s2), 
+						unescape(valueConverter, line, n+1, line.length(), s1, s2)
+						);
+			}
+		}
+	}
+	
+	private static <K> K unescape(Function<String, K> converter, String string, int start, int end, StringBuilder s1, StringBuilder s2) {
+		if(!string.isEmpty() && start != end) {
+			s1.setLength(0);
+			s1.append(string, start, end);
+			
+			if(s1.length() != 0) {
+				s2.setLength(0);
+				TsvUtils.unescape(s1, s2);
+				string = s2.toString();
+			}
+		}
+		return converter.apply(string);
+	}
+
+	public static <E> void save(Path path, Map<E, E> map, Function<E, String> converter) throws IOException {
+		save(path, map, converter, converter);
+	}
+	public static <K, V> void save(Path path, Map<K, V> map, Function<K, String> keyConverter, Function<V, String> valueConverter) throws IOException {
+		Checker.requireNonNull("path, map, keyConverter, valueConverter", path, map, keyConverter, valueConverter);
+		
+		try(BufferedWriter w = Files.newBufferedWriter(path, CREATE, TRUNCATE_EXISTING, WRITE)) {
+			save(w, map, keyConverter, valueConverter);
+		}
+	}
+	public static void save(Path path, Map<String, String> map) throws IOException {
+		save(path, map, s -> s);
+	}
+	public static void save(Appendable target, Map<String, String> map) throws IOException {
+		save(target, map, s -> s);
+	}
+	public static <E> void save(Appendable target, Map<E, E> map, Function<E, String> converter) throws IOException {
+		save(target, map, converter, converter);
+	}
+	public static <K, V> void save(Appendable target, Map<K, V> map, Function<K, String> keyConverter, Function<V, String> valueConverter) throws IOException {
+		Checker.requireNonNull("target, map, keyConverter, valueConverter", target, map, keyConverter, valueConverter);
+		
+		if(map.isEmpty())
+			return;
+		
 		TsvSaver saver = new TsvSaver();
 
 		for (Entry<K, V> e : map.entrySet()) 
-			saver.append(converters.key.toString(e.getKey()), converters.value.toString(e.getValue()), target);
-	}
-
-	@Override
-	public int size() { 
-		return map.size();
-	}
-	@Override
-	public boolean isEmpty() {
-		return map.isEmpty();
-	}
-
-	@Override
-	public boolean containsKey(Object key) {
-		return map.containsKey(key);
-	}
-	@Override
-	public boolean containsValue(Object value) {
-		return map.containsValue(value);
-	}
-	@Override
-	public V get(Object key) {
-		return map.get(key);
-	}
-	@Override
-	public V put(K key, V value) {
-		requireNonNull(key);
-		requireNonNull(value);
-
-		return map.put(key, value);
-	}
-
-	@Override
-	public V remove(Object key) {
-		return map.remove(key);
-	}
-
-	@Override
-	public void putAll(Map<? extends K, ? extends V> m) {
-		requireNonNull(m);
-		map.forEach((key, value) -> {
-			requireNonNull(key);
-			requireNonNull(value);
-		});
-		map.putAll(m);
-	}
-
-	@Override
-	public void clear() {
-		map.clear();
-	}
-
-	@Override
-	public Set<K> keySet() {
-		return map.keySet();
-	}
-
-	@Override
-	public Collection<V> values() {
-		return map.values();
-	}
-
-	@Override
-	public Set<Entry<K, V>> entrySet() {
-		return map.entrySet();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Override
-	public boolean equals(Object o) {
-		if(o == null || !(o instanceof TsvMap)) return false;
-		return map.equals(((TsvMap)o).map);
-	}
-
-	@Override
-	public V getOrDefault(Object key, V defaultValue) {
-		return map.getOrDefault(key, defaultValue);
-	}
-
-	@Override
-	public void forEach(BiConsumer<? super K, ? super V> action) {
-		map.forEach(action);
-	}
-
-	@Override
-	public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-		map.replaceAll(function);
-	}
-
-	@Override
-	public V putIfAbsent(K key, V value) {
-		return map.putIfAbsent(key, value);
-	}
-
-	@Override
-	public boolean remove(Object key, Object value) {
-		return map.remove(key, value);
-	}
-
-	@Override
-	public boolean replace(K key, V oldValue, V newValue) {
-		requireNonNull(key);
-		requireNonNull(newValue);
-
-		return map.replace(key, oldValue, newValue);
-	}
-
-	@Override
-	public V replace(K key, V value) {
-		return map.replace(
-				requireNonNull(key),
-				requireNonNull(value)
-				);
-	}
-
-	@Override
-	public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-		return map.computeIfAbsent(
-				requireNonNull(key),
-				requireNonNull(mappingFunction)
-				);
-	}
-
-	@Override
-	public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-		return map.computeIfPresent(
-				requireNonNull(key), 
-				requireNonNull(remappingFunction)
-				);
-	}
-
-	@Override
-	public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-		return map.compute(
-				requireNonNull(key), 
-				requireNonNull(remappingFunction)
-				);
-	}
-
-	@Override
-	public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-		return map.merge(
-				requireNonNull(key),
-				value, 
-				requireNonNull(remappingFunction)
-				);
-	} 
-	
-	public Map<K, V> getMap() {
-		return Collections.unmodifiableMap(map);
+			saver.append(keyConverter.apply(e.getKey()), valueConverter.apply(e.getValue()), target);
 	}
 }

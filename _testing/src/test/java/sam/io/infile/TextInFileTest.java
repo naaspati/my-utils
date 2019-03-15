@@ -267,6 +267,4 @@ public class TextInFileTest extends TextInFileTestUtils {
 	private int sizeSum(Collection<DataMeta> list) {
 		return list.stream().mapToInt(d -> d.size).sum();
 	}
-
-
 }

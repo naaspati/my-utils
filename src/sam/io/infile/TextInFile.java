@@ -6,10 +6,13 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
+import sam.functions.IOExceptionConsumer;
+import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
-import sam.io.IOUtils;
 import sam.io.serilizers.StringIOUtils;
+import sam.io.serilizers.WriterImpl;
 import sam.logging.Logger;
 
 public class TextInFile extends InFile {
@@ -18,59 +21,55 @@ public class TextInFile extends InFile {
 	public TextInFile(Path path, boolean createIfNotExits) throws IOException {
 		super(path, createIfNotExits);
 	}
-	
+
 	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink) throws IOException {
+		readText(meta, buffer, charBuffer, decoder, sink, null, null, ' ', null);
+	}
+	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, IOExceptionConsumer<CharBuffer> consumer) throws IOException {
+		readText(meta, buffer, charBuffer, decoder, null, consumer, null, ' ', null);
+	}
+	public void collect(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Consumer<String> consumer, char separator, StringBuilder sbBuffer) throws IOException {
+		readText(meta, buffer, charBuffer, decoder, null, null, consumer, separator, sbBuffer);
+	}
+	private void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, IOExceptionConsumer<CharBuffer> consumer, Consumer<String> collector, char separator, StringBuilder sb) throws IOException {
 		if(meta.size == 0)
 			return;
 
-		if(buffer == null) 
-			buffer = ByteBuffer.allocate(Math.min(meta.size, BufferSupplier.DEFAULT_BUFFER_SIZE));
-		
-		IOUtils.ensureCleared(buffer);
-		ByteBuffer bf = buffer;
-		
-		BufferSupplier fill = new BufferSupplier() {
-			int size = meta.size;
-			long pos = meta.position;
-			
-			boolean first = true;
-			
-			@Override public long size() throws IOException { return meta.size; }
-			
-			@Override
-			public ByteBuffer next() throws IOException {
-				if(!first) {
-					if(bf.hasRemaining()) 
-						bf.compact();
-					 else
-						bf.clear();	
-				}
-				
-				first = false;
-				
-				int n = read(bf, pos, size, true);
-				
-				size -= n;
-				pos  += n;
-				
-				return bf;
-			}
-			@Override
-			public boolean isEndOfInput() throws IOException {
-				return size == 0;
-			}
-		};
-		StringIOUtils.read(fill, sink, decoder, charBuffer);
+		BufferSupplier fill = supplier(meta, buffer);
+
+		if(collector != null)
+			StringIOUtils.collect(fill, separator, collector, decoder, charBuffer, sb);
+		else if(consumer != null)
+			StringIOUtils.read(fill, consumer, decoder, charBuffer);	
+		else 
+			StringIOUtils.read(fill, sink, decoder, charBuffer);
 	}
-	
+
 	public DataMeta write(CharSequence s, CharsetEncoder encoder, ByteBuffer buffer) throws IOException {
 		long pos = size();
-		
+
 		if(s == null || s.length() == 0)
 			return new DataMeta(pos, 0);
-		
+
 		int[] size = {0};
-		StringIOUtils.write(b -> size[0] += write0(b), s, encoder, buffer);
+		StringIOUtils.write(consumer(size), s, encoder, buffer);
+
+		DataMeta d = new DataMeta(pos, size[0]); 
+		LOGGER.debug("WRITTEN: {}", d);
+		return d;
+	}
+	
+	private BufferConsumer consumer(int[] size) {
+		return b -> size[0] += write0(b);
+	}
+
+	public DataMeta write(IOExceptionConsumer<WriterImpl> writerConsumer, CharsetEncoder encoder, ByteBuffer buffer, CharBuffer charBuffer) throws IOException {
+		long pos = size();
+		int[] size = {0};
+		
+		try(WriterImpl w = new WriterImpl(consumer(size), buffer, charBuffer, false, encoder)) {
+			writerConsumer.accept(w);
+		}
 		
 		DataMeta d = new DataMeta(pos, size[0]); 
 		LOGGER.debug("WRITTEN: {}", d);

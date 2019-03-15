@@ -3,6 +3,7 @@ package sam.io;
 import static sam.io.IOConstants.defaultBufferSize;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -109,6 +110,40 @@ public abstract class BufferSupplier {
 				return buf;
 			}
 
+			@Override
+			public boolean isEndOfInput() throws IOException {
+				return n == -1;
+			}
+		};
+	}
+	
+	public static BufferSupplier of(InputStream gis, ByteBuffer buffer) throws IOException {
+		IOUtils.ensureCleared(buffer);
+		buffer = buffer(buffer, DEFAULT_BUFFER_SIZE);
+		
+		ByteBuffer buf = buffer;
+		
+		return new BufferSupplier() {
+			int n = 0;
+			boolean first = true;
+			
+			@Override
+			public ByteBuffer next() throws IOException {
+				if(!first)
+					IOUtils.compactOrClear(buf);
+
+				first = false;
+				
+				n = gis.read(buf.array(), buf.position(), buf.remaining());
+				if(n != -1) {
+					buf.limit(buf.position() + n);
+					buf.position(0);
+				} else {
+					buf.flip();
+				} 
+				return buf;
+			}
+			
 			@Override
 			public boolean isEndOfInput() throws IOException {
 				return n == -1;

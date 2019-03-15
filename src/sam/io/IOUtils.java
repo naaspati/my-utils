@@ -81,6 +81,22 @@ public interface IOUtils {
 		return size;
 	}
 
+
+	public static int write(ByteBuffer buffer, OutputStream target, boolean flip) throws IOException {
+		if(flip)
+			buffer.flip();
+		
+		if(!buffer.hasRemaining())
+			return 0;
+		
+		int n = buffer.remaining();
+		target.write(buffer.array(), 0, n);
+
+		buffer.clear();
+		return n;
+	}
+
+	
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();

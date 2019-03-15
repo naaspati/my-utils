@@ -108,4 +108,9 @@ public class InFile implements AutoCloseable {
 			return null;
 		});
 	}
+	
+	public BufferSupplier supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
+		return file.supplier(meta, buffer);
+	}
+	
 }

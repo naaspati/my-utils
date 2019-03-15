@@ -1,13 +1,14 @@
 package sam.string;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import sam.logging.Logger;
-import java.util.stream.Collectors;
 
 import javafx.collections.ObservableList;
+import sam.logging.Logger;
 
 /**
  * for javafx app user TextSearchFx</br>
@@ -22,6 +23,7 @@ import javafx.collections.ObservableList;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class TextSearch<E> {
 	private static final Logger LOGGER = Logger.getLogger(TextSearch.class);
+	private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
 	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
 	public static final Predicate FALSE_ALL = TextSearchPredicate.FALSE_ALL;
@@ -79,6 +81,9 @@ public class TextSearch<E> {
 	public Collection<E> getFilterData() {
 		return searchBackup = applyFilter(searchBackup);
 	}
+
+	private WeakReference<List<E>> wsink = new WeakReference<List<E>>(new ArrayList<>());
+
 	public Collection<E> applyFilter(Collection<E> list){
 		if(allData == null) {
 			if(list != null)
@@ -99,19 +104,44 @@ public class TextSearch<E> {
 			LOGGER.debug("filter == TRUE_ALL");
 			return setAll(list, allData);
 		} else {
+			Collection<E> source;
+
 			if(allDataChanged || preFilterChanged || list == null || !newSearchContainsOldSearch) {
-				LOGGER.debug(() -> "FULL FILTER: searchKey: "+wrap(currentSearch)+", "+ string("allDataChanged", allDataChanged)+ string("preFilterChanged", preFilterChanged)+  string("list == null", list == null)+  string("!newSearchContainsOldSearch", !newSearchContainsOldSearch));
 				preFilterChanged = false;
 				allDataChanged = false;
-				return setAll(list, allData.stream().filter(filter).collect(Collectors.toList()));
+				source = allData;
 			} else {
-				int len = list.size();
-				list.removeIf(filter.negate());
-				LOGGER.debug(() -> wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
-				return list;
+				source = list;
 			}
+
+			List<E> sink = sink(); 
+			source.forEach(e -> {
+				if(filter.test(e))
+					sink.add(e);
+			});
+
+			int len = source.size();
+			Collection<E> result = setAll(list, sink);
+			sink.clear();
+
+			if(DEBUG) {
+				if(source == allData)
+					LOGGER.debug(() -> "FULL FILTER: searchKey: "+wrap(currentSearch)+", "+ string("allDataChanged", allDataChanged)+ string("preFilterChanged", preFilterChanged)+  string("list == null", list == null)+  string("!newSearchContainsOldSearch", !newSearchContainsOldSearch)+", size: "+len+" -> "+result.size());
+				else 
+					LOGGER.debug(() -> wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
+			}
+
+			return result;
 		}
 	} 
+	private List<E> sink() {
+		List<E> sink = wsink.get();
+
+		if(sink == null)
+			wsink = new WeakReference<List<E>>(sink = new ArrayList<>());
+
+		return sink;
+	}
 	private String wrap(String s) {
 		return s == null ? null : "\""+s+"\"";
 	}
@@ -122,8 +152,12 @@ public class TextSearch<E> {
 	private Collection<E> setAll(Collection<E> list, Collection<E> allData) {
 		if(list == null)
 			return new ArrayList<>(allData);
-		if(list instanceof ObservableList)
-			((ObservableList<E>)list).setAll(allData);
+		if(list instanceof ObservableList) {
+			((ObservableList)list).setAll(allData);
+		} else {
+			list.clear();
+			allData.forEach(list::add);
+		}
 		return list;
 	}
 	private Predicate<E> allFilter;

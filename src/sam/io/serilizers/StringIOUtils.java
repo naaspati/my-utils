@@ -7,7 +7,6 @@ import static sam.io.IOConstants.defaultCharset;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
@@ -19,16 +18,12 @@ import sam.functions.IOExceptionConsumer;
 import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
 import sam.io.IOConstants;
-import sam.io.IOUtils;
 import sam.logging.Logger;
 
 public final class StringIOUtils {
 	private static final Logger LOGGER = Logger.getLogger(StringIOUtils.class);
 	private static final boolean DEBUG_ENABLED = LOGGER.isDebugEnabled();
-
-	public static BufferConsumer writer(WritableByteChannel target) {
-		return b -> IOUtils.write(b, target, false);
-	}
+	
 	public static void write(BufferConsumer consumer, CharSequence s) throws IOException {
 		write(consumer, s, (ByteBuffer)null);
 	}
@@ -47,6 +42,7 @@ public final class StringIOUtils {
 		encoder = orElse(encoder, () -> IOConstants.newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
 		CharsetEncoder e = encoder;
 		buffer = orElse(buffer, () -> ByteBuffer.allocate((int)Math.min(e.averageBytesPerChar()*chars.length() + 5, DEFAULT_BUFFER_SIZE)), b -> LOGGER.debug("ByteBuffer created: {}", b.capacity()));
+		encoder.reset();
 		
 		while(chars.hasRemaining()) {
 			CoderResult c = encoder.encode(chars, buffer, true);
@@ -129,12 +125,15 @@ public final class StringIOUtils {
 		public abstract void consume(CharBuffer chars) throws IOException;
 	}
 
-	public static abstract class DefaultReadConfig extends ReadConfig {
+	private static abstract class DefaultReadConfig extends ReadConfig {
 		int bufloop = 0, charloop = 0;
 		private final BufferSupplier supplier;
 
-		public DefaultReadConfig(BufferSupplier supplier) {
+		public DefaultReadConfig(BufferSupplier supplier, CharsetDecoder decoder, CharBuffer charBuffer) {
 			this.supplier = supplier;
+			this.decoder = decoder;
+			this.charsBuffer = charBuffer;
+			
 			if(DEBUG_ENABLED)
 				debug = new StringBuilder();
 		}
@@ -164,8 +163,8 @@ public final class StringIOUtils {
 	public static void read(BufferSupplier supplier, IOExceptionConsumer<CharBuffer> resultConsumer, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
 		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(resultConsumer);
-
-		read(new DefaultReadConfig(supplier) {
+		
+		read(new DefaultReadConfig(supplier, decoder, charsBuffer) {
 			@Override
 			public void consume(CharBuffer chars) throws IOException {
 				charloop++;
@@ -173,12 +172,42 @@ public final class StringIOUtils {
 			}
 		});
 	}
+	
+	public static void collect(BufferSupplier supplier, char separater, Consumer<String> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
+		StringBuilder sb = orElse(sbBuffer, StringBuilder::new, s -> {});
+		
+		IOExceptionConsumer<CharBuffer> eater = new IOExceptionConsumer<CharBuffer>() {
+			@Override
+			public void accept(CharBuffer e) throws IOException {
+				while(e.hasRemaining()) {
+					char c = e.get();
+					if(c == separater) {
+						if(sb.length() != 0 && c == '\n' && sb.charAt(sb.length() - 1) == '\r')
+							sb.setLength(sb.length() - 1);
+						
+						if(sb.length() == 0) {
+							collector.accept("");
+						} else {
+							collector.accept(sb.toString());
+							sb.setLength(0);
+						}
+					} else {
+						sb.append(c);
+					}
+				}
+				e.clear();
+			}
+		};
+		read(supplier, eater, decoder, charsBuffer);
+		if(sb.length() != 0)
+			collector.accept(sb.toString());
+	}
 
 	public static void read(BufferSupplier supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
 		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(sink);
 
-		ReadConfig config = new DefaultReadConfig(supplier) {
+		ReadConfig config = new DefaultReadConfig(supplier, decoder, charsBuffer) {
 			int initLength = -1;
 			int cap = -1, dcap = -1;
 			int charAppended = 0;
@@ -300,18 +329,5 @@ public final class StringIOUtils {
 		if(!chars.hasRemaining())
 			throw new IOException("buffer not consumed");
 	}
-	public static String concat(String result, CharBuffer cb) {
-		if(result.length() == 0) return cb.toString();
-		if(cb.length() == 0) return result;
 
-		char[] chars = new char[result.length() + cb.length()];
-		int n = 0;
-		for (int i = 0; i < result.length(); i++) 
-			chars[n++] = result.charAt(i);
-
-		for (int i = 0; i < cb.length(); i++) 
-			chars[n++] = cb.charAt(i);
-
-		return new String(chars);
-	}
 }

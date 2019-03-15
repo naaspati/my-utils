@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +38,7 @@ class InFileImpl implements AutoCloseable {
 	private final Path filepath;
 	private final FileLock lock;
 	private final AtomicLong position = new AtomicLong();
+	private volatile int mod = 0;
 
 	public InFileImpl(Path path, boolean createIfNotExits) throws IOException {
 		Objects.requireNonNull(path);
@@ -61,6 +63,7 @@ class InFileImpl implements AutoCloseable {
 		long n = acutualSize();
 		LOGGER.warn("Position reset: {} -> {}", position.get(), n);
 		position.set(n);
+		mod++;
 	}
 	long position() throws IOException {
 		return position.get();
@@ -97,6 +100,7 @@ class InFileImpl implements AutoCloseable {
 			return 0;
 		}
 
+		mod++;
 		boolean success = false;
 		try {
 			long pos = DEBUG_ENABLED ? position() : -1;
@@ -188,6 +192,8 @@ class InFileImpl implements AutoCloseable {
 	private int write2(BufferSupplier buffers) throws IOException {
 		int size = 0;
 		boolean success = false;
+		
+		mod++;
 
 		try {
 			int loops = 0;
@@ -312,6 +318,7 @@ class InFileImpl implements AutoCloseable {
 
 		long tpos = target.position();
 		boolean success = false;
+		mod++;
 
 		try {
 			transferList(list, target.file);
@@ -368,6 +375,8 @@ class InFileImpl implements AutoCloseable {
 	}
 
 	private long transferList(List<DataMeta> list, WritableByteChannel target) throws IOException {
+		mod++;
+		
 		if(list.isEmpty())
 			return 0;
 		else if(list.size() == 1) {
@@ -414,6 +423,8 @@ class InFileImpl implements AutoCloseable {
 	private long transfer(long pos, long size, WritableByteChannel target) throws IOException {
 		long initPos = pos;
 		long size2 = size;
+		
+		mod++;
 
 		while(size > 0) {
 			long n = file.transferTo(pos, size, target);
@@ -431,5 +442,55 @@ class InFileImpl implements AutoCloseable {
 	public void close() throws IOException {
 		lock.release();
 		file.close();
+	}
+
+	public BufferSupplier supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
+		Objects.requireNonNull(meta);
+		verifyDataMeta(meta);
+
+		if(meta.size == 0)
+			return BufferSupplier.EMPTY;
+
+		if(buffer == null) 
+			buffer = ByteBuffer.allocate(Math.min(meta.size, BufferSupplier.DEFAULT_BUFFER_SIZE));
+
+		ByteBuffer buf = buffer;
+		IOUtils.ensureCleared(buffer);
+		IOUtils.setFilled(buf);
+		
+		int mod = this.mod;
+
+		return new BufferSupplier() {
+			int size = meta.size;
+			long pos = meta.position;
+
+			@Override public long size() throws IOException {
+				checkMod(mod);
+				return meta.size; 
+				}
+
+			@Override
+			public ByteBuffer next() throws IOException {
+				checkMod(mod);
+				
+				IOUtils.compactOrClear(buf);
+				int n = read(buf, pos, size, true);
+
+				size -= n;
+				pos  += n;
+
+				return buf;
+			}
+			@Override
+			public boolean isEndOfInput() throws IOException {
+				checkMod(mod);
+				return size == 0;
+			}
+		};
+	}
+
+	private void checkMod(int mod2) {
+		if(this.mod != mod2)
+			throw new ConcurrentModificationException();
 	}
 }

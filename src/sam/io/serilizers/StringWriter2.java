@@ -5,7 +5,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static sam.io.IOUtils.ensureCleared;
-import static sam.io.serilizers.StringIOUtils.writer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -17,6 +16,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import sam.io.BufferConsumer;
 import sam.io.IOConstants;
 
 
@@ -50,7 +50,7 @@ public class StringWriter2 {
 
 	public void write(CharSequence data, WritableByteChannel target) throws IOException {
 		ensureCleared(buffer);
-		StringIOUtils.write(writer(target), data, encoder, buffer);
+		StringIOUtils.write(BufferConsumer.of(target, false), data, encoder, buffer);
 
 		if(buffer != null)
 			buffer.clear();

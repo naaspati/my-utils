@@ -8,10 +8,10 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.logging.Logger;
 import sam.reference.ReferenceUtils;
@@ -78,22 +78,22 @@ public final class Resources implements AutoCloseable {
 
 	public Charset charset() {
 		if(charset == null)
-			charset = StandardCharsets.UTF_8;
+			charset = IOConstants.defaultCharset();
 		return charset;
 	}
 	public byte[] bytes() {
 		if(bytes == null)
-			bytes = new byte[8 * 1024];
+			bytes = new byte[IOConstants.defaultBufferSize()];
 		return bytes;
 	}
 	public CharsetEncoder encoder() {
 		if (encoder == null)
-			encoder = charset().newEncoder();
+			encoder = IOConstants.newEncoder(charset());
 		return encoder;
 	}
 	public CharsetDecoder decoder() {
 		if (decoder == null)
-			decoder = charset().newDecoder();
+			decoder = IOConstants.newDecoder(charset());
 		return decoder;
 	}
 
