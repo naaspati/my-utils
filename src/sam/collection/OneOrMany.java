@@ -2,8 +2,10 @@ package sam.collection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collector;
 
 /**
@@ -13,32 +15,85 @@ import java.util.stream.Collector;
  * @param <E>
  */
 public class OneOrMany<E> implements Iterable<E> {
-	private List<E> list = Collections.emptyList();
+	private int size;
+	private E data;
+	private List<E> list;
+	private int mod;
 
 	public void clear() {
-		list = Collections.emptyList();
+		if(list != null)
+			list.clear();
+		
+		data = null;
+		size = 0;
 	}
 	public boolean isEmpty() {
-		return list.isEmpty();
+		return size() == 0;
 	}
 	public void add(E e) {
-		if(list.isEmpty())
-			list = Collections.singletonList(e);
-		else {
-			if(list.size() == 1)
-				list = new ArrayList<>(list);
+		mod++;
+		
+		if(list != null) {
 			list.add(e);
+			size = list.size();
+		} else if(size == 0) {
+			data = e;
+			size = 1;
+		} else {
+			if(list == null) {
+				list = new ArrayList<>();
+				list.add(data);
+				data = null;
+			}
+			
+			list.add(e);
+			size = list.size();
 		}
 	}
 	public int size() {
-		return list.size();
+		return size;
 	}
 	public E get(int index) {
-		return list.get(index);
+		if(index >= size)
+			throw new IndexOutOfBoundsException();
+		
+		if(list != null)
+			return list.get(index);
+		
+		if(index == 0)
+			return data;
+		else 
+			throw new IllegalArgumentException();
 	}
 	@Override
 	public Iterator<E> iterator() {
-		return list.iterator();
+		if(list != null)
+			return list.iterator();
+		if(size == 0)
+			Collections.emptyIterator();
+		
+		int m = mod;
+		return new Iterator<E>() {
+			boolean next = true;
+
+			@Override
+			public boolean hasNext() {
+				if(m != mod)
+					throw new ConcurrentModificationException();
+				return next;
+			}
+
+			@Override
+			public E next() {
+				if(m != mod)
+					throw new ConcurrentModificationException();
+				if(!next)
+					throw new NoSuchElementException();
+				
+				next = false;
+				return data;
+			}
+		}; 
 	}
 	public void addAll(OneOrMany<E> n) {
 		n.forEach(this::add);
@@ -51,7 +106,11 @@ public class OneOrMany<E> implements Iterable<E> {
 	}
 	@Override
 	public String toString() {
-		return list.toString();
-		//return list.getClass().getSimpleName()+"@"+list.toString();
+		if(list != null)
+			return list.toString();
+		if(size == 0)
+			return "[]";
+		
+		return "["+data+"]";
 	}
 }

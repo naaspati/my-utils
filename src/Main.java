@@ -2,15 +2,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
 
+import sam.collection.OneOrMany;
 import sam.io.IOUtils;
 
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		Random r = new Random();
-		Path p = Files.createTempFile(null, null);
+		OneOrMany<Integer> inte = new OneOrMany<>();
+		System.out.println(inte+"  "+inte.size());
 		
-		for (int i = 0; i < 1000; i++) {
-		}
+		int k = 0;
+		inte.add(k++);
+		System.out.println(inte+"  "+inte.size());
+
+		inte.add(k++);
+		System.out.println(inte+"  "+inte.size());
+
+		inte.add(k++);
+		System.out.println(inte+"  "+inte.size());
+
+		inte.add(k++);
+		System.out.println(inte+"  "+inte.size());
+
+		inte.add(k++);
+		System.out.println(inte+"  "+inte.size());
+
+		inte.add(k++);
+		System.out.println(inte+"  "+inte.size());
+		
+		
 	}
 }

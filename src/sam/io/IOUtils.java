@@ -157,7 +157,7 @@ public interface IOUtils {
 		}
 		
 		buffer.limit(buffer.position() + n);
-		buffer.flip();
+		buffer.position(0);
 		return n;
 	}
 	public static void compactOrClear(ByteBuffer buffer) {

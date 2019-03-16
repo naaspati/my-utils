@@ -328,4 +328,7 @@ public class StringBuilder2 implements Appendable, CharSequence, Externalizable 
         
         return this;
     }
+    public StringWriter2 writer() {
+    	return new StringWriter2(sb);
+    }
 }
