@@ -32,4 +32,7 @@ public abstract class IndexGetterIterator<E> implements IteratorWithSize<E> {
 			throw new NoSuchElementException();
 		return at(index++);
 	}
+	public void reset() {
+		this.index = 0;
+	}
 }

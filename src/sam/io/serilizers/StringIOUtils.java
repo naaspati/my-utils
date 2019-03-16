@@ -10,6 +10,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -19,6 +20,7 @@ import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
 import sam.io.IOConstants;
 import sam.logging.Logger;
+import sam.myutils.Checker;
 
 public final class StringIOUtils {
 	private static final Logger LOGGER = Logger.getLogger(StringIOUtils.class);
@@ -33,6 +35,39 @@ public final class StringIOUtils {
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder) throws IOException {
 		write(consumer, s, encoder, null);
 	}
+	public static void writeJoining(Iterator<String> itr, String separator, BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, CharsetEncoder encoder) throws IOException {
+		Checker.requireNonNull("itr, separator, consumer, buffer, chars, encoder", itr, separator, consumer);
+	
+		chars = orElse(chars, () -> CharBuffer.allocate(100), d -> LOGGER.debug("CharBuffer created: {}", d.capacity()));  
+		encoder = orElse(encoder, () -> IOConstants.newEncoder(), d -> LOGGER.debug("encoder created: {}", d.charset().name()));
+		buffer = orElse(buffer, () -> ByteBuffer.allocate(DEFAULT_BUFFER_SIZE), b -> LOGGER.debug("ByteBuffer created: {}", b.capacity()));
+		encoder.reset();
+		
+		if(!itr.hasNext())
+			return;
+		
+		try(WriterImpl w = new WriterImpl(consumer, buffer, chars, false, encoder)) {
+			char csep = ' ';
+			if(separator.length() == 1) {
+				csep = separator.charAt(0);
+				separator = null;
+			}
+			
+			while (itr.hasNext()) {
+				String s = itr.next();
+				if(s == null)
+					throw new NullPointerException();
+				
+				w.append(s);
+				
+				if(separator == null)
+					w.append(csep);
+				else if(!separator.isEmpty())
+					w.append(separator);
+			}
+		}
+	}
+	
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(s);
 		

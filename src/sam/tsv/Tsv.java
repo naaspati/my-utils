@@ -28,7 +28,7 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	final Collection<Row> rows = rowCollectionImpl();
 	final Map<String, Column> columns = new HashMap<>();
 
-	Tsv(String...columnNames) {
+	public Tsv(String...columnNames) {
 		addColumns(columnNames);
 	}
 	protected Collection<Row> rowCollectionImpl() {

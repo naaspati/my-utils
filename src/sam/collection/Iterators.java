@@ -107,18 +107,7 @@ public interface Iterators {
 		return new ArrayIterator<>(values);
 	}
 	public static <E, F> Iterator<F> map(Iterator<E> itr, Function<E, F> mapper) {
-		Objects.requireNonNull(itr);
-		Objects.requireNonNull(mapper);
-
-		return new IteratorWithSize<F>() {
-			@Override public boolean hasNext() { return itr.hasNext(); }
-			@Override public F next() { return mapper.apply(itr.next()); }
-			@Override
-			public int size() {
-				return IteratorWithSize.size(itr);
-			}
-
-		};
+		return new MappedIterator<>(itr, mapper);
 	}
 	public static <E> Iterator<E> repeat(E e, int times){
 		if(times < 0)

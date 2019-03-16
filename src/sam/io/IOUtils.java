@@ -56,14 +56,14 @@ public interface IOUtils {
 	}
 	public static long pipe(Path input, OutputStream out, byte[] buffer) throws IOException {
 		Checker.requireNonNull("input out buffer", input, out, buffer);
-		
+
 		if(buffer.length == 0)
 			ThrowException.illegalArgumentException("buffer.length == 0");
 
 		try(InputStream is = Files.newInputStream(input)) {
 			int n = 0;
 			long size = 0;
-			
+
 			while((n = is.read(buffer)) > 0) {
 				out.write(buffer, 0, n);
 				size += n;
@@ -85,10 +85,10 @@ public interface IOUtils {
 	public static int write(ByteBuffer buffer, OutputStream target, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
-		
+
 		if(!buffer.hasRemaining())
 			return 0;
-		
+
 		int n = buffer.remaining();
 		target.write(buffer.array(), 0, n);
 
@@ -96,11 +96,11 @@ public interface IOUtils {
 		return n;
 	}
 
-	
+
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
-		
+
 		int n = 0;
 		while(buffer.hasRemaining())
 			n += channel.write(buffer);
@@ -108,11 +108,11 @@ public interface IOUtils {
 		buffer.clear();
 		return n;
 	}
-	
+
 	public static int write(ByteBuffer buffer, long pos, FileChannel channel, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
-		
+
 		int n = 0;
 		while(buffer.hasRemaining())
 			n += channel.write(buffer, pos + n);
@@ -120,30 +120,44 @@ public interface IOUtils {
 		buffer.clear();
 		return n;
 	}
-	
+
 	public static int read(ByteBuffer buffer, boolean clear, ReadableByteChannel source) throws IOException {
 		if(clear)
 			buffer.clear();
-		
+
 		int n = source.read(buffer);
 		buffer.flip();
-		
+
 		return n;
 	}
 	public static int read(ByteBuffer buffer, long pos, boolean clear, FileChannel source) throws IOException {
 		if(clear)
 			buffer.clear();
-		
+
 		int n = source.read(buffer, pos);
 		buffer.flip();
-		
+
 		return n;
 	}
 	public static int read(ByteBuffer buffer, long pos, int size, FileChannel source) throws IOException {
 		buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
 		int n = source.read(buffer, pos);
 		buffer.flip();
+
+		return n;
+	}
+	public static int read(ByteBuffer buffer, InputStream is, boolean flip) throws IOException {
+		if(!buffer.hasRemaining())
+			return 0;
 		
+		int n = is.read(buffer.array(), buffer.position(), buffer.remaining());
+		if(n == -1) {
+			buffer.flip();
+			return -1;
+		}
+		
+		buffer.limit(buffer.position() + n);
+		buffer.flip();
 		return n;
 	}
 	public static void compactOrClear(ByteBuffer buffer) {
