@@ -2,17 +2,20 @@ package sam.collection;
 
 
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static sam.collection.Iterators.join;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Random;
-import sam.logging.Logger;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
+
+import sam.logging.Logger;
 
 public class IteratorsTest {
 	private static final Logger LOGGER = Logger.getLogger(IteratorsTest.class);

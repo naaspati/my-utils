@@ -11,49 +11,60 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class TempDir implements Closeable {
+public class TempDir implements Closeable {
 	private final Path tempDir;
 	private final AtomicInteger counter;
-	
-	protected abstract Logger logger();
-	
-	public TempDir(String dirname) throws IOException {
+	private final Logger logger;
+
+	public TempDir(String dirname, Logger logger) throws IOException {
 		tempDir = Files.createTempDirectory(dirname);
 		counter = new AtomicInteger(0);
+		this.logger = logger;
 
-		logger().info(() -> "CREATE: "+tempDir);
+		if(logger != null)
+			logger.info(() -> "CREATE: "+tempDir);
 	}
-	
-	
+
 	public void close() throws IOException {
 		File file = tempDir == null ? null : tempDir.toFile();
 		String[] files = file == null ? null : file.list();
 
 		if(files != null) {
 			for (String s : files) {
-				if(!new File(file, s).delete())
-					logger().warning("failed to delete: "+file.getName()+"\\"+s);
+				if(!new File(file, s).delete()) {
+					if(logger != null)
+						logger.warning("failed to delete: "+file.getName()+"\\"+s);	
+				}
 			} 
+			file.delete();
 		}
 
 		counter.set(0);
-		logger().info(() -> "DELETE: "+tempDir+(files == null ? "" : ", ["+String.join(",", files)+"]"));
+		if(logger != null)
+			logger.info(() -> "DELETE: "+tempDir+(files == null ? "" : ", ["+String.join(",", files)+"]"));
 	}
 
 	public Path nextPath() {
 		Path p = tempDir.resolve(String.valueOf(counter.incrementAndGet()));
 		assertFalse(Files.exists(p));
-		logger().info(() -> "NextPath: "+p);
+		if(logger != null)
+			logger.info(() -> "NextPath: "+p);
 		return p;
 	}
 
-	public void deleteQuietly(Path p) {
+	public static void deleteQuietly(Path p, Logger logger) {
 		if(p == null)
 			return;
+		
 		try {
 			Files.deleteIfExists(p);
 		} catch (Exception e) {
-			logger().log(Level.WARNING, "failed to delete: "+p, e);
+			if(logger != null)
+				logger.log(Level.WARNING, "failed to delete: "+p, e);
 		}
+	}
+
+	public void deleteQuietly(Path p) {
+		deleteQuietly(p, logger);
 	}
 }

@@ -23,12 +23,7 @@ public class StringReader2Test {
 
 	@BeforeAll
 	public static void setup() throws IOException {
-		tempdir = new TempDir(InFileTest.class.getSimpleName()) {
-			@Override
-			protected Logger logger() {
-				return LOGGER;
-			}
-		};
+		tempdir = new TempDir(InFileTest.class.getSimpleName(), LOGGER);
 	}
 
 	@AfterAll

@@ -11,69 +11,74 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import sam.logging.Logger;
 import sam.myutils.Checker;
 import sam.myutils.ThrowException;
 
-public interface IOUtils {
-	/**
-	 * Reads all bytes from an input stream and writes them to an output stream.
-	 * and return number of bytes read 
-	 */
-	public static long pipe(InputStream in, OutputStream out) throws IOException  {
-		int dbs = IOConstants.defaultBufferSize();
+public final class IOUtils {
+	private static final Logger LOGGER = Logger.getLogger(IOUtils.class);
 
-		int buffersize = in.available() + 5;
-		if(buffersize < 20)
-			buffersize = 20;
-		if(buffersize > dbs)
-			buffersize = dbs;
+	private IOUtils() { }
+
+	private static final int DEAFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize(); 
+
+	private static void checkBuffer(byte[] buffer) {
+		if(buffer != null && buffer.length == 0)
+			ThrowException.illegalArgumentException("buffer.length == 0");
+	}
+
+	private static byte[] buffer(byte[] buffer, InputStream in) throws IOException {
+		if(buffer == null) {
+			int size = in.available() + 5;
+			if(size < 20)
+				size = 20;
+			if(size > DEAFAULT_BUFFER_SIZE)
+				size = DEAFAULT_BUFFER_SIZE;
+
+			buffer = new byte[size];
+			LOGGER.debug("new byte["+size+"], created");
+		}
+		return buffer;
+	}
+
+	public static long pipe(InputStream in, OutputStream out, byte[] buffer) throws IOException {
+		Checker.requireNonNull("in, out, buffer", in, out);
+		checkBuffer(buffer);
+		buffer = buffer(buffer, in);
 
 		long nread = 0L;//number of bytes read
-		byte[] buf = new byte[buffersize];
 		int n;
 
-		while ((n = in.read(buf)) > 0) {
-			out.write(buf, 0, n);
+		while ((n = in.read(buffer)) > 0) {
+			out.write(buffer, 0, n);
 			nread += n;
 		}
 		return nread;
 	}
 
-	public static long pipe(InputStream is, Path path, byte[] buffer) throws IOException {
-		Checker.requireNonNull("is path buffer", is, path, buffer);
-		if(buffer.length == 0)
-			ThrowException.illegalArgumentException("buffer.length == 0");
+	public static long pipe(InputStream in, Path path, byte[] buffer) throws IOException {
+		Checker.requireNonNull("is path buffer", in, path);
+		checkBuffer(buffer);
 
 		try(OutputStream out = Files.newOutputStream(path)) {
-			int n = 0;
-			long size = 0;
-			while((n = is.read(buffer)) > 0) {
-				out.write(buffer, 0, n);
-				size += n;
-			}
-			return size;
+			return pipe(in, out, buffer);
 		}
 	}
 	public static long pipe(Path input, OutputStream out, byte[] buffer) throws IOException {
-		Checker.requireNonNull("input out buffer", input, out, buffer);
-
-		if(buffer.length == 0)
-			ThrowException.illegalArgumentException("buffer.length == 0");
+		Checker.requireNonNull("input out buffer", input, out);
+		checkBuffer(buffer);
 
 		try(InputStream is = Files.newInputStream(input)) {
-			int n = 0;
-			long size = 0;
-
-			while((n = is.read(buffer)) > 0) {
-				out.write(buffer, 0, n);
-				size += n;
-			}
-			return size;
+			return pipe(is, out, buffer);
 		}
 	}
 	public static long pipe(InputStream in, WritableByteChannel out, byte[] buffer) throws IOException {
+		Checker.requireNonNull("input out buffer", in, out);
+		buffer = buffer(buffer, in);
+
 		int n = 0;
 		long size = 0;
+
 		while((n = in.read(buffer)) > 0) {
 			out.write(ByteBuffer.wrap(buffer, 0, n));
 			size += n;
@@ -81,29 +86,26 @@ public interface IOUtils {
 		return size;
 	}
 
-
 	public static int write(ByteBuffer buffer, OutputStream target, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
 
-		if(!buffer.hasRemaining())
-			return 0;
-
 		int n = buffer.remaining();
-		target.write(buffer.array(), 0, n);
+		if(n != 0) 
+			target.write(buffer.array(), 0, n);
 
 		buffer.clear();
 		return n;
 	}
 
-
 	public static int write(ByteBuffer buffer, WritableByteChannel channel, boolean flip) throws IOException {
 		if(flip)
 			buffer.flip();
 
-		int n = 0;
+		int n = buffer.remaining();
+
 		while(buffer.hasRemaining())
-			n += channel.write(buffer);
+			channel.write(buffer);
 
 		buffer.clear();
 		return n;
@@ -122,43 +124,53 @@ public interface IOUtils {
 	}
 
 	public static int read(ByteBuffer buffer, boolean clear, ReadableByteChannel source) throws IOException {
+		return read(buffer, clear, source, true);
+	}
+	public static int read(ByteBuffer buffer, boolean clear, ReadableByteChannel source, boolean flip) throws IOException {
 		if(clear)
 			buffer.clear();
 
 		int n = source.read(buffer);
-		buffer.flip();
+		if(flip)
+			buffer.flip();
 
 		return n;
 	}
-	public static int read(ByteBuffer buffer, long pos, boolean clear, FileChannel source) throws IOException {
+	public static int read(ByteBuffer buffer, long pos, boolean clear, FileChannel source, boolean flip) throws IOException {
 		if(clear)
 			buffer.clear();
 
 		int n = source.read(buffer, pos);
-		buffer.flip();
+		if(flip)
+			buffer.flip();
 
 		return n;
 	}
-	public static int read(ByteBuffer buffer, long pos, int size, FileChannel source) throws IOException {
+	public static int read(ByteBuffer buffer, long pos, int size, FileChannel source, boolean flip) throws IOException {
 		buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
 		int n = source.read(buffer, pos);
-		buffer.flip();
+		if(flip)
+			buffer.flip();
 
 		return n;
 	}
 	public static int read(ByteBuffer buffer, InputStream is, boolean flip) throws IOException {
 		if(!buffer.hasRemaining())
-			return 0;
+			throw new IOException("full buffer");
 		
 		int n = is.read(buffer.array(), buffer.position(), buffer.remaining());
-		if(n == -1) {
-			buffer.flip();
-			return -1;
-		}
+
+		final int k = n;
+		if(n < 0)
+			n = 0;
 		
-		buffer.limit(buffer.position() + n);
-		buffer.position(0);
-		return n;
+		if(flip) {
+			buffer.limit(buffer.position() + n);
+			buffer.position(0);
+		} else {
+			buffer.position(buffer.position() + n);
+		}
+		return k;
 	}
 	public static void compactOrClear(ByteBuffer buffer) {
 		if(buffer.hasRemaining())

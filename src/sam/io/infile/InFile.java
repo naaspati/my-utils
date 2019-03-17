@@ -14,6 +14,7 @@ import sam.functions.IOExceptionSupplier;
 import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
 
+
 /*
  * using delegate, rather than subclass, so that lock does not effect InFileImpl's internal access of methods
  */ 

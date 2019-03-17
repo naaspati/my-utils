@@ -25,12 +25,17 @@ public abstract class BufferSupplier {
 	}
 	public void onComplete() {
 	}
+	
+	protected static void ensureBufferNotFull(ByteBuffer buf) throws IOException {
+		if(buf.remaining() == 0)
+			throw new IOException("full buffer");
+	}
 
 	public static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 
 	public static final BufferSupplier EMPTY = new BufferSupplier() {
 		@Override public long size() throws IOException { return 0; }
-		@Override public ByteBuffer next() throws IOException { return null; }
+		@Override public ByteBuffer next() throws IOException { return IOConstants.EMPTY_BUFFER; }
 		@Override public boolean isEndOfInput() throws IOException { return true; }
 		@Override public boolean isEmpty() { return true; }
 	};
@@ -42,13 +47,11 @@ public abstract class BufferSupplier {
 
 		if(position + size > fc.size())
 			throw new IOException(String.format("position(%s) + size(%s) = (%s) > file.size(%s)", position, size, position + size, fc.size()));
-
-		ByteBuffer buf = buffer(buffer, size);
-		IOUtils.ensureCleared(buf);
-		IOUtils.setFilled(buf);
 		
 		if(size == 0)
 			return EMPTY;
+
+		ByteBuffer buf = buffer(buffer, size);
 
 		return new BufferSupplier() {
 			long pos = position;
@@ -56,9 +59,9 @@ public abstract class BufferSupplier {
 
 			@Override
 			public ByteBuffer next() throws IOException {
-				IOUtils.compactOrClear(buf);
-
-				int n = IOUtils.read(buf, pos, remaining, fc);
+				ensureBufferNotFull(buf);
+				
+				int n = IOUtils.read(buf, pos, remaining, fc, true);
 				pos        += n;
 				remaining  -= n;
 
@@ -68,7 +71,7 @@ public abstract class BufferSupplier {
 			public long size() throws IOException {
 				return size;
 			}
-			
+
 			@Override
 			public boolean isEndOfInput() throws IOException {
 				return remaining <= 0;
@@ -86,15 +89,12 @@ public abstract class BufferSupplier {
 	}
 	public static BufferSupplier of(ReadableByteChannel channel, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(channel);
-		
+
 		if(channel instanceof FileChannel) {
 			FileChannel f = (FileChannel) channel;
 			return of(f, buffer, f.position(), (int) (f.size() - f.position()));
 		}
-
 		ByteBuffer buf = buffer(buffer, -1);
-		IOUtils.ensureCleared(buf);
-		IOUtils.setFilled(buf);
 
 		return new BufferSupplier() {
 			int n = 0;
@@ -103,7 +103,8 @@ public abstract class BufferSupplier {
 
 			@Override
 			public ByteBuffer next() throws IOException {
-				IOUtils.compactOrClear(buf);
+				ensureBufferNotFull(buf);
+				
 				n = channel.read(buf);
 				buf.flip();
 
@@ -116,34 +117,21 @@ public abstract class BufferSupplier {
 			}
 		};
 	}
-	
-	public static BufferSupplier of(InputStream gis, ByteBuffer buffer) throws IOException {
-		IOUtils.ensureCleared(buffer);
-		buffer = buffer(buffer, DEFAULT_BUFFER_SIZE);
-		
-		ByteBuffer buf = buffer;
-		
+
+	public static BufferSupplier of(InputStream is, ByteBuffer buffer) throws IOException {
+		ByteBuffer buf = buffer(buffer, is.available());
+		buffer = null;
+
 		return new BufferSupplier() {
 			int n = 0;
-			boolean first = true;
-			
+
 			@Override
 			public ByteBuffer next() throws IOException {
-				if(!first)
-					IOUtils.compactOrClear(buf);
-
-				first = false;
+				ensureBufferNotFull(buf);
 				
-				n = gis.read(buf.array(), buf.position(), buf.remaining());
-				if(n != -1) {
-					buf.limit(buf.position() + n);
-					buf.position(0);
-				} else {
-					buf.flip();
-				} 
+				n = IOUtils.read(buf, is, true);
 				return buf;
 			}
-			
 			@Override
 			public boolean isEndOfInput() throws IOException {
 				return n == -1;
@@ -153,7 +141,6 @@ public abstract class BufferSupplier {
 
 	public static BufferSupplier of(ByteBuffer buf) {
 		Objects.requireNonNull(buf);
-
 		int size = buf.remaining();
 
 		if(size == 0)
@@ -163,7 +150,7 @@ public abstract class BufferSupplier {
 			@Override public long size() throws IOException { return size; }
 			@Override public ByteBuffer next() throws IOException { return buf; }
 			@Override public boolean isEndOfInput() throws IOException { return true; }
-			@Override public boolean isEmpty() { return size == 0; }
+			@Override public boolean isEmpty() { return false; }
 		};
 	}
 }

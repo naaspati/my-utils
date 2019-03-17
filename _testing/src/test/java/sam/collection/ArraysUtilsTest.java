@@ -1,7 +1,7 @@
 package sam.collection;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static sam.collection.ArraysUtils.fill;
 import static sam.collection.ArraysUtils.intRange;
 import static sam.collection.ArraysUtils.join;

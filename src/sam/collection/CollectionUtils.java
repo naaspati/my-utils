@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -76,5 +77,16 @@ public interface CollectionUtils {
 			return Collections.singletonList(source.get(0));
 		
 		return creater.apply(source);
+	}
+	public static <E> void repeat(Collection<E> col, E value, int times) {
+		if(times < 0)
+			throw new IllegalArgumentException();
+		Objects.requireNonNull(col);
+		
+		if(times == 0)
+			return;
+		
+		for (int i = 0; i < times; i++)
+			col.add(value);
 	}
 }

@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 import sam.functions.IOExceptionFunction;
-import sam.io.BufferSupplier;
+
 import sam.io.IOConstants;
 
 public class StringReader2 {

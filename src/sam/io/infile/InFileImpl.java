@@ -192,7 +192,7 @@ class InFileImpl implements AutoCloseable {
 	private int write2(BufferSupplier buffers) throws IOException {
 		int size = 0;
 		boolean success = false;
-		
+
 		mod++;
 
 		try {
@@ -376,7 +376,7 @@ class InFileImpl implements AutoCloseable {
 
 	private long transferList(List<DataMeta> list, WritableByteChannel target) throws IOException {
 		mod++;
-		
+
 		if(list.isEmpty())
 			return 0;
 		else if(list.size() == 1) {
@@ -423,7 +423,7 @@ class InFileImpl implements AutoCloseable {
 	private long transfer(long pos, long size, WritableByteChannel target) throws IOException {
 		long initPos = pos;
 		long size2 = size;
-		
+
 		mod++;
 
 		while(size > 0) {
@@ -455,25 +455,23 @@ class InFileImpl implements AutoCloseable {
 			buffer = ByteBuffer.allocate(Math.min(meta.size, BufferSupplier.DEFAULT_BUFFER_SIZE));
 
 		ByteBuffer buf = buffer;
-		IOUtils.ensureCleared(buffer);
-		IOUtils.setFilled(buf);
-		
 		int mod = this.mod;
 
 		return new BufferSupplier() {
 			int size = meta.size;
 			long pos = meta.position;
 
-			@Override public long size() throws IOException {
+			@Override 
+			public long size() throws IOException {
 				checkMod(mod);
 				return meta.size; 
-				}
+			}
 
 			@Override
 			public ByteBuffer next() throws IOException {
-				checkMod(mod);
+				ensureBufferNotFull(buf);
 				
-				IOUtils.compactOrClear(buf);
+				checkMod(mod);
 				int n = read(buf, pos, size, true);
 
 				size -= n;
@@ -481,6 +479,7 @@ class InFileImpl implements AutoCloseable {
 
 				return buf;
 			}
+			
 			@Override
 			public boolean isEndOfInput() throws IOException {
 				checkMod(mod);

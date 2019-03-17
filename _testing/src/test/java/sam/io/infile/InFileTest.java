@@ -46,12 +46,7 @@ public class InFileTest extends InFileTestUtils {
 	
 	@BeforeAll
 	public static void setup() throws IOException {
-		tempdir = new TempDir(InFileTest.class.getSimpleName()) {
-			@Override
-			protected Logger logger() {
-				return LOGGER;
-			}
-		};
+		tempdir = new TempDir(InFileTest.class.getSimpleName(), LOGGER);
 	}
 	
 	@AfterAll
@@ -65,7 +60,6 @@ public class InFileTest extends InFileTestUtils {
 		assertEquals(actual.remaining(), expected.capacity());
 		assertEquals(expected, actual);
 	}
-	
 
 	@Test
 	public void testGeneral() throws IOException {

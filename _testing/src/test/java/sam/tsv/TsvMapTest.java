@@ -2,7 +2,6 @@ package sam.tsv;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,8 +13,6 @@ import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
-
-import com.google.common.base.Converter;
 
 class TsvMapTest {
 	

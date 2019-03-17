@@ -19,6 +19,7 @@ import sam.functions.IOExceptionConsumer;
 import sam.io.BufferConsumer;
 import sam.io.BufferSupplier;
 import sam.io.IOConstants;
+import sam.io.IOUtils;
 import sam.logging.Logger;
 import sam.myutils.Checker;
 
@@ -311,7 +312,7 @@ public final class StringIOUtils {
 
 		CharBuffer charsBuffer = Objects.requireNonNull(reader.charsBuffer());
 		reader.postStart();
-
+				
 		while(true) {
 			ByteBuffer buffer = reader.next();
 			if(buffer == null)
@@ -345,6 +346,7 @@ public final class StringIOUtils {
 				}
 				break;
 			}
+			IOUtils.compactOrClear(buffer);
 		}
 
 		consume(charsBuffer, reader);
