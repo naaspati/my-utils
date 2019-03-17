@@ -209,7 +209,11 @@ public final class StringIOUtils {
 		});
 	}
 	
-	public static void collect(BufferSupplier supplier, char separater, Consumer<String> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
+	public static void collect(BufferSupplier supplier, char separater, IOExceptionConsumer<String> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
+		IOExceptionConsumer<StringBuilder> col = sb -> collector.accept(sb.length() == 0 ? "" : sb.toString());
+		collect0(supplier, separater, col, decoder, charsBuffer, sbBuffer);
+	}
+	public static void collect0(BufferSupplier supplier, char separater, IOExceptionConsumer<StringBuilder> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
 		StringBuilder sb = orElse(sbBuffer, StringBuilder::new, s -> {});
 		
 		IOExceptionConsumer<CharBuffer> eater = new IOExceptionConsumer<CharBuffer>() {
@@ -221,12 +225,8 @@ public final class StringIOUtils {
 						if(sb.length() != 0 && c == '\n' && sb.charAt(sb.length() - 1) == '\r')
 							sb.setLength(sb.length() - 1);
 						
-						if(sb.length() == 0) {
-							collector.accept("");
-						} else {
-							collector.accept(sb.toString());
-							sb.setLength(0);
-						}
+						collector.accept(sb);
+						sb.setLength(0);
 					} else {
 						sb.append(c);
 					}
@@ -234,9 +234,10 @@ public final class StringIOUtils {
 				e.clear();
 			}
 		};
+		
 		read(supplier, eater, decoder, charsBuffer);
 		if(sb.length() != 0)
-			collector.accept(sb.toString());
+			collector.accept(sb);
 	}
 
 	public static void read(BufferSupplier supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
@@ -317,6 +318,7 @@ public final class StringIOUtils {
 			ByteBuffer buffer = reader.next();
 			if(buffer == null)
 				buffer = IOConstants.EMPTY_BUFFER;
+			
 			boolean endOfInput = reader.isEndOfInput();
 
 			while(true) {

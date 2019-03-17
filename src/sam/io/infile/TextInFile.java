@@ -6,7 +6,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 import sam.functions.IOExceptionConsumer;
 import sam.io.BufferConsumer;
@@ -28,10 +27,10 @@ public class TextInFile extends InFile {
 	public void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, IOExceptionConsumer<CharBuffer> consumer) throws IOException {
 		readText(meta, buffer, charBuffer, decoder, null, consumer, null, ' ', null);
 	}
-	public void collect(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Consumer<String> consumer, char separator, StringBuilder sbBuffer) throws IOException {
+	public void collect(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, IOExceptionConsumer<String> consumer, char separator, StringBuilder sbBuffer) throws IOException {
 		readText(meta, buffer, charBuffer, decoder, null, null, consumer, separator, sbBuffer);
 	}
-	private void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, IOExceptionConsumer<CharBuffer> consumer, Consumer<String> collector, char separator, StringBuilder sb) throws IOException {
+	private void readText(DataMeta meta, ByteBuffer buffer, CharBuffer charBuffer, CharsetDecoder decoder, Appendable sink, IOExceptionConsumer<CharBuffer> consumer, IOExceptionConsumer<String> collector, char separator, StringBuilder sb) throws IOException {
 		if(meta.size == 0)
 			return;
 

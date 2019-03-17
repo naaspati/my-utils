@@ -47,9 +47,6 @@ public abstract class BufferSupplier {
 
 		if(position + size > fc.size())
 			throw new IOException(String.format("position(%s) + size(%s) = (%s) > file.size(%s)", position, size, position + size, fc.size()));
-		
-		if(size == 0)
-			return EMPTY;
 
 		ByteBuffer buf = buffer(buffer, size);
 
