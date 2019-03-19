@@ -1,14 +1,20 @@
 package sam.collection;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
+import sam.logging.Logger;
+
 abstract class IntListBase implements IntCollection {
 	static final int[] DEFAULT_ARRAY = new int[0];
+	private static final Logger LOGGER = Logger.getLogger(IntListBase.class);
+	private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
 	int modCount;
 
@@ -49,6 +55,8 @@ abstract class IntListBase implements IntCollection {
 	private void move(int srcPos, int destPos, int length) {
 		System.arraycopy(data, srcPos, data, destPos, length);
 		afterMove(srcPos, destPos, length);
+		if(DEBUG)
+			LOGGER.debug("move: srcPos: {}, destPos: {}, length: {}", srcPos, destPos, length);
 	}
 	private void move(int srcPos, int destPos) {
 		move(srcPos, destPos, size - srcPos);
@@ -77,15 +85,20 @@ abstract class IntListBase implements IntCollection {
 
 		while(capacity <= minCapacity) {
 			capacity += capacity/2;
+
 			if(capacity < 0)
+				throw new IllegalArgumentException("int negative size");
+			if(capacity > Integer.MAX_VALUE)
 				throw new IllegalStateException("capacity larger than > int.MAX_VALUE");
 		}
-		setData(Arrays.copyOf(data, capacity));
+		if(DEBUG)
+			LOGGER.debug("data resize {} -> {}", data.length, capacity);
+
+		data = Arrays.copyOf(data, capacity);
 		afterDataResize();
 	}
-	protected void afterDataResize() {
-		
-	}
+	protected void afterDataResize() { }
+
 	int size() {
 		return size;
 	}
@@ -97,15 +110,15 @@ abstract class IntListBase implements IntCollection {
 	}
 	int indexOf(int value) {
 		if(size == 0) return -1;
-		
+
 		for (int i = 0; i < size; i++)
 			if(data[i] == value) return i;
+
 		return -1;
 	}
 	int lastIndexOf(int value) {
-		for (int i = size - 1; i >= 0; i--) {
+		for (int i = size - 1; i >= 0; i--) 
 			if(data[i] == value) return i;
-		}
 
 		return -1;
 	}
@@ -142,7 +155,8 @@ abstract class IntListBase implements IntCollection {
 	int removeIndex(int index) {
 		int value = get(index);
 		modified();
-		move(index+1, index);
+		if(index != size - 1)
+			move(index+1, index);
 		size--;
 		return value;
 	}
@@ -158,6 +172,7 @@ abstract class IntListBase implements IntCollection {
 	public boolean addAll(IntCollection list) {
 		IntListBase list2 = (IntListBase) list.toIntListBase();
 		Objects.requireNonNull(list2);
+
 		if(list2.size() == 0) return false;
 		ensureCapacity(size+list2.size());
 		modified();
@@ -195,19 +210,51 @@ abstract class IntListBase implements IntCollection {
 	public boolean removeAll(int... c) {
 		Objects.requireNonNull(c);
 		if(c.length == 0) return false;
-		if(c.length == 1)
-			return remove(c[0]);
 
-		int[] copy = Arrays.copyOf(c, c.length);
-		c = null;
-		Arrays.sort(copy);
-		return removeIf(i -> Arrays.binarySearch(copy, i) >= 0);
+		if(c.length == 1) {
+			int n = c[0];
+			return removeIf(k -> k == n);
+		}
+
+		int max = Integer.MIN_VALUE;
+		int min = Integer.MAX_VALUE;
+
+		for (int j : c) {
+			max = Math.max(max, j);
+			min = Math.min(min, j);
+		}
+
+		IntPredicate filter;
+		int size = max - min; 
+		
+		if(size >= 0 && (size < 100 || size < 4 * 8 * c.length)) { // bytes_per_int * bits_per_byte * c.length
+			BitSet set = new BitSet(size);
+			for (int j : c)
+				set.set(j - min);
+
+			int min2 = min;
+			int max2 = max;
+
+			filter = i -> {
+				if(i == min2 || i == max2)
+					return true;
+				
+				return i > min2 && i < max2 ? set.get(i - min2) : false;
+			};
+		} else {
+			int[] copy = Arrays.copyOf(c, c.length);
+			c = null;
+			Arrays.sort(copy);
+			filter = i -> Arrays.binarySearch(copy, i) >= 0;
+		}
+
+		return removeIf(filter);
 	}
 	private void checkModified(int m) {
 		if(modCount != m)
 			throw new ConcurrentModificationException();		
 	}
-	
+
 	public int[] subList(int fromIndex, int toIndex) {
 		checkIndex(fromIndex);
 		if(fromIndex == toIndex)
@@ -221,19 +268,19 @@ abstract class IntListBase implements IntCollection {
 		return Arrays.copyOfRange(data, fromIndex, toIndex);
 	}
 	public boolean removeIf(IntPredicate filter) {
-		int oldsize = size;
 		modified();
 		int m = modCount;
 
+		int n = 0;
 		for (int i = 0; i < size; i++) {
 			checkModified(m);
-			if(filter.test(data[i])) {
-				move(i+1, i, size - i);
-				i--;
-				size--;
-			}
+			if(!filter.test(data[i]))
+				data[n++] = data[i];
 		}
-		return size != oldsize;
+		boolean b = size != n;
+		size = n;
+
+		return b;
 	}
 
 
@@ -271,18 +318,19 @@ abstract class IntListBase implements IntCollection {
 	public boolean equals(Object obj) {
 		if (this == obj) return true;
 		if (obj == null || getClass() != obj.getClass()) return false;
-		
+
 		IntListBase other = (IntListBase) obj;
 		if (data == other.data) return true;
 		if(size != other.size ) return false;
-		
+
 		for (int i = 0; i < size; i++) {
 			if(data[i] != other.data[i])
 				return false;
 		}
 		return true;
 	}
-	
+
+	@Override
 	public void forEach(IntConsumer action) {
 		if(size == 0) 
 			return;
@@ -293,5 +341,23 @@ abstract class IntListBase implements IntCollection {
 			action.accept(data[i]);
 		}
 	}
-	
+
+	public OfInt iterator() {
+		return new OfInt() {
+			int m = modCount;
+			int n = 0;
+
+			@Override
+			public boolean hasNext() {
+				checkModified(m);
+				return n < size;
+			}
+
+			@Override
+			public int nextInt() {
+				checkModified(m);
+				return data[n++];
+			}
+		};
+	}
 }

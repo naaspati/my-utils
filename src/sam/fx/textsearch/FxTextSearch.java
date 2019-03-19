@@ -105,5 +105,7 @@ public class FxTextSearch<E> {
 	public Predicate<E> getFilter() {
 		return search.getFilter();
 	}
-	
+	public void applyFilter(Collection<E> col, Predicate<E> filter) {
+		search.applyFilter(col, filter);
+	}
 }

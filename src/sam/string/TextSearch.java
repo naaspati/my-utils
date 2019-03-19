@@ -4,10 +4,12 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import sam.logging.Logger;
 
 /**
@@ -114,15 +116,15 @@ public class TextSearch<E> {
 				source = list;
 			}
 
-			List<E> sink = sink(); 
+			List<E> filteredSource = sink(); 
 			source.forEach(e -> {
 				if(filter.test(e))
-					sink.add(e);
+					filteredSource.add(e);
 			});
 
 			int len = source.size();
-			Collection<E> result = setAll(list, sink);
-			sink.clear();
+			Collection<E> result = setAll(list, filteredSource);
+			filteredSource.clear();
 
 			if(DEBUG) {
 				if(source == allData)
@@ -130,10 +132,26 @@ public class TextSearch<E> {
 				else 
 					LOGGER.debug(() -> wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
 			}
-
 			return result;
 		}
+	}
+
+	public void applyFilter(Collection<E> col, Predicate<E> filter) {
+		Objects.requireNonNull(col);
+		Objects.requireNonNull(filter);
+
+		List<E> list = sink();
+		list.clear();
+
+		col.forEach(e -> {
+			if(filter.test(e))
+				list.add(e);
+		});
+
+		setAll(col, list);
+		list.clear();
 	} 
+
 	private List<E> sink() {
 		List<E> sink = wsink.get();
 
@@ -149,16 +167,20 @@ public class TextSearch<E> {
 		return b ? s+", " : "";
 	}
 
-	private Collection<E> setAll(Collection<E> list, Collection<E> allData) {
-		if(list == null)
-			return new ArrayList<>(allData);
-		if(list instanceof ObservableList) {
-			((ObservableList)list).setAll(allData);
+	private static <E> Collection<E> setAll(Collection<E> sink, Collection<E> source) {
+		if(sink == null)
+			return new ArrayList<>(source);
+		
+		if(sink instanceof ObservableList) 
+			((ObservableList)sink).setAll(source);
+		else if(sink instanceof ObservableSet) {
+			sink.clear();
+			sink.addAll(source);
 		} else {
-			list.clear();
-			allData.forEach(list::add);
+			sink.clear();
+			source.forEach(sink::add);
 		}
-		return list;
+		return sink;
 	}
 	private Predicate<E> allFilter;
 

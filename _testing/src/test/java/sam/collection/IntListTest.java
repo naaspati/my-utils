@@ -3,9 +3,11 @@ package sam.collection;
 
 
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static sam.collection.Utils.check;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,14 +26,6 @@ public class IntListTest {
 
 	static Runnable asrt = () -> check(listStatic, arraylistStatic);
 	
-	private static void check(IntList list, List<Integer> arraylist) {
-		assertEquals(list.size(), arraylist.size(), "size:");
-
-		int k = 0;
-		for (Integer n : arraylist)
-			assertEquals(n.intValue(), list.get(k++), "at index: "+k);	
-	}
-
 	@Test
 	public void add() {
 		listStatic.add(25);
@@ -108,7 +102,7 @@ public class IntListTest {
 			r = new Random(10);
 			afterFill.run();
 		}
-		
+
 		check(list, list2);
 	}
 
@@ -198,6 +192,72 @@ public class IntListTest {
 			}
 		});
 	}
+	@Test
+	public void randomRemoveAll_2() {
+		arrayTest(true, i -> {
+			int[] n = {r.nextInt(1000), r.nextInt(1000), r.nextInt(1000)};
+			list.addAll(n);
+			list2.addAll(Arrays.asList(n[0], n[1], n[2]));
+		}, () -> {
+			int size = list.size()/2;
+			for (int i = 0; i < size; i++) {
+				int[] n = {r.nextInt(1000), r.nextInt(1000), r.nextInt(1000)};
+				list.removeAll(n);
+				list2.removeAll(Arrays.asList(n[0], n[1], n[2]));
+			}
+		});
+	}
+
+	@Test
+	void randomRemoveAll_3() {
+		Random r = new Random();
+
+		for (int i = 0; i < 1000; i++) 
+			rra_3(r, 1 + r.nextInt(10000), 1 + r.nextInt(1000));
+	}
+	void rra_3(Random r, final int size, final int max) {
+		IntList list = new IntList();
+		ArrayList<Integer> arraylist = new ArrayList<>(size);
+
+		for (int i = 0; i < size; i++) {
+			int n = r.nextInt(max);
+			list.add(n);
+			arraylist.add(n);
+		}
+
+		check(list, arraylist);
+		List<Integer> temp = new ArrayList<>();
+
+		for (int i = 0; i < 100; i++) {
+			int[] n = new int[r.nextInt(100)];
+			temp.clear();
+
+			for (int j = 0; j < n.length; j++) {
+				n[j] = r.nextInt(max);
+				temp.add(n[j]);
+			}
+			arraylist.removeAll(temp);
+			int[] copy = Arrays.copyOf(n, n.length);
+			list.removeAll(n);
+			
+			boolean success = false;
+			try {
+				assertArrayEquals(copy, n);
+				check(list, arraylist);
+				success = true;
+			} finally {
+				if(!success) {
+					System.out.println("list:             "+list);
+					System.out.println("arraylist:        "+arraylist);
+					System.out.println("delete-list:      "+Arrays.toString(n));
+					System.out.println("delete-arraylist: "+temp);
+				}
+			}
+		}
+
+
+		check(list, arraylist);
+	}
 	@Test 
 	public void removeIf() {
 		arrayTest(false, simplefill, () -> {
@@ -210,6 +270,6 @@ public class IntListTest {
 			IntList list = new IntList(new int[]{10});
 			list.forEach(i -> list.add(10));
 		});
-		
+
 	}
 }

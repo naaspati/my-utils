@@ -81,6 +81,14 @@ class IntSetBase extends IntListBase {
 		return b;
 	}
 	@Override
+	public boolean removeAll(int... c) {
+		if(c.length == 1)
+			return remove(c[0]);
+		else 
+			return super.removeAll(c);
+	}
+
+	@Override
 	public void forEach(IntConsumer action) {
 		super.forEach(action);
 	}

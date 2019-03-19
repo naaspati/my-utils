@@ -8,28 +8,6 @@ import sam.io.IOUtils;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		OneOrMany<Integer> inte = new OneOrMany<>();
-		System.out.println(inte+"  "+inte.size());
-		
-		int k = 0;
-		inte.add(k++);
-		System.out.println(inte+"  "+inte.size());
-
-		inte.add(k++);
-		System.out.println(inte+"  "+inte.size());
-
-		inte.add(k++);
-		System.out.println(inte+"  "+inte.size());
-
-		inte.add(k++);
-		System.out.println(inte+"  "+inte.size());
-
-		inte.add(k++);
-		System.out.println(inte+"  "+inte.size());
-
-		inte.add(k++);
-		System.out.println(inte+"  "+inte.size());
-		
-		
+		System.out.println(4 * 8);
 	}
 }
