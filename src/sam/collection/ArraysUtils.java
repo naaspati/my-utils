@@ -2,11 +2,14 @@ package sam.collection;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+
+import sam.myutils.Checker;
 
 public interface ArraysUtils {
 	@SafeVarargs
@@ -70,16 +73,31 @@ public interface ArraysUtils {
 
 		return array;
 	} 
-	public static <E,F> F[] map(E[] array, IntFunction<F[]> arrayMaker, Function<E, F> mapper) {
-		if(array == null)
-			return null;
+	public static <E,F> F[] map(Iterator<E> source, F[] target, Function<E, F> mapper) {
+		Objects.requireNonNull(source);
+		if(Checker.isEmpty(target))
+			return target;
+		
+		int n = 0;
+		while (n < target.length && source.hasNext())
+			target[n++] = mapper.apply(source.next());
+		
+		return target;
+	}
+	public static <E,F> F[] map(E[] source, F[] target, Function<E, F> mapper) {
+		Objects.requireNonNull(target);
+		
+		if(Checker.isEmpty(source))
+			return target;
 
-		F[] fs = arrayMaker.apply(array.length);
+		int size = Math.min(source.length, target.length);
+		if(size == 0)
+			return target;
+					
+		for (int i = 0; i < size; i++)
+			target[i] = mapper.apply(source[i]);
 
-		for (int i = 0; i < array.length; i++)
-			fs[i] = mapper.apply(array[i]);
-
-		return fs;
+		return target;
 	}
 	@SafeVarargs
 	public static <E,F> String toString(Function<E, F> map, E...es){

@@ -36,7 +36,7 @@ public interface Iterables {
 	@SuppressWarnings("unchecked")
 	@SafeVarargs
 	public static <E>  Iterable<E> join(Iterable<E>... itr) {
-		return Iterables.of(Iterators.join(ArraysUtils.map(itr, Iterator[]::new, Iterable::iterator)));
+		return Iterables.of(Iterators.join(ArraysUtils.map(itr, new Iterator[itr.length], Iterable::iterator)));
 	}
 	public static <E> Iterable<E> filtered(Iterable<E> itr, Predicate<E> filter) {
 		return of(Iterators.filtered(itr.iterator(), filter));
