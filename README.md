@@ -27,7 +27,7 @@ ___
   - [WriterImpl.java](src/sam/io/serilizers/WriterImpl.java) simple Writer (un-synchronized).   [test/usage](_testing/src/test/java/sam/io/serilizers/WriterImplTest.java)
 * [File/Path](help/files.md) Files Helper 
 * [String](help/string.md)   String helper
-* [Collection](help/collection.md) Data Structures 
+Structures 
 * [Config](help/config.md)
 * [JavaFX](help/javafx.md)
 * [Swing](help/swing.md)
