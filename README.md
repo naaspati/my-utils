@@ -4,6 +4,8 @@ Common Utilities i use
 ___
 
 * [MyUtilsPackager](_MyUtilsPackager) packs selectively MyUtils classes into a jar (myutils.jar).
+* [ANSI](help/ansi.md) Ansi  Console Color Helper  
+
 - [sam.collection](src/sam/collection)
   - [IntList.java](src/sam/collection/IntList.java)    [test/usage](_testing/src/test/java/sam/collection/IntListTest.java) 
   - [IntSet.java](src/sam/collection/IntSet.java)  [test/usage](_testing/src/test/java/sam/collection/IntSetTest.java) 
@@ -20,8 +22,9 @@ ___
 - [sam.io.infile](src/sam/io/infile)
   - [InFile.java](src/sam/io/infile/InFile.java)  a mapped file. for Each write this returns [DataMeta](src/sam/io/infile/DataMeta.java) object.
   - [TextInFile.java](src/sam/io/infile/TextInFile.java) InFile with text read/write capability.
- 
-* [ANSI](help/ansi.md) Ansi  Console Color Helper  
+- [sam.io.serilizers](src/sam/io/serilizers)
+  - [StringIOUtils.java](src/sam/io/serilizers/StringIOUtils.java) helpers to read/write text to file. [test/usage](_testing/src/test/java/sam/io/serilizers/StringIOUtilsTest.java)
+  - [WriterImpl.java](src/sam/io/serilizers/WriterImpl.java) simple Writer (un-synchronized).   [test/usage](_testing/src/test/java/sam/io/serilizers/WriterImplTest.java)
 * [File/Path](help/files.md) Files Helper 
 * [String](help/string.md)   String helper
 * [Collection](help/collection.md) Data Structures 
