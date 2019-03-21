@@ -4,6 +4,19 @@ Common Utilities i use
 ___
 
 * [MyUtilsPackager](_MyUtilsPackager) packs selectively MyUtils classes into a jar (myutils.jar).
+- [sam.collection](src/sam/collection)
+  - IntList
+  - IntSet
+  - ArrayIterator
+  - ArraysUtils
+  - CollectionUtils
+  - FilteredIterator
+  - IndexedMap
+  - IndexGetterIterator
+  - Iterables
+  - Iterators
+  - MappedIterator
+  - OneOrMany 
 
 * [ANSI](help/ansi.md) Ansi  Console Color Helper  
 * [File/Path](help/files.md) Files Helper 
