@@ -3,6 +3,8 @@
 Common Utilities i use
 ___
 
+* [MyUtilsPackager](_MyUtilsPackager) packs selectively MyUtils classes into a jar (myutils.jar).
+
 * [ANSI](help/ansi.md) Ansi  Console Color Helper  
 * [File/Path](help/files.md) Files Helper 
 * [String](help/string.md)   String helper

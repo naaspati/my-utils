@@ -36,7 +36,7 @@ public final class StringIOUtils {
 	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder) throws IOException {
 		write(consumer, s, encoder, null);
 	}
-	public static void writeJoining(Iterator<String> itr, String separator, BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, CharsetEncoder encoder) throws IOException {
+	public static <E extends CharSequence> void writeJoining(Iterator<E> itr, CharSequence separator, BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, CharsetEncoder encoder) throws IOException {
 		Checker.requireNonNull("itr, separator, consumer, buffer, chars, encoder", itr, separator, consumer);
 	
 		chars = orElse(chars, () -> CharBuffer.allocate(100), d -> LOGGER.debug("CharBuffer created: {}", d.capacity()));  
@@ -49,13 +49,16 @@ public final class StringIOUtils {
 		
 		try(WriterImpl w = new WriterImpl(consumer, buffer, chars, false, encoder)) {
 			char csep = ' ';
+			
 			if(separator.length() == 1) {
 				csep = separator.charAt(0);
 				separator = null;
 			}
 			
+			boolean notEmpty = Checker.isNotEmpty(separator); 
+			
 			while (itr.hasNext()) {
-				String s = itr.next();
+				CharSequence s = itr.next();
 				if(s == null)
 					throw new NullPointerException();
 				
@@ -63,7 +66,7 @@ public final class StringIOUtils {
 				
 				if(separator == null)
 					w.append(csep);
-				else if(!separator.isEmpty())
+				else if(notEmpty)
 					w.append(separator);
 			}
 		}

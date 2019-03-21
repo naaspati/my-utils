@@ -48,7 +48,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 		return connection.prepareStatement(sql);
 	}
 	public int executeUpdate(String sql) throws SQLException {
-		LOGGER.debug("UPDATE: ", sql);
+		LOGGER.debug("UPDATE: {}", sql);
 		return getDefaultStatement().executeUpdate(sql); 
 	}
 	public Statement createStatement() throws SQLException {
@@ -61,7 +61,7 @@ public abstract class JDBCHelper implements AutoCloseable {
 	 * @throws SQLException
 	 */
 	public ResultSet query(String sql) throws SQLException {
-		LOGGER.debug("QUERY: ", sql);
+		LOGGER.debug("QUERY: {}", sql);
 		return getDefaultStatement().executeQuery(sql);
 	}
 	public ResultSet executeQuery(String sql) throws SQLException {
