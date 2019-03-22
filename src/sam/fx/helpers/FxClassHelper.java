@@ -24,10 +24,6 @@ public interface FxClassHelper {
 			n.getStyleClass().setAll(clazz);
 		return nodes;
 	}
-	public static <E extends Node> E addClass(E node, String clazz) {
-		node.getStyleClass().add(clazz);
-		return node;
-	}
 	public static <E extends Node> E removeClass(E node, String...clazz) {
 		node.getStyleClass().removeAll(clazz);
 		return node;
@@ -70,4 +66,21 @@ public interface FxClassHelper {
 			addClass(node,clazz);
 		return node;
 	}
+	
+	public static <E extends Node> E addClass(E node, String clazz) {
+		node.getStyleClass().add(clazz);
+		return node;
+	}
+	public static <E extends Node> E removeClass(E node, String clazz) {
+		node.getStyleClass().removeAll(clazz);
+		return node;
+	}
+
+	public static <E extends Node> E setClass(E n, String className) {
+		n.getStyleClass().clear();
+		n.getStyleClass().add(className);
+		return n;
+	}
+
+	
 }
