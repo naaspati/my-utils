@@ -8,35 +8,49 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.logging.Logger;
-import sam.reference.ReferenceUtils;
 import sam.reference.WeakAndLazy;
 
 public final class Resources implements AutoCloseable {
-	private static final AtomicInteger count = new AtomicInteger(0);
-	private static final AtomicReference<WeakReference<Resources>> reference = new AtomicReference<>();
 	private static final Logger LOGGER = Logger.getLogger(Resources.class);
 	private static final boolean DEBUG = LOGGER.isDebugEnabled();
+	
+	private static final Object LOCK = new Object(); 
+	private static volatile int count = 0;
+	private static volatile boolean inUse = false;
+	private static volatile WeakReference<Resources> reference = new WeakReference<Resources>(null);
 
 	private Resources() { }
 
 	public static Resources get() throws IOException {
-		Resources resource = ReferenceUtils.get(reference.getAndSet(null));
-		if(resource == null) {
-			resource = new Resources();
-			int n = count.incrementAndGet();
-			if(DEBUG)
-				LOGGER.debug(n+": Resource created for: "+Thread.currentThread().getStackTrace()[2]);
+		synchronized(LOCK) {
+			if(inUse) {
+				return create();
+			} else {
+				Resources resource = reference.get();
+				
+				if(resource == null)
+					resource = create();
+				else
+					resource.open();
+				
+				if(DEBUG)
+					LOGGER.debug("Resource opened at: "+Thread.currentThread().getStackTrace()[2]);
+				
+				inUse = true;
+				return resource;
+			}
 		}
+	}
 
-		resource.open();
+	private static Resources create() {
+		Resources resource = new Resources();
+		int n = count++;
 		if(DEBUG)
-			LOGGER.debug("Resource opened at: "+Thread.currentThread().getStackTrace()[2]);
+			LOGGER.debug(n+": Resource created for: "+Thread.currentThread().getStackTrace()[3]);
 		return resource;
 	}
 
@@ -99,19 +113,31 @@ public final class Resources implements AutoCloseable {
 
 	@Override
 	public void close() throws IOException {
-		clear(buffer);
-		clear(chars);
-		wsink.ifPresent(s -> s.setLength(0));
-		
-		if(charset != null) {
-			if(decoder != null)
-				decoder.reset();
-			if(encoder != null)
-				encoder.reset();	
+		synchronized (LOCK) {
+			clear(buffer);
+			clear(chars);
+			wsink.ifPresent(s -> s.setLength(0));
+
+			if(charset != null) {
+				if(decoder != null)
+					decoder.reset();
+				if(encoder != null)
+					encoder.reset();	
+			}
+			
+			Resources r = reference.get(); 
+			
+			if(r == null) {
+				inUse = false;
+				reference = new WeakReference<Resources>(this);
+			} else if(r == this) {
+				inUse = false; 
+			}
+			
+			r = null;
 		}
-		reference.compareAndSet(null, new WeakReference<>(this));
 	}
-	
+
 	private void clear(Buffer b) {
 		if(b != null)
 			b.clear();

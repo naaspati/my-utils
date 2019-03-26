@@ -113,5 +113,8 @@ public class InFile implements AutoCloseable {
 	public BufferSupplier supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
 		return file.supplier(meta, buffer);
 	}
+	public void writeTo(DataMeta dm, BufferConsumer consumer, ByteBuffer buffer) throws IOException {
+		file.writeTo(dm, consumer, buffer);
+	}
 	
 }

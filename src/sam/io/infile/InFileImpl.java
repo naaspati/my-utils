@@ -5,6 +5,7 @@ import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -27,6 +28,7 @@ import sam.io.BufferSupplier;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.logging.Logger;
+import sam.myutils.Checker;
 
 
 class InFileImpl implements AutoCloseable {
@@ -487,9 +489,34 @@ class InFileImpl implements AutoCloseable {
 			}
 		};
 	}
-
 	private void checkMod(int mod2) {
 		if(this.mod != mod2)
 			throw new ConcurrentModificationException();
+	}
+	
+	public void writeTo(DataMeta dm, BufferConsumer consumer, ByteBuffer buffer) throws IOException {
+		Checker.requireNonNull("dm, consumer", dm, consumer);
+		if(dm.size == 0)
+			return;
+		
+		if(buffer == null)
+			buffer = ByteBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, dm.size));
+		
+		int modm = mod;
+		int size = dm.size;
+		int pos = 0;
+		
+		while(size > 0) {
+			IOUtils.ensureCleared(buffer);
+			int n = read(buffer, pos, size, true);
+			if(n != -1) {
+				size -= n;
+				pos  += n;
+			}
+			consumer.consume(buffer);
+			checkMod(modm);
+		}
+		
+		checkMod(modm);
 	}
 }
