@@ -1,16 +1,8 @@
 package sam.collection;
 
-import static java.util.Spliterator.IMMUTABLE;
-import static java.util.Spliterator.NONNULL;
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterator.SIZED;
-
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -19,75 +11,99 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class IndexedMap<E> implements Iterable<E> {
-	private final E[] array0;
-	private Map<Integer, E> map = Collections.emptyMap();
-	private final ToIntFunction<E> indexOf;
+public class IndexedMap<E> implements Iterable<E> {
+	final E[] array;
+	final ToIntFunction<E> indexOf;
 	private final Comparator<E> comparator;
 	private final int max, min;
 
 	public IndexedMap(E[] array, ToIntFunction<E> indexOf) {
-		this.array0 = Objects.requireNonNull(array);
+		this.array = Objects.requireNonNull(array);
 		Objects.requireNonNull(indexOf);
 
-		ToIntFunction<E> func = e -> {
-			Objects.requireNonNull(e);
-			int n = indexOf.applyAsInt(e);
-			if(n < 0)
-				throw new IllegalArgumentException("index cannot be < 0: index: "+n+", of: "+e);
-			return n;
-		};
-		this.comparator = (s1, s2) -> {
-			int n1 = func.applyAsInt(s1);
-			int n2 = func.applyAsInt(s2);
-			if(n1 == n2 && s1 != s2) 
-				throw new IllegalArgumentException("two different element with same index("+n1+") : "+s1+"@"+System.identityHashCode(s1)+", "+s2+"@"+System.identityHashCode(s2));
-			return Integer.compare(n1, n2);
-		};
+		if(array.length == 0) {
+			this.comparator = null;
+			this.max = -1;
+			this.min = -1;
+			this.indexOf = null;
+		} else {
+			ToIntFunction<E> func = e -> {
+				Objects.requireNonNull(e);
+				int n = indexOf.applyAsInt(e);
+				if(n < 0)
+					throw new IllegalArgumentException("index cannot be < 0: index: "+n+", of: "+e);
+				return n;
+			};
+			this.comparator = (s1, s2) -> {
+				int n1 = func.applyAsInt(s1);
+				int n2 = func.applyAsInt(s2);
+				if(n1 == n2 && s1 != s2) 
+					throw new IllegalArgumentException("two different element with same index("+n1+") : "+s1+"@"+System.identityHashCode(s1)+", "+s2+"@"+System.identityHashCode(s2));
+				return Integer.compare(n1, n2);
+			};
 
-		Arrays.sort(array, comparator);
+			Arrays.sort(array, comparator);
 
-		this.max = func.applyAsInt(array[array.length - 1]);
-		this.min = func.applyAsInt(array[0]);
+			this.max = func.applyAsInt(array[array.length - 1]);
+			this.min = func.applyAsInt(array[0]);
 
-		this.indexOf = func;
+			this.indexOf = func;	
+		}
 	}
 
 	private static final Object MARKER = new Object();
 
 	public E get(final int index) {
+		if(isEmpty())
+			return null;
+
 		if(isInRange(index)) {
 			int n = indexOf(index);
 			if(n >= 0)
-				return array0[n];
+				return array[n];
 		}
 
-		return map.get(index);
+		return null;
 	}
 
 	public int size() {
-		return array0.length + map.size();
+		return array.length;
 	}
 	public boolean isEmpty() {
 		return size() == 0;
 	}
 
-	private int indexOf(int index) {
-		checkIndex(index);
+	int indexOf(int value) {
+		if(isEmpty())
+			return  -1;
+		checkIndex(value);
 
-		if(index == min) 
+		if(value == min) 
 			return 0;
-		if(index == max) 
-			return array0.length - 1;
+		if(value == max) 
+			return array.length - 1;
 
-		if(index > min && index < max && index - min < array0.length) {
-			E e = array0[index - min];
-			if(indexOf.applyAsInt(e) == index) 
-				return index - min;
-		}
+		int n = value - min;
 
-		Comparator<Object> comp = (s,t) -> Integer.compare(index(s, index), index(t, index));
-		return Arrays.binarySearch((Object[])array0, MARKER, comp);
+		if(n < 0 || n >= array.length) 
+			return Arrays.binarySearch((Object[])array, MARKER, finder(value));
+
+		E e = array[n];
+		int actual = indexOf.applyAsInt(e);
+
+		if(actual == value) 
+			return n;
+
+		Comparator<Object> comp = finder(value);
+
+		if(actual > value) 
+			return Arrays.binarySearch((Object[])array, 0, n, MARKER, comp);
+		else 
+			return Arrays.binarySearch((Object[])array, n, array.length, MARKER, comp);
+	}
+
+	private Comparator<Object> finder(int value) {
+		return (s,t) -> Integer.compare(index(s, value), index(t, value));
 	}
 
 	private int checkIndex(int index) {
@@ -96,7 +112,7 @@ public final class IndexedMap<E> implements Iterable<E> {
 		return index;
 	}
 
-	private boolean isInRange(int index) {
+	boolean isInRange(int index) {
 		return index >= min && index <= max;
 	}
 
@@ -104,69 +120,33 @@ public final class IndexedMap<E> implements Iterable<E> {
 	private int index(Object s, int index) {
 		return s == MARKER ? index : indexOf.applyAsInt((E)s);
 	}
-	@Override
-	public String toString() {
-		return "IndexedMap [min-index=" + min + ", max-index=" + max + ", content=" + Arrays.toString(array0)+", extra: "+map+ "]";
-	}
-
-	public void put(E e) {
-		int index = indexOf.applyAsInt(e);
-
-		if(isInRange(index)) {
-			int n = indexOf(index);
-			if(n >= 0) {
-				array0[n] = e;
-				return;
-			}
-		}
-		if(map.isEmpty())
-			map = new HashMap<>();
-
-		map.put(index, e);
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Override
-	public boolean equals(Object obj) {
-		if(obj == null)
-			return false;
-		if(!(obj instanceof IndexedMap))
-			return false;
-		IndexedMap map = (IndexedMap) obj;
-
-		return Arrays.equals(map.array0, this.array0) && this.map.equals(map.map);
-	}
 
 	@Override
 	public Iterator<E> iterator() {
 		if(isEmpty())
 			return Iterators.empty();
-		else if(map.isEmpty())
-			return Iterators.of(array0);
-		else
-			return Iterators.join(Iterators.of(array0), map.values().iterator());
+		else 
+			return new ArrayIterator<>(array);
 	}
 	@Override
 	public void forEach(Consumer<? super E> action) {
 		if(isEmpty())
 			return;
 
-		for (E e : array0) 
+		for (E e : array) 
 			action.accept(e);
-
-		if(!map.isEmpty())
-			map.values().forEach(action);
 	}
 	@Override
 	public Spliterator<E> spliterator() {
 		if(isEmpty())
 			return Spliterators.emptySpliterator();
-		else if(map.isEmpty())
-			return Arrays.spliterator(array0);
 		else
-			return Spliterators.spliterator(Iterators.join(Iterators.of(array0), map.values().iterator()), size(), ORDERED | IMMUTABLE | SIZED | NONNULL);
+			return Arrays.spliterator(array);
 	}
 	public Stream<E> stream() {
-		return StreamSupport.stream(spliterator(), false);
+		if(isEmpty())
+			return Stream.empty();
+		else
+			return StreamSupport.stream(spliterator(), false);
 	}
 }

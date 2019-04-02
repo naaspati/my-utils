@@ -278,8 +278,10 @@ public class Main {
                         Path p = bin.resolve(c.getPackage().pkgName.replace('.', '/'));
                         String[] files = p.toFile().list();
 
-                        processRequired(c, jos);
-                        processClassesFiles(p, files, c, jos);
+                        if(!(files == null || files.length == 0)) {
+                        	processRequired(c, jos);
+                            processClassesFiles(p, files, c, jos);	
+                        }
                     }
                 }
             }
