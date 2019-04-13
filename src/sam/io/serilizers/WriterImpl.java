@@ -11,15 +11,10 @@ import java.util.NoSuchElementException;
 
 import sam.io.BufferConsumer;
 import sam.io.IOUtils;
-import sam.logging.Logger;
 import sam.myutils.Checker;
 import sam.myutils.ThrowException;
 
 public class WriterImpl extends Writer {
-	private static final Logger logger = Logger.getLogger(WriterImpl.class);
-	
-	int charLoops, charCount, bufLoop, bytesCount;
-	
 	private final BufferConsumer consumer;
 	private final ByteBuffer buffer;
 	private final CharBuffer chars;
@@ -118,10 +113,8 @@ public class WriterImpl extends Writer {
 	}
 	private void _write(boolean end) throws IOException {
 		chars.flip();
-		charCount += chars.remaining();
 
 		while(chars.hasRemaining()) {
-			charLoops++;
 			CoderResult c = encoder.encode(chars, buffer, end);
 			flushed = false;
 
@@ -136,9 +129,7 @@ public class WriterImpl extends Writer {
 	}
 
 	private void consume() throws IOException {
-		bufLoop++;
 		buffer.flip();
-		bytesCount += buffer.remaining();
 		consumer.consume(buffer);
 		if(!buffer.hasRemaining())
 			throw new IOException("buffer not consumed");
@@ -171,8 +162,5 @@ public class WriterImpl extends Writer {
 	@Override
 	public void close() throws IOException {
 		flush();
-		
-		if(logger.isDebugEnabled())
-			logger.debug("charLoops: {}, charCount: {}, bufLoop: {}, bytesCount: {}", charLoops, charCount, bufLoop, bytesCount);
 	}
 };
