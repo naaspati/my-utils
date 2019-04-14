@@ -11,6 +11,8 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.file.Path;
 
 import sam.functions.IOExceptionConsumer;
+import sam.io.IOUtils;
+import sam.io.ReadableByteChannelCustom;
 import sam.io.WritableByteChannelCustom;
 import sam.io.serilizers.StringIOUtils;
 import sam.io.serilizers.WriterImpl;
@@ -36,7 +38,7 @@ public class TextInFile extends InFile {
 		if(meta.size == 0)
 			return;
 
-		ReadableByteChannel fill = supplier(meta, buffer);
+		ReadableByteChannel fill = ReadableByteChannelCustom.of(reader(meta), buffer);
 
 		if(collector != null)
 			StringIOUtils.collect(fill, separator, collector, decoder, charBuffer, sb);
@@ -82,7 +84,9 @@ public class TextInFile extends InFile {
 				if(!open)
 					throw new ClosedChannelException();
 				
-				return write0(buffer);
+				int n =  write0(src);
+				size[0] += n;
+				return n;
 			}
 		};
 	}

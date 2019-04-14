@@ -3,16 +3,22 @@ package sam.io.serilizers;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static sam.myutils.test.Utils.toArray;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,8 +36,6 @@ import com.thedeanda.lorem.LoremIpsum;
 import sam.functions.IOExceptionConsumer;
 import sam.functions.IOExceptionFunction;
 import sam.io.IOConstants;
-
-import static sam.myutils.test.Utils.*;
 @SuppressWarnings("rawtypes")
 class DataReaderWriterTest {
 
@@ -112,34 +116,51 @@ class DataReaderWriterTest {
 
 		Random r = new Random();
 		LoremIpsum lorem = new LoremIpsum();
-		
+
 		CharsetEncoder encoder = IOConstants.newEncoder();
 		CharsetDecoder decoder = IOConstants.newDecoder();
-		
-		IOExceptionConsumer<String> check = s -> {
-			System.out.println("write: test for ("+s.length()+"): "+s);
+
+		IOExceptionConsumer<CharSequence> check = expected -> {
 			data_src_sink.clear();
 			buffer2.clear();
-			
-			write(data_src_sink, buffer2, w -> w.writeUTF(s));
+
+			write(data_src_sink, buffer2, w -> w.writeUTF(expected));
 			data_src_sink.flip();
-			
-			ByteBuffer converted = encoder.encode(CharBuffer.wrap(s));
+
+			ByteBuffer converted = encoder.encode(CharBuffer.wrap(expected));
 
 			assertEquals(DataWriter.STRING_MARKER, data_src_sink.getShort());
-			assertEquals(s.length(), data_src_sink.getInt());
+			assertEquals(expected.length(), data_src_sink.getInt());
 			assertEquals(converted.remaining(), data_src_sink.getInt());
 
+			if(expected.length() != converted.remaining()) 
+				System.out.println(expected.length() +" -> "+ converted.remaining());
+
 			assertArrayEquals(toArray(converted), toArray(data_src_sink));
-			assertEquals(decoder.decode(data_src_sink).toString(), s);
+
+			if(expected instanceof CharBuffer){
+				((CharBuffer) expected).clear();
+				assertEquals(decoder.decode(data_src_sink), expected);
+			} else
+				assertEquals(decoder.decode(data_src_sink).toString(), expected);
 		};
-		
+
 		check.accept("sameer");
-		
+
 		for (int i = 0; i < 100; i++) 
 			check.accept(lorem.getWords(10, 30));	
+
+		CharBuffer buffer = CharBuffer.allocate(500);
+
+		for (int j = 0; j < 20; j++) {
+			buffer.clear();
+			while (buffer.hasRemaining()) 
+				buffer.put((char)r.nextInt(5000));
+			buffer.flip();
+			check.accept(buffer);
+		}
 	}
-	
+
 	@Test
 	void stringReadTest() throws IOException {
 		ByteBuffer data_src_sink = ByteBuffer.allocate(8124);
@@ -147,72 +168,139 @@ class DataReaderWriterTest {
 
 		Random r = new Random();
 		LoremIpsum lorem = new LoremIpsum();
-		
-		CharsetEncoder encoder = IOConstants.newEncoder();
-		
-		IOExceptionConsumer<String> check = expected -> {
-			System.out.println("read: test for ("+expected.length()+"): "+expected);
-			data_src_sink.clear();
-			buffer2.clear();
-			
-			data_src_sink.putShort(DataWriter.STRING_MARKER);
-			data_src_sink.putInt(expected.length());
-			
-			ByteBuffer converted = encoder.encode(CharBuffer.wrap(expected));
-			
-			data_src_sink.putInt(converted.remaining());
-			data_src_sink.put(converted);
-			
-			data_src_sink.flip();
-			converted.flip();
-			
-			assertEquals(data_src_sink.remaining(), 2 + 4 * 2 + converted.remaining());
-			
-			String actual = read(data_src_sink, buffer2, d -> d.readUTF());
-			
-			System.out.println(Arrays.toString(toArray(converted)));
-			assertEquals(expected, actual);
-		};
-		
-		check.accept(lorem.getWords(50));
-		check.accept("sameer");
-		
-		for (int i = 0; i < 100; i++) 
-			check.accept(lorem.getWords(10, 30));		
-	}
 
-	@Test
-	void stringTest() throws IOException {
-		ByteBuffer data_src_sink = ByteBuffer.allocate(8124);
-		ByteBuffer buffer2 = ByteBuffer.allocate(200);  
-
-		Random r = new Random();
-		LoremIpsum lorem = new LoremIpsum();
-
-		IOExceptionConsumer<String> check = expected -> {
-			System.out.println("string-check: "+expected);
-
+		IOExceptionConsumer<CharSequence> check = expected -> {
 			data_src_sink.clear();
 			buffer2.clear();
 
 			write(data_src_sink, buffer2, w -> w.writeUTF(expected));
 			data_src_sink.flip();
-			System.out.println("  bytes: "+data_src_sink.remaining());
-			buffer2.clear();
-			String s = read(data_src_sink, buffer2, d -> d.readUTF());
 
-			assertEquals(expected, s);	
+			data_src_sink.getShort();
+			System.out.println(data_src_sink.getInt()+", "+data_src_sink.getInt());
+			data_src_sink.position(0);
+
+			String actual = read(data_src_sink, buffer2, w -> w.readUTF());
+
+			assertEquals(expected.length(), actual.length());
+			assertEquals(expected.toString(), actual);
 		};
 
-		check.accept(null);
-		check.accept("");
 		check.accept("sameer");
 
-		for (int i = 0; i < 500; i++) {
-			String s = lorem.getWords(0, 100);
-			check.accept(s);
-		} 
+		for (int i = 0; i < 100; i++) 
+			check.accept(lorem.getWords(10, 100));	
 
+		CharBuffer buffer = CharBuffer.allocate(500);
+
+		for (int j = 0; j < 20; j++) {
+			buffer.clear();
+			while (buffer.hasRemaining()) 
+				buffer.put((char)r.nextInt(5000));
+			buffer.flip();
+			check.accept(buffer);
+		}		
+	}
+
+	@Test
+	void fullTest() throws IOException {
+		fullTest(ByteBuffer.allocate(200));
+		fullTest(ByteBuffer.allocate(8 * 1024));
+	}
+
+	void fullTest(ByteBuffer buffer2) throws IOException {
+		Path temp = Files.createTempFile("fullTest", null);
+		System.out.println(temp);
+
+		ArrayList<Unit> written = new ArrayList<>(1000);
+		int writeCount[] = {0, 0};
+
+		try(FileChannel fc = FileChannel.open(temp, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+				WritableByteChannel wbc = new WritableByteChannel() {
+
+					@Override
+					public boolean isOpen() {
+						return fc.isOpen();
+					}
+
+					@Override
+					public void close() throws IOException {
+						fc.close();
+					}
+
+					@Override
+					public int write(ByteBuffer src) throws IOException {
+						writeCount[0] += src.remaining();
+						writeCount[1]++;
+
+						return fc.write(src);
+					}
+				};
+				DataWriter w = new DataWriter(wbc, buffer2)) {
+
+			Random r = new Random();
+			LoremIpsum lorem = new LoremIpsum();
+
+			IdentityHashMap<Class, AtomicInteger> map = new IdentityHashMap<>();
+			Function<Class, AtomicInteger> computer = t -> new AtomicInteger();
+
+			List<Supplier<Unit>> unitsGenrator = new ArrayList<>(DataReaderWriterTest.unitsGenrator);
+			unitsGenrator.add(StringUnit::new);
+
+			for (int i = 0; i < 1000; i++) {
+				Unit t = unitsGenrator.get(r.nextInt(unitsGenrator.size())).get();
+				map.computeIfAbsent(t.getClass(), computer).incrementAndGet();
+				t.write(w, r, lorem);
+				written.add(t);
+			}
+
+			System.out.println("write-trip-count: "+writeCount[1]);
+			System.out.println("bytes write: "+fc.size()+", "+writeCount[0]);
+			System.out.println("items: "+written.size());
+			map.forEach((s,t) -> System.out.println(s.getSimpleName()+"  "+t.get()));
+			System.out.println("EMPTY string: "+StringUnit.EMPTY);
+			System.out.println("NULL string:  "+StringUnit.NULLS);
+		}
+
+		buffer2.clear();
+
+		int readCount[] = {0, 0};
+
+		try(FileChannel fc = FileChannel.open(temp, StandardOpenOption.READ);
+				ReadableByteChannel channel = new ReadableByteChannel() {
+					@Override
+					public boolean isOpen() {
+						return fc.isOpen();
+					}
+
+					@Override
+					public void close() throws IOException {
+						fc.close();
+					}
+
+					@Override
+					public int read(ByteBuffer dst) throws IOException {
+						int n = fc.read(dst);
+						if(n != -1) {
+							readCount[0] += n;
+							readCount[1]++;							
+						}
+						return n;
+					}
+				};
+				DataReader w = new DataReader(channel, buffer2)) {
+
+			for (Unit t : written) {
+				t.read(w);
+				t.validate();
+			}
+
+			System.out.println("read-trip-count: "+readCount[1]);
+			System.out.println("bytes read: "+readCount[0]);
+		}
+
+		System.out.println("------------------------------------------\n");
+		System.err.println("------------------------------------------\n");
 	}
 
 	private <E> E read(ByteBuffer data_src_sink, ByteBuffer buffer2, IOExceptionFunction<DataReader, E> reader) throws IOException {
@@ -310,13 +398,13 @@ class DataReaderWriterTest {
 		};
 	}
 
+
+
 	private static interface Unit {
 		void read(DataReader reader) throws IOException;
 		void read(ByteBuffer buffer);
 		void write(DataWriter writer, Random r, LoremIpsum lorem) throws IOException;
 		void validate();
-
-
 	}
 
 	private static class ByteUnit implements Unit {
@@ -556,6 +644,8 @@ class DataReaderWriterTest {
 	}
 
 	private static class StringUnit implements Unit {
+		static int EMPTY, NULLS;
+
 		String read, write;
 
 		@Override
@@ -570,13 +660,26 @@ class DataReaderWriterTest {
 
 		@Override
 		public void write(DataWriter writer, Random r, LoremIpsum lorem) throws IOException {
-			writer.writeUTF(lorem.getWords(10, 200));
+			if(r.nextInt()%18 == 0) {
+				write = null;
+				NULLS++;
+			} else if(r.nextInt()%24 == 0) {
+				write = "";
+				EMPTY++;
+			} else 
+				write = lorem.getWords(10, 200);
+
+			writer.writeUTF(write);
 		}
 
 		@Override
 		public void validate() {
-			assertEquals(read, write);
+			if(read == null)
+				assertSame(read, write);
+			else {
+				assertEquals(read.length(), write.length());
+				assertEquals(read, write);	
+			}
 		}
-
 	}
 }

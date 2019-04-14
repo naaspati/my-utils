@@ -87,14 +87,21 @@ public final class IOUtils {
 	}
 
 	public static int write(ByteBuffer buffer, OutputStream target, boolean flip) throws IOException {
+		return write(buffer, target, flip, true);
+	}
+	public static int write(ByteBuffer buffer, OutputStream target, boolean flip, boolean clear) throws IOException {
 		if(flip)
 			buffer.flip();
 
 		int n = buffer.remaining();
 		if(n != 0) 
-			target.write(buffer.array(), 0, n);
+			target.write(buffer.array(), buffer.position(), n);
 
-		buffer.clear();
+		if(clear)
+			buffer.clear();
+		else
+			buffer.position(buffer.limit());
+		
 		return n;
 	}
 

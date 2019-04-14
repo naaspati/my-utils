@@ -11,11 +11,8 @@ import java.util.Objects;
 
 import sam.io.IOConstants;
 import sam.io.IOUtils;
-import sam.logging.Logger;
 
 public class DataWriter implements AutoCloseable {
-	private static final Logger LOGGER = Logger.getLogger(DataWriter.class);
-
 	static final short STRING_MARKER = 8115;
 
 	private final WritableByteChannel sink;
@@ -138,8 +135,6 @@ public class DataWriter implements AutoCloseable {
 		encoder.reset();
 		ByteBuffer buffer = encoder.encode(CharBuffer.wrap(value));
 		writeInt(buffer.remaining());
-
-		LOGGER.debug(() -> "new_bytebuffer: "+buffer.capacity());
 
 		IOUtils.write(buf, sink, true);
 		IOUtils.write(buffer, sink, false);

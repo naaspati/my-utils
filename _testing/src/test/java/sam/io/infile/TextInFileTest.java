@@ -66,7 +66,8 @@ public class TextInFileTest extends TextInFileTestUtils {
 			DataMeta meta = file.write(string);
 			String read = file.readText(meta);
 
-			assertEquals(string,read);
+			assertEquals(string.length(), read.length());
+			assertEquals(string, read);
 
 			Appen sb = new Appen(read.length() + 100);
 			file.readText(meta, ByteBuffer.allocate(1000), CharBuffer.allocate(100), sb);

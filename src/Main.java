@@ -10,25 +10,11 @@ import sam.io.IOUtils;
 import sam.nopkg.EnsureSingleton;
 
 public class Main {
-	private static final EnsureSingleton singleton = new EnsureSingleton();
-	{
-		singleton.init();
-	}
 
 	public static void main(String[] args) throws Exception {
-		new Main();
-		new Main();
-		new Main();
+		System.out.println((char)5000);
 	}
 
-	static int n = 0;
-	int a = (new IntSupplier() {
-		@Override
-		public int getAsInt() {
-			System.out.println(n);
-			return n++;
-		}
-	}).getAsInt();
 	
 	
 }

@@ -25,6 +25,9 @@ ___
 - [sam.io.serilizers](src/sam/io/serilizers)
   - [StringIOUtils.java](src/sam/io/serilizers/StringIOUtils.java) helpers to read/write text to file. [test/usage](_testing/src/test/java/sam/io/serilizers/StringIOUtilsTest.java)
   - [WriterImpl.java](src/sam/io/serilizers/WriterImpl.java) simple Writer (un-synchronized).   [test/usage](_testing/src/test/java/sam/io/serilizers/WriterImplTest.java)
+  - [DataReader.java](src/sam/io/serilizers/DataReader.java) alternative for DataInputStream.   [test/usage](_testing/src/test/java/sam/io/serilizers/DataReaderWriterTest.java)
+  - [DataWriter.java](src/sam/io/serilizers/DataWriter.java) alternative for DataOutputStream.   [test/usage](_testing/src/test/java/sam/io/serilizers/DataReaderWriterTest.java)
+
 * [File/Path](help/files.md) Files Helper 
 * [String](help/string.md)   String helper
 Structures 

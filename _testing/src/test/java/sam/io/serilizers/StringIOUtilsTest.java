@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static sam.io.serilizers.StringIOUtils.write;
-import static sam.myutils.test.Utils.*;
+import static sam.myutils.test.Utils.writeable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,7 +14,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -29,6 +28,7 @@ import com.thedeanda.lorem.LoremIpsum;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.io.ReadableByteChannelCustom;
+import sam.io.WritableByteChannelCustom;
 
 public class StringIOUtilsTest {
 
@@ -55,7 +55,7 @@ public class StringIOUtilsTest {
 
 		write0(expected, actual, null, s);
 		write0(expected, actual, null, CharBuffer.wrap(s));
-
+		
 		ByteBuffer buffer = ByteBuffer.allocate(100);
 		write0(expected, actual, buffer, s);
 		write0(expected, actual, buffer, CharBuffer.wrap(s));
@@ -71,10 +71,15 @@ public class StringIOUtilsTest {
 
 		assertEquals(expected, actual);
 	}
+	
 	@Test
 	void writeJoiningTest() throws IOException {
-		writeJoiningTest0("\n");
-		writeJoiningTest0("josen");
+		try {
+			writeJoiningTest0("\n");
+			writeJoiningTest0("josen");
+		} catch (Throwable e) {
+			fail(e);
+		}
 	}
 
 	private void writeJoiningTest0(String separator) throws IOException {
@@ -101,7 +106,7 @@ public class StringIOUtilsTest {
 			public boolean hasNext() {
 				return n < 100;
 			}
-		}, separator, writeable(b -> IOUtils.write(b, bos, false)), null, null);
+		}, separator, WritableByteChannelCustom.of(bos, null), null, null);
 
 		StringBuilder sb = new StringBuilder();
 		list.forEach(s -> sb.append(s).append(separator));

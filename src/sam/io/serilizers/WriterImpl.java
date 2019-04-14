@@ -16,7 +16,7 @@ import sam.myutils.ThrowException;
 
 public class WriterImpl extends Writer {
 	private final WritableByteChannel target;
-	private final ByteBuffer buffer;
+	private final ByteBuffer buf;
 	private final CharBuffer chars;
 	private final boolean synced;
 	private final Object lock;
@@ -28,7 +28,7 @@ public class WriterImpl extends Writer {
 
 		this.target = target;
 		this.encoder = encoder;
-		this.buffer = HasBuffer.buffer(target);
+		this.buf = HasBuffer.buffer(target);
 		this.chars = chars;
 		this.synced = syncronized;
 		this.lock = syncronized ? new Object() : null;
@@ -109,21 +109,21 @@ public class WriterImpl extends Writer {
 		chars.flip();
 
 		while(chars.hasRemaining()) {
-			CoderResult c = encoder.encode(chars, buffer, end);
+			CoderResult c = encoder.encode(chars, buf, end);
 			flushed = false;
 
 			if(c.isUnderflow())
 				break;
 			else if(c.isOverflow()) 
-				consume();
+				writeTarget();
 			else
 				c.throwException();
 		}
 		chars.clear();
 	}
 
-	private void consume() throws IOException {
-		IOUtils.write(buffer, target, true);
+	private void writeTarget() throws IOException {
+		IOUtils.write(buf, target, true);
 	}
 	@Override
 	public void flush() throws IOException {
@@ -142,11 +142,13 @@ public class WriterImpl extends Writer {
 		flushed = true;
 		
 		while(true) {
-			CoderResult c = encoder.flush(buffer);
-			consume();
+			CoderResult c = encoder.flush(buf);
+			writeTarget();
 
 			if(c.isUnderflow()) 
 				break;
+			else if(!c.isOverflow())
+				c.throwException();
 		}
 		encoder.reset();
 	}

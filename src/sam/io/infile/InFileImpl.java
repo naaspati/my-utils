@@ -6,6 +6,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
@@ -35,7 +36,6 @@ class InFileImpl implements AutoCloseable {
 	private static final Logger LOGGER = Logger.getLogger(InFileImpl.class);
 	private static final boolean DEBUG_ENABLED = LOGGER.isDebugEnabled();
 
-	private static final int DEFAULT_BUFFER_SIZE = IOConstants.defaultBufferSize();
 	private final FileChannel file;
 	private final Path filepath;
 	private final FileLock lock;
@@ -105,7 +105,7 @@ class InFileImpl implements AutoCloseable {
 		try {
 			long pos = DEBUG_ENABLED ? position() : -1;
 
-			int n = IOUtils.write(buffer, file, false);
+			int n = file.write(buffer);
 			success = true;
 			position.addAndGet(n);
 
@@ -193,17 +193,21 @@ class InFileImpl implements AutoCloseable {
 
 		try {
 			ByteBuffer buf = HasBuffer.buffer(src);
+			int empty = 0;
 
 			while(IOUtils.read(buf, false, src) != -1) {
 				if(!buf.hasRemaining()) { 
-					LOGGER.debug("EMPTY buffer return by buffers");
+					empty++;
+					if(empty > 10)
+						throw new IOException("returned empty buffers");
 					buf.clear();
 				} else {
-					size += IOUtils.write(buf, file, true);
+					size += IOUtils.write(buf, file, false);
 				}
 			}
-
+			
 			LOGGER.debug("WRITTEN: {} bytes", size);
+			
 			success = true;
 			position.addAndGet(size);
 			return size;
@@ -425,33 +429,47 @@ class InFileImpl implements AutoCloseable {
 		file.close();
 	}
 
-	public ReadableByteChannel supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
+	public ReadableByteChannel reader(DataMeta meta) throws IOException {
 		Objects.requireNonNull(meta);
 		verifyDataMeta(meta);
 
 		if(meta.size == 0)
 			return ReadableByteChannelCustom.EMPTY;
 
-		if(buffer == null) 
-			buffer = ByteBuffer.allocate(Math.min(meta.size, HasBuffer.DEFAULT_BUFFER_SIZE));
-
-		ByteBuffer buf = buffer;
 		int mod = this.mod;
 
-		return new ReadableByteChannelCustom.ReadableByteChannelCustom2(null, meta.size, buffer) {
+		return new ReadableByteChannel() {
 			int size = meta.size;
 			long pos = meta.position;
+			boolean open = true;
+
+			@Override
+			public boolean isOpen() {
+				return open && mod == InFileImpl.this.mod;
+			}
+
+			@Override
+			public void close() throws IOException {
+				open = false;
+			}
 
 			@Override
 			public int read(ByteBuffer dst) throws IOException {
 				checkMod(mod);
-				int n = InFileImpl.this.read(buf, pos, size);
+				if(!open)
+					throw new ClosedChannelException();
+				
+				if(size == 0)
+					return -1;
+				
+				int n = InFileImpl.this.read(dst, pos, size);
 
 				size -= n;
 				pos  += n;
 
 				return n;
 			}
+			
 		};
 	}
 	private void checkMod(int mod2) {

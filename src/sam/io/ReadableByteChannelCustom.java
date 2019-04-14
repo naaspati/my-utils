@@ -36,6 +36,63 @@ public interface ReadableByteChannelCustom extends ReadableByteChannel, HasBuffe
 			return IOConstants.EMPTY_BUFFER;
 		}
 	};
+	
+	public static ReadableByteChannelCustom of(ByteBuffer buf) {
+		if(!buf.hasRemaining())
+			return EMPTY;
+		
+		ByteBuffer orig = buf;
+		
+		if(buf.position() != 0)
+			buf = ByteBuffer.wrap(buf.array(), buf.position(), buf.remaining());
+		
+		ByteBuffer buf2 = buf;
+		
+		int size = buf.remaining();
+		return new ReadableByteChannelCustom() {
+			boolean first = true;
+			ByteBuffer copy = buf2.duplicate();
+			
+			@Override
+			public long size() throws IOException {
+				return size;
+			}
+			
+			@Override
+			public ByteBuffer buffer() {
+				return buf2;
+			}
+			
+			@Override
+			public boolean isOpen() {
+				return true;
+			}
+			
+			@Override
+			public void close() throws IOException {
+			}
+			
+			@Override
+			public int read(ByteBuffer dst) throws IOException {
+				if(!first)
+					return -1;
+				
+				if(dst != buf2)
+					throw new IOException();
+				if(!dst.equals(copy))
+					throw new IOException();
+
+				first = false;
+				int n = dst.remaining();
+				dst.position(dst.limit());
+				
+				if(orig != dst)
+					orig.position(orig.limit());
+				
+				return n;
+			}
+		};
+	}
 
 	public static ReadableByteChannelCustom of(FileChannel fc, ByteBuffer buffer, long position, int size) throws IOException {
 		Objects.requireNonNull(fc);

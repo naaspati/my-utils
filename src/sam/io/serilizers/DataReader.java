@@ -4,15 +4,15 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.CharsetDecoder;
-import java.util.Arrays;
 import java.util.Objects;
 
-import sam.io.BufferSupplier;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
-import sam.nopkg.Junk;
+import sam.io.ReadableByteChannelCustom;
+import sam.reference.WeakAndLazy;
 
 public class DataReader implements AutoCloseable {
 	private final ReadableByteChannel src;
@@ -33,8 +33,7 @@ public class DataReader implements AutoCloseable {
 			return;
 
 		IOUtils.compactOrClear(buf);
-		src.read(buf);
-		buf.flip();
+		IOUtils.read(buf, false, src);
 
 		if(!buf.hasRemaining())
 			throw new EOFException();
@@ -110,11 +109,10 @@ public class DataReader implements AutoCloseable {
 	public final Appendable readUTF(CharsetDecoder decoder, CharBuffer charBuffer, Appendable sink) throws IOException {
 		return (Appendable) _readUTF(decoder, charBuffer, sink);
 	}
-
+	
+	private static final WeakAndLazy<ByteBuffer> TEMP_BUFF = new WeakAndLazy<>(() -> ByteBuffer.allocate(100));
+	
 	private final Object _readUTF(CharsetDecoder decoder, Object charsBuffer, Object sink0) throws IOException {
-		if(10 < System.currentTimeMillis())
-			Junk.notYetImplemented();
-		
 		if(readShort() != DataWriter.STRING_MARKER)
 			throw new IOException("data doesnt represent a String");
 
@@ -125,67 +123,68 @@ public class DataReader implements AutoCloseable {
 		if(len == 0)
 			return sink0;
 
-		decoder.reset();
-
 		Objects.requireNonNull(charsBuffer);
 		Objects.requireNonNull(sink0);
 
 		CharBuffer chars = charsBuffer == CHARS_MARKER ? CharBuffer.allocate(Math.min(len, 100)) : (CharBuffer)charsBuffer;
 		Appendable sink = sink0 == SINK_MARKER ? new StringBuilder(len) : (Appendable)sink0;
-		
-		int bytes = readInt();
-		
-		BufferSupplier supplier = new BufferSupplier() {
-			int remaining = bytes;
-			boolean first = true;
+		decoder.reset();
 
-			@Override
-			public ByteBuffer next() throws IOException {
-				if(remaining == 0)
-					return null;
+		final int remaining = readInt();
+		
+		synchronized (TEMP_BUFF) {
+			ByteBuffer temp = TEMP_BUFF.get();
+			temp.clear();
+			
+			ReadableByteChannel c = new ReadableByteChannelCustom() {
+				int remain = remaining;
+				boolean open = true;
 				
-				if(!first) {
-					IOUtils.compactOrClear(buf);
-					if(IOUtils.read(buf, false, src) < 0)
-						throw new EOFException();
+				@Override
+				public long size() throws IOException {
+					return remaining;
 				}
 				
-				first = false;
-				
-				ByteBuffer b = buf;
-				
-				if(buf.remaining() > remaining) {
-					b = buf.duplicate();
-					b.limit(b.position() + remaining);
-					buf.position(b.limit());
+				@Override
+				public ByteBuffer buffer() {
+					return temp;
 				}
-				
-				remaining -= b.remaining();
-				return b;
-			}
-
-			@Override
-			public boolean isEndOfInput() throws IOException {
-				return remaining == 0;
-			}
-		};
-		
-		
-		ByteBuffer buf2 = ByteBuffer.allocate(bytes + 10);
-		while(true) {
-			buf2.put(supplier.next());
-			if(supplier.isEndOfInput())
-				break;
+				@Override
+				public boolean isOpen() {
+					return open;
+				}
+				@Override
+				public void close() throws IOException {
+					open = false;
+				}
+				@Override
+				public int read(ByteBuffer dst) throws IOException {
+					if(!open)
+						throw new ClosedChannelException();
+					
+					if(remain == 0)
+						return -1;
+					
+					int n = 0;
+					while(remain != 0 && dst.hasRemaining()) {
+						if(!buf.hasRemaining() && IOUtils.read(buf, true, src) < 0)
+							throw new EOFException();
+						dst.put(buf.get());
+						
+						n++;
+						remain--;
+					}
+					
+					return n;
+				}
+			};
+			
+			StringIOUtils.read(c, sink, decoder, chars);
 		}
-		buf2.flip();
 		
-		System.out.println(buf2.remaining());
-		System.out.println(Arrays.toString(Arrays.copyOf(buf2.array(), buf.remaining())));
-		
-		//FIXME StringIOUtils.read(supplier, sink, decoder, chars);
 		return sink;
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		src.close();

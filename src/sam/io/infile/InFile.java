@@ -113,8 +113,8 @@ public class InFile implements AutoCloseable {
 		});
 	}
 	
-	public ReadableByteChannel supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
-		return file.supplier(meta, buffer);
+	public ReadableByteChannel reader(DataMeta meta) throws IOException {
+		return file.reader(meta);
 	}
 	public void writeTo(DataMeta dm, WritableByteChannel consumer) throws IOException {
 		file.writeTo(dm, consumer);
