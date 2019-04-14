@@ -4,15 +4,13 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
 import java.util.Objects;
 
 import sam.io.IOConstants;
 import sam.io.IOUtils;
-import sam.io.ReadableByteChannelCustom;
-import sam.reference.WeakAndLazy;
 
 public class DataReader implements AutoCloseable {
 	private final ReadableByteChannel src;
@@ -109,9 +107,31 @@ public class DataReader implements AutoCloseable {
 	public final Appendable readUTF(CharsetDecoder decoder, CharBuffer charBuffer, Appendable sink) throws IOException {
 		return (Appendable) _readUTF(decoder, charBuffer, sink);
 	}
-	
-	private static final WeakAndLazy<ByteBuffer> TEMP_BUFF = new WeakAndLazy<>(() -> ByteBuffer.allocate(100));
-	
+
+	private CharBuffer _chars;
+	private StringBuilder _sb;
+
+	private CharBuffer chars(int len) {
+		int size = Math.min(_chars == null ? Integer.MAX_VALUE : _chars.capacity(), len);
+		size = Math.min(size, 100);
+
+		if(_chars == null || _chars.capacity() < size)
+			_chars = CharBuffer.allocate(size);
+
+		_chars.clear();
+		return _chars;
+	}
+
+	private Appendable sb(int len) {
+		if(_sb == null)
+			_sb = new StringBuilder(len);
+		else {
+			_sb.ensureCapacity(len);
+			_sb.setLength(0);
+		}
+		return _sb;
+	}
+
 	private final Object _readUTF(CharsetDecoder decoder, Object charsBuffer, Object sink0) throws IOException {
 		if(readShort() != DataWriter.STRING_MARKER)
 			throw new IOException("data doesnt represent a String");
@@ -126,63 +146,63 @@ public class DataReader implements AutoCloseable {
 		Objects.requireNonNull(charsBuffer);
 		Objects.requireNonNull(sink0);
 
-		CharBuffer chars = charsBuffer == CHARS_MARKER ? CharBuffer.allocate(Math.min(len, 100)) : (CharBuffer)charsBuffer;
-		Appendable sink = sink0 == SINK_MARKER ? new StringBuilder(len) : (Appendable)sink0;
-		decoder.reset();
+		CharBuffer chars = charsBuffer == CHARS_MARKER ? chars(len) : (CharBuffer)charsBuffer;
+		Appendable sink = sink0 == SINK_MARKER ? sb(len) : (Appendable)sink0;
 
-		final int remaining = readInt();
-		
-		synchronized (TEMP_BUFF) {
-			ByteBuffer temp = TEMP_BUFF.get();
-			temp.clear();
-			
-			ReadableByteChannel c = new ReadableByteChannelCustom() {
-				int remain = remaining;
-				boolean open = true;
-				
-				@Override
-				public long size() throws IOException {
-					return remaining;
-				}
-				
-				@Override
-				public ByteBuffer buffer() {
-					return temp;
-				}
-				@Override
-				public boolean isOpen() {
-					return open;
-				}
-				@Override
-				public void close() throws IOException {
-					open = false;
-				}
-				@Override
-				public int read(ByteBuffer dst) throws IOException {
-					if(!open)
-						throw new ClosedChannelException();
-					
-					if(remain == 0)
-						return -1;
-					
-					int n = 0;
-					while(remain != 0 && dst.hasRemaining()) {
-						if(!buf.hasRemaining() && IOUtils.read(buf, true, src) < 0)
-							throw new EOFException();
-						dst.put(buf.get());
-						
-						n++;
-						remain--;
+		int remaining = readInt();
+		decoder.reset();
+		ByteBuffer buf = this.buf;
+
+		while(remaining != 0) {
+			if(buf.remaining() > remaining) {
+				buf = buf.duplicate();
+				buf.limit(buf.position() + remaining);
+			}
+
+			remaining -= buf.remaining();
+			boolean end = remaining == 0;
+
+			while(true) {
+				CoderResult c = decoder.decode(buf, chars, end);
+				if(consume(c, chars, sink)) {
+					if(end) {
+						while(true) {
+							c = decoder.flush(chars);
+							if(consume(c, chars, sink))
+								break;
+						}
 					}
-					
-					return n;
+					break;
 				}
-			};
-			
-			StringIOUtils.read(c, sink, decoder, chars);
+			}
+
+			if(buf != this.buf) {
+				this.buf.position(buf.position());
+				buf = this.buf;
+			}
+
+			if(remaining != 0) {
+				IOUtils.compactOrClear(buf);
+				IOUtils.read(buf, false, src);	
+			}
 		}
 		
+		chars.flip();
+		sink.append(chars);
 		return sink;
+	}
+
+	private boolean consume(CoderResult c, CharBuffer chars, Appendable sink) throws IOException {
+		if(c.isUnderflow()) 
+			return true;
+		else if (c.isOverflow()) {
+			chars.flip();
+			sink.append(chars);
+			chars.clear();
+		} else 
+			c.throwException();
+
+		return false;
 	}
 
 	@Override
