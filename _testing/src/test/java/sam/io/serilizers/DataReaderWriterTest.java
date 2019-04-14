@@ -31,6 +31,7 @@ import sam.functions.IOExceptionConsumer;
 import sam.functions.IOExceptionFunction;
 import sam.io.IOConstants;
 
+import static sam.myutils.test.Utils.*;
 @SuppressWarnings("rawtypes")
 class DataReaderWriterTest {
 
@@ -178,13 +179,6 @@ class DataReaderWriterTest {
 		
 		for (int i = 0; i < 100; i++) 
 			check.accept(lorem.getWords(10, 30));		
-	}
-
-	private byte[] toArray(ByteBuffer b) {
-		if(b.position() == 0 && b.limit() == b.capacity())
-			return b.array();
-		
-		return Arrays.copyOfRange(b.array(), b.position(), b.limit());
 	}
 
 	@Test

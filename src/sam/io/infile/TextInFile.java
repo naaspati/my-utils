@@ -3,13 +3,15 @@ package sam.io.infile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.file.Path;
 
 import sam.functions.IOExceptionConsumer;
-import sam.io.BufferConsumer;
-import sam.io.BufferSupplier;
+import sam.io.WritableByteChannelCustom;
 import sam.io.serilizers.StringIOUtils;
 import sam.io.serilizers.WriterImpl;
 import sam.logging.Logger;
@@ -34,7 +36,7 @@ public class TextInFile extends InFile {
 		if(meta.size == 0)
 			return;
 
-		BufferSupplier fill = supplier(meta, buffer);
+		ReadableByteChannel fill = supplier(meta, buffer);
 
 		if(collector != null)
 			StringIOUtils.collect(fill, separator, collector, decoder, charBuffer, sb);
@@ -51,22 +53,45 @@ public class TextInFile extends InFile {
 			return new DataMeta(pos, 0);
 
 		int[] size = {0};
-		StringIOUtils.write(consumer(size), s, encoder, buffer);
+		StringIOUtils.write(consumer(size, buffer), s, encoder);
 
 		DataMeta d = new DataMeta(pos, size[0]); 
 		LOGGER.debug("WRITTEN: {}", d);
 		return d;
 	}
 	
-	private BufferConsumer consumer(int[] size) {
-		return b -> size[0] += write0(b);
+	private WritableByteChannel consumer(int[] size, ByteBuffer buffer) {
+		return new WritableByteChannelCustom() {
+			@Override
+			public ByteBuffer buffer() {
+				return buffer;
+			}
+			boolean open = true;
+			@Override
+			public boolean isOpen() {
+				return open;
+			}
+			
+			@Override
+			public void close() throws IOException {
+				open = false;
+			}
+			
+			@Override
+			public int write(ByteBuffer src) throws IOException {
+				if(!open)
+					throw new ClosedChannelException();
+				
+				return write0(buffer);
+			}
+		};
 	}
 
 	public DataMeta write(IOExceptionConsumer<WriterImpl> writerConsumer, CharsetEncoder encoder, ByteBuffer buffer, CharBuffer charBuffer) throws IOException {
 		long pos = size();
 		int[] size = {0};
 		
-		try(WriterImpl w = new WriterImpl(consumer(size), buffer, charBuffer, false, encoder)) {
+		try(WriterImpl w = new WriterImpl(consumer(size, buffer), charBuffer, false, encoder)) {
 			writerConsumer.accept(w);
 		}
 		

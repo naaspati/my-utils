@@ -13,8 +13,8 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import sam.io.BufferSupplier;
 import sam.io.IOConstants;
+import sam.io.ReadableByteChannelCustom;
 
 
 public class StringReader2 {
@@ -39,7 +39,7 @@ public class StringReader2 {
 	}
 	
 	public void read(ReadableByteChannel source, Appendable sink) throws IOException {
-		StringIOUtils.read(BufferSupplier.of(source, buffer), sink, decoder, chars);
+		StringIOUtils.read(ReadableByteChannelCustom.of(source, buffer), sink, decoder, chars);
 		
 		if(buffer != null)
 			buffer.clear();

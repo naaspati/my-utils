@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import com.thedeanda.lorem.LoremIpsum;
 
-import sam.io.infile.InFileTest;
 import sam.test.commons.TempDir;
 public class StringReader2Test {
 	private static final Logger LOGGER = Logger.getLogger(StringReader2Test.class.getSimpleName());
@@ -23,7 +22,7 @@ public class StringReader2Test {
 
 	@BeforeAll
 	public static void setup() throws IOException {
-		tempdir = new TempDir(InFileTest.class.getSimpleName(), LOGGER);
+		tempdir = new TempDir(StringReader2Test	.class.getSimpleName(), LOGGER);
 	}
 
 	@AfterAll

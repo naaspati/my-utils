@@ -9,13 +9,13 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.NoSuchElementException;
 
-import sam.io.BufferConsumer;
+import sam.io.HasBuffer;
 import sam.io.IOUtils;
 import sam.myutils.Checker;
 import sam.myutils.ThrowException;
 
 public class WriterImpl extends Writer {
-	private final BufferConsumer consumer;
+	private final WritableByteChannel target;
 	private final ByteBuffer buffer;
 	private final CharBuffer chars;
 	private final boolean synced;
@@ -23,23 +23,17 @@ public class WriterImpl extends Writer {
 	private final CharsetEncoder encoder;
 	private volatile boolean flushed = true;
 
-	public WriterImpl(WritableByteChannel target, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
-		this(b -> IOUtils.write(b, target, false), buffer, chars, syncronized, encoder);
-	}
-	public WriterImpl(BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
-		Checker.requireNonNull("consumer, buffer, chars, syncronized, encoder", consumer, buffer, chars, syncronized, encoder);
+	public WriterImpl(WritableByteChannel target, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
+		Checker.requireNonNull("target, buffer, chars, syncronized, encoder", target, chars, syncronized, encoder);
 
-		this.consumer = consumer;
+		this.target = target;
 		this.encoder = encoder;
-		this.buffer = buffer;
+		this.buffer = HasBuffer.buffer(target);
 		this.chars = chars;
 		this.synced = syncronized;
 		this.lock = syncronized ? new Object() : null;
 
 		encoder.reset();
-		
-		IOUtils.ensureCleared(buffer);
-		IOUtils.ensureCleared(chars);
 	}
 
 	@Override
@@ -129,10 +123,7 @@ public class WriterImpl extends Writer {
 	}
 
 	private void consume() throws IOException {
-		buffer.flip();
-		consumer.consume(buffer);
-		if(!buffer.hasRemaining())
-			throw new IOException("buffer not consumed");
+		IOUtils.write(buffer, target, true);
 	}
 	@Override
 	public void flush() throws IOException {
@@ -162,5 +153,6 @@ public class WriterImpl extends Writer {
 	@Override
 	public void close() throws IOException {
 		flush();
+		target.close();
 	}
 };

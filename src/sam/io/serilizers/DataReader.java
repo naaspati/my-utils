@@ -182,7 +182,7 @@ public class DataReader implements AutoCloseable {
 		System.out.println(buf2.remaining());
 		System.out.println(Arrays.toString(Arrays.copyOf(buf2.array(), buf.remaining())));
 		
-		StringIOUtils.read(supplier, sink, decoder, chars);
+		//FIXME StringIOUtils.read(supplier, sink, decoder, chars);
 		return sink;
 	}
 	

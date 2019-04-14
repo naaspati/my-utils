@@ -4,7 +4,6 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
-import static sam.io.IOUtils.ensureCleared;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -16,8 +15,8 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import sam.io.BufferConsumer;
 import sam.io.IOConstants;
+import sam.io.WritableByteChannelCustom;
 
 
 public class StringWriter2 {
@@ -49,8 +48,7 @@ public class StringWriter2 {
 	}
 
 	public void write(CharSequence data, WritableByteChannel target) throws IOException {
-		ensureCleared(buffer);
-		StringIOUtils.write(BufferConsumer.of(target, false), data, encoder, buffer);
+		StringIOUtils.write(WritableByteChannelCustom.of(target, buffer), data, encoder);
 
 		if(buffer != null)
 			buffer.clear();

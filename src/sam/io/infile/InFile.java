@@ -3,6 +3,7 @@ package sam.io.infile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.util.ConcurrentModificationException;
@@ -11,8 +12,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import sam.functions.IOExceptionSupplier;
-import sam.io.BufferConsumer;
-import sam.io.BufferSupplier;
 
 
 /*
@@ -33,7 +32,7 @@ public class InFile implements AutoCloseable {
 	}
 
 	
-	public DataMeta replace(DataMeta d, BufferSupplier buffers) throws IOException {
+	public DataMeta replace(DataMeta d, ReadableByteChannel buffers) throws IOException {
 		return wrap(() -> file.replace(d, buffers));
 	}
 	public Path getPath() {
@@ -64,15 +63,15 @@ public class InFile implements AutoCloseable {
 	public DataMeta write(ByteBuffer buffer) throws IOException {
 		return wrap(() -> file.write2(buffer));
 	}
-	public DataMeta write(BufferSupplier buffers) throws IOException {
+	public DataMeta write(ReadableByteChannel buffers) throws IOException {
 		return wrap(() -> file.write(buffers));
 	}
 	public ByteBuffer read(DataMeta meta, ByteBuffer buffer) throws IOException {
 		return wrap(() -> file.read(meta, buffer));
 	}
-	public void read(DataMeta meta, ByteBuffer buffer, BufferConsumer bufferConsumer) throws IOException {
+	public void read(DataMeta meta, WritableByteChannel bufferConsumer) throws IOException {
 		wrap(() -> {
-			file.read(meta, buffer, bufferConsumer);
+			file.read(meta, bufferConsumer);
 			return null;
 		});
 	}
@@ -94,7 +93,11 @@ public class InFile implements AutoCloseable {
 	}
 	
 	int read(ByteBuffer buffer, long pos, int size, boolean flip) throws IOException {
-		return wrap(() -> file.read(buffer, pos, size, flip));
+		return wrap(() -> {
+			int n = file.read(buffer, pos, size);
+			buffer.flip();
+			return n;
+		});
 	}
 	public void close() throws IOException {
 		if(closed.get())
@@ -110,11 +113,11 @@ public class InFile implements AutoCloseable {
 		});
 	}
 	
-	public BufferSupplier supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
+	public ReadableByteChannel supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
 		return file.supplier(meta, buffer);
 	}
-	public void writeTo(DataMeta dm, BufferConsumer consumer, ByteBuffer buffer) throws IOException {
-		file.writeTo(dm, consumer, buffer);
+	public void writeTo(DataMeta dm, WritableByteChannel consumer) throws IOException {
+		file.writeTo(dm, consumer);
 	}
 	
 }

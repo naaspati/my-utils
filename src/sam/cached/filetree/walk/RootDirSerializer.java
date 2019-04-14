@@ -16,9 +16,9 @@ import java.util.Objects;
 
 import sam.collection.MappedIterator;
 import sam.functions.IOExceptionConsumer;
-import sam.io.BufferConsumer;
-import sam.io.BufferSupplier;
 import sam.io.IOUtils;
+import sam.io.ReadableByteChannelCustom;
+import sam.io.WritableByteChannelCustom;
 import sam.io.serilizers.StringIOUtils;
 import sam.nopkg.Resources;
 import sam.reference.WeakAndLazy;
@@ -104,10 +104,10 @@ public class RootDirSerializer {
 
 				IOUtils.write(buf, fc, true);
 
-				StringIOUtils.writeJoining(new MappedIterator<>(dirs.iterator(), d -> d.name), "\n", BufferConsumer.of(fc, false), buf, r.chars(), r.encoder());
+				StringIOUtils.writeJoining(new MappedIterator<>(dirs.iterator(), d -> d.name), "\n", WritableByteChannelCustom.of(fc, buf), r.chars(), r.encoder());
 				buf.clear();
 				r.chars().clear();
-				StringIOUtils.writeJoining(new MappedIterator<>(files.iterator(), d -> d.name), "\n", BufferConsumer.of(fc, false), buf, r.chars(), r.encoder());
+				StringIOUtils.writeJoining(new MappedIterator<>(files.iterator(), d -> d.name), "\n", WritableByteChannelCustom.of(fc, buf), r.chars(), r.encoder());
 			} finally {
 				if(files != null)
 					files.clear();
@@ -220,7 +220,7 @@ public class RootDirSerializer {
 
 				sb.setLength(0);
 				IOUtils.compactOrClear(buf);
-				StringIOUtils.collect(BufferSupplier.of(fc, buf), '\n', collector, r.decoder(), r.chars(), sb);
+				StringIOUtils.collect(ReadableByteChannelCustom.of(fc, buf), '\n', collector, r.decoder(), r.chars(), sb);
 
 				return (RootDir) dirs[0];
 			}

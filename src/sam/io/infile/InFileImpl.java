@@ -5,10 +5,10 @@ import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,10 +23,10 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import sam.io.BufferConsumer;
-import sam.io.BufferSupplier;
+import sam.io.HasBuffer;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
+import sam.io.ReadableByteChannelCustom;
 import sam.logging.Logger;
 import sam.myutils.Checker;
 
@@ -76,14 +76,12 @@ class InFileImpl implements AutoCloseable {
 	public long acutualSize() throws IOException {
 		return file.size();
 	}
-	int read(ByteBuffer buffer, long pos, int size, boolean flip) throws IOException {
+	int read(ByteBuffer buffer, long pos, int size) throws IOException {
 		buffer.limit(buffer.position() + Math.min(buffer.remaining(), size));
-		return read(buffer, pos, flip);
+		return read(buffer, pos);
 	}
-	int read(ByteBuffer buffer, long pos, boolean flip) throws IOException {
+	int read(ByteBuffer buffer, long pos) throws IOException {
 		int n = file.read(buffer, pos);
-		if(flip)
-			buffer.flip();
 
 		if(DEBUG_ENABLED)
 			LOGGER.debug("READ: pos: {}, size: {}", pos, buffer.limit());
@@ -122,7 +120,7 @@ class InFileImpl implements AutoCloseable {
 	/**
 	 *  write every buffer supplied by buffers, until buffers returns null (end of input)
 	 */
-	public DataMeta write(BufferSupplier buffers) throws IOException {
+	public DataMeta write(ReadableByteChannel buffers) throws IOException {
 		long pos = position();
 		int size = write2(buffers);
 
@@ -155,35 +153,31 @@ class InFileImpl implements AutoCloseable {
 		return dm;
 	}
 
-	public DataMeta replace(DataMeta d, BufferSupplier buffers) throws IOException {
+	public DataMeta replace(DataMeta d, ReadableByteChannel src) throws IOException {
 		Objects.requireNonNull(d);
-		Objects.requireNonNull(buffers);
+		Objects.requireNonNull(src);
 
 		long pos = 0;
-		int loops = 0;
 
-		while(true) {
-			loops++;
-			ByteBuffer buffer = buffers.next();
-			if(buffer == null && buffers.isEndOfInput())
-				break;
+		ByteBuffer buf = HasBuffer.buffer(src, d.size);
 
-			if(!buffer.hasRemaining()) { 
-				LOGGER.debug("EMPTY buffer return by buffers");
-				buffer.clear();
-			} else {
-				if(buffer.remaining() + pos > d.size + d.position)
-					throw new IOException("new size ("+(buffer.remaining() + pos - d.position)+"), exceeds old size ("+d.size+")");
+		int read = IOUtils.read(buf, false, src);
 
-				pos += IOUtils.write(buffer, pos, file, false);
+		if(!buf.hasRemaining()) { 
+			LOGGER.debug("EMPTY buffer return by buffers");
+			buf.clear();
+		} else {
+			while(read != -1) {
+				if(buf.remaining() + pos > d.size + d.position)
+					throw new IOException("new size ("+(buf.remaining() + pos - d.position)+"), exceeds old size ("+d.size+")");
+
+				pos += IOUtils.write(buf, pos, file, false);
+				read = IOUtils.read(buf, false, src);
 			}
-
-			if(buffers.isEndOfInput())
-				break;
 		}
 
 		DataMeta d2 = new DataMeta(d.position, (int) (pos - d.position));
-		LOGGER.debug("REPLACED: {} -> {}, loops: {}", d, d2, loops);
+		LOGGER.debug("REPLACED: {} -> {}", d, d2);
 
 		return d2;
 	}
@@ -191,32 +185,25 @@ class InFileImpl implements AutoCloseable {
 	/**
 	 *  write every buffer supplied by buffers, until buffers returns null (end of input)
 	 */
-	private int write2(BufferSupplier buffers) throws IOException {
+	private int write2(ReadableByteChannel src) throws IOException {
 		int size = 0;
 		boolean success = false;
 
 		mod++;
 
 		try {
-			int loops = 0;
+			ByteBuffer buf = HasBuffer.buffer(src);
 
-			while(true) {
-				ByteBuffer buffer = buffers.next();
-				if(buffer == null && buffers.isEndOfInput())
-					break;
-
-				if(!buffer.hasRemaining()) { 
+			while(IOUtils.read(buf, false, src) != -1) {
+				if(!buf.hasRemaining()) { 
 					LOGGER.debug("EMPTY buffer return by buffers");
-					buffer.clear();
+					buf.clear();
 				} else {
-					size += IOUtils.write(buffer, file, false);
+					size += IOUtils.write(buf, file, true);
 				}
-
-				if(buffers.isEndOfInput())
-					break;
 			}
 
-			LOGGER.debug("WRITTEN: {} bytes, loops: {}", size, loops);
+			LOGGER.debug("WRITTEN: {} bytes", size);
 			success = true;
 			position.addAndGet(size);
 			return size;
@@ -244,7 +231,7 @@ class InFileImpl implements AutoCloseable {
 		buffer.clear();
 		buffer.limit(meta.size);
 
-		while(buffer.hasRemaining() && read(buffer, meta.position + buffer.position(), false) != -1) {
+		while(buffer.hasRemaining() && read(buffer, meta.position + buffer.position()) != -1) {
 		}
 
 		if(buffer.hasRemaining()) 
@@ -257,39 +244,31 @@ class InFileImpl implements AutoCloseable {
 
 	}
 
-	public void read(DataMeta meta, ByteBuffer buffer, BufferConsumer bufferConsumer) throws IOException {
+	public void read(DataMeta meta, WritableByteChannel target) throws IOException {
 		int size = meta.size;
 		if(size == 0)
-			bufferConsumer.consume(buffer == null ? IOConstants.EMPTY_BUFFER : buffer);
+			target.write(IOConstants.EMPTY_BUFFER);
 		else {
 			verifyDataMeta(meta);
-			if(buffer == null) {
-				buffer = ByteBuffer.allocate(Math.min(size, DEFAULT_BUFFER_SIZE));
-				LOGGER.debug("Buffer created capacity: {}", buffer.capacity());
-			}
+			ByteBuffer buf = HasBuffer.buffer(target, size);
 
-			int loops = 0;
 			long pos = meta.position;
 
 			while(size > 0) {
-				loops++;
-				int n = read(buffer, pos, size, true);
+				int n = read(buf, pos, size);
 				if(n == -1)
 					throw new IOException("all bytes not found, remaining: "+size);
 
 				pos += n;
 				size -= n;
 
-				bufferConsumer.consume(buffer);
-
-				if(size > 0 && !buffer.hasRemaining())
-					throw new IOException("buffer not cosumed");
+				IOUtils.write(buf, target, true);
 			}
 
 			if(size != 0)
 				throw new IOException("size("+size+") != 0");
 
-			LOGGER.debug("READ bytes: {}, loops: {}", meta.size, loops);
+			LOGGER.debug("READ bytes: {}", meta.size);
 		}
 	}
 
@@ -446,46 +425,32 @@ class InFileImpl implements AutoCloseable {
 		file.close();
 	}
 
-	public BufferSupplier supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
+	public ReadableByteChannel supplier(DataMeta meta, ByteBuffer buffer) throws IOException {
 		Objects.requireNonNull(meta);
 		verifyDataMeta(meta);
 
 		if(meta.size == 0)
-			return BufferSupplier.EMPTY;
+			return ReadableByteChannelCustom.EMPTY;
 
 		if(buffer == null) 
-			buffer = ByteBuffer.allocate(Math.min(meta.size, BufferSupplier.DEFAULT_BUFFER_SIZE));
+			buffer = ByteBuffer.allocate(Math.min(meta.size, HasBuffer.DEFAULT_BUFFER_SIZE));
 
 		ByteBuffer buf = buffer;
 		int mod = this.mod;
 
-		return new BufferSupplier() {
+		return new ReadableByteChannelCustom.ReadableByteChannelCustom2(null, meta.size, buffer) {
 			int size = meta.size;
 			long pos = meta.position;
 
-			@Override 
-			public long size() throws IOException {
-				checkMod(mod);
-				return meta.size; 
-			}
-
 			@Override
-			public ByteBuffer next() throws IOException {
-				ensureBufferNotFull(buf);
-				
+			public int read(ByteBuffer dst) throws IOException {
 				checkMod(mod);
-				int n = read(buf, pos, size, true);
+				int n = InFileImpl.this.read(buf, pos, size);
 
 				size -= n;
 				pos  += n;
 
-				return buf;
-			}
-			
-			@Override
-			public boolean isEndOfInput() throws IOException {
-				checkMod(mod);
-				return size == 0;
+				return n;
 			}
 		};
 	}
@@ -493,30 +458,29 @@ class InFileImpl implements AutoCloseable {
 		if(this.mod != mod2)
 			throw new ConcurrentModificationException();
 	}
-	
-	public void writeTo(DataMeta dm, BufferConsumer consumer, ByteBuffer buffer) throws IOException {
-		Checker.requireNonNull("dm, consumer", dm, consumer);
+
+	public void writeTo(DataMeta dm, WritableByteChannel target) throws IOException {
+		Checker.requireNonNull("dm, target", dm, target);
+		
 		if(dm.size == 0)
 			return;
-		
-		if(buffer == null)
-			buffer = ByteBuffer.allocate(Math.min(DEFAULT_BUFFER_SIZE, dm.size));
-		
+
 		int modm = mod;
 		int size = dm.size;
 		int pos = 0;
-		
+		ByteBuffer buffer = HasBuffer.buffer(target, dm.size);
+
 		while(size > 0) {
-			IOUtils.ensureCleared(buffer);
-			int n = read(buffer, pos, size, true);
+			checkMod(modm);
+			int n = read(buffer, pos, size);
 			if(n != -1) {
 				size -= n;
 				pos  += n;
 			}
-			consumer.consume(buffer);
 			checkMod(modm);
+			IOUtils.write(buffer, target, true);
 		}
-		
+
 		checkMod(modm);
 	}
 }

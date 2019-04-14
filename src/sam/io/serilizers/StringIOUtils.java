@@ -1,10 +1,14 @@
 package sam.io.serilizers;
 
-import static sam.io.BufferSupplier.DEFAULT_BUFFER_SIZE;
+import static sam.io.HasBuffer.DEFAULT_BUFFER_SIZE;
+import static sam.io.HasBuffer.buffer;
+import static sam.io.IOConstants.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
@@ -13,35 +17,25 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import sam.functions.IOExceptionConsumer;
-import sam.io.BufferConsumer;
-import sam.io.BufferSupplier;
+import sam.io.HasBuffer;
+import sam.io.HasSize;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
+import sam.io.ReadableByteChannelCustom;
 import sam.myutils.Checker;
 
 public final class StringIOUtils {
-
-	public static void write(BufferConsumer consumer, CharSequence s) throws IOException {
-		write(consumer, s, (ByteBuffer)null);
-	}
-	public static void write(BufferConsumer consumer, CharSequence s, ByteBuffer buffer) throws IOException {
-		write(consumer, s, null, buffer);
-	}
-	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder) throws IOException {
-		write(consumer, s, encoder, null);
-	}
-	public static <E extends CharSequence> void writeJoining(Iterator<E> itr, CharSequence separator, BufferConsumer consumer, ByteBuffer buffer, CharBuffer chars, CharsetEncoder encoder) throws IOException {
-		Checker.requireNonNull("itr, separator, consumer, buffer, chars, encoder", itr, separator, consumer);
+	public static <E extends CharSequence> void writeJoining(Iterator<E> itr, CharSequence separator, WritableByteChannel target, CharBuffer chars, CharsetEncoder encoder) throws IOException {
+		Checker.requireNonNull("itr, separator, target", itr, separator, target);
 
 		chars = orElse(chars, () -> CharBuffer.allocate(100));  
 		encoder = orElse(encoder, () -> IOConstants.newEncoder());
-		buffer = orElse(buffer, () -> ByteBuffer.allocate(DEFAULT_BUFFER_SIZE));
 		encoder.reset();
 
 		if(!itr.hasNext())
 			return;
 
-		try(WriterImpl w = new WriterImpl(consumer, buffer, chars, false, encoder)) {
+		try(WriterImpl w = new WriterImpl(target, chars, false, encoder)) {
 			char csep = ' ';
 
 			if(separator.length() == 1) {
@@ -65,8 +59,12 @@ public final class StringIOUtils {
 			}
 		}
 	}
+	
+	public static void write(WritableByteChannel target, CharSequence s) throws IOException {
+		write(target, s, newEncoder());
+	}
 
-	public static void write(BufferConsumer consumer, CharSequence s, CharsetEncoder encoder, ByteBuffer buffer) throws IOException {
+	public static void write(WritableByteChannel target, CharSequence s, CharsetEncoder encoder) throws IOException {
 		Objects.requireNonNull(s);
 
 		if(s.length() == 0) return;
@@ -74,7 +72,7 @@ public final class StringIOUtils {
 		CharBuffer chars = s instanceof CharBuffer ? (CharBuffer) s : CharBuffer.wrap(s);
 		encoder = orElse(encoder, () -> IOConstants.newEncoder());
 		CharsetEncoder e = encoder;
-		buffer = orElse(buffer, () -> ByteBuffer.allocate((int)Math.min(e.averageBytesPerChar()*chars.length() + 5, DEFAULT_BUFFER_SIZE)));
+		ByteBuffer buffer = buffer(target, (int)(e.averageBytesPerChar()*chars.length() + 5));
 		encoder.reset();
 
 		while(chars.hasRemaining()) {
@@ -83,7 +81,7 @@ public final class StringIOUtils {
 			if(c.isUnderflow()) {
 				while(true) {
 					c = encoder.flush(buffer);
-					consume(consumer, buffer);
+					consume(target, buffer);
 
 					if(c.isUnderflow()) 
 						break;
@@ -92,43 +90,30 @@ public final class StringIOUtils {
 				}
 				break;
 			} else if(c.isOverflow())
-				consume(consumer, buffer);
+				consume(target, buffer);
 			else
 				c.throwException();
 		}
 
-		consumer.onComplete();
+		target.close();
 	}
 
-	private static void consume(BufferConsumer consumer, ByteBuffer buffer) throws IOException {
-		buffer.flip();
-		consumer.consume(buffer);
-		if(!buffer.hasRemaining())
-			throw new IOException("buffer not consumed");
+	private static void consume(WritableByteChannel target, ByteBuffer buffer) throws IOException {
+		IOUtils.write(buffer, target, true);
 	}
-	public static StringBuilder read(BufferSupplier filler) throws IOException {
+	public static StringBuilder read(ReadableByteChannel filler) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		read(filler, sb);
 		return sb;
 	}
-
-	public static void read(ByteBuffer buf, Appendable sink) throws IOException {
-		read(buf, sink, null);
+	public static void read(ReadableByteChannel src, Appendable sink) throws IOException {
+		read(src, sink, null);
 	}
-	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder) throws IOException {
-		read(buf, sink, decoder);
-	}
-	public static void read(ByteBuffer buf, Appendable sink, CharsetDecoder decoder, CharBuffer chars) throws IOException {
-		read(BufferSupplier.of(buf), sink, decoder, chars);
-	}
-	public static void read(BufferSupplier filler, Appendable sink) throws IOException {
-		read(filler, sink, null);
-	}
-	public static void read(BufferSupplier filler, Appendable sink, CharsetDecoder decoder) throws IOException {
-		read(filler, sink, decoder, null);
+	public static void read(ReadableByteChannel src, Appendable sink, CharsetDecoder decoder) throws IOException {
+		read(src, sink, decoder, null);
 	}
 
-	public static abstract class ReadConfig extends BufferSupplier {
+	public static abstract class ReadConfig implements ReadableByteChannelCustom {
 		protected CharsetDecoder decoder; 
 		protected CharBuffer charsBuffer;
 		int charsCount;
@@ -151,41 +136,55 @@ public final class StringIOUtils {
 		public CharBuffer charsBuffer() {
 			if(this.charsBuffer == null)
 				this.charsBuffer = CharBuffer.allocate(charsCount > 100 || charsCount < 10 ? 100 : charsCount);
-			
+
 			return this.charsBuffer;
 		}
 		public abstract void consume(CharBuffer chars) throws IOException;
 	}
 
 	private static abstract class DefaultReadConfig extends ReadConfig {
-		private final BufferSupplier supplier;
+		private final ReadableByteChannel src;
 
-		public DefaultReadConfig(BufferSupplier supplier, CharsetDecoder decoder, CharBuffer charBuffer) {
-			this.supplier = supplier;
+		public DefaultReadConfig(ReadableByteChannel src, CharsetDecoder decoder, CharBuffer charBuffer) {
+			this.src = src;
 			this.decoder = decoder;
 			this.charsBuffer = charBuffer;
 		}
 
 		@Override
-		public ByteBuffer next() throws IOException {
-			return supplier.next();
+		public boolean isOpen() {
+			return src.isOpen();
 		}
 		@Override
-		public boolean isEndOfInput() throws IOException {
-			return supplier.isEndOfInput();
+		public int read(ByteBuffer dst) throws IOException {
+			return src.read(dst);
+		}
+		@Override
+		public void close() throws IOException {
+			src.close();
+		}
+		@Override
+		public ByteBuffer buffer() {
+			if(src instanceof HasBuffer)
+				return ((HasBuffer) src).buffer();
+			else
+				return null;
+		}
+		@Override
+		public long size() throws IOException {
+			if(src instanceof HasSize)
+				return ((HasSize) src).size();
+			else 
+				return  -1;
 		}
 
-		@Override
-		public void onComplete() {
-			supplier.onComplete();
-		}
 	}
 
-	public static void read(BufferSupplier supplier, IOExceptionConsumer<CharBuffer> resultConsumer, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
-		Objects.requireNonNull(supplier);
+	public static void read(ReadableByteChannel src, IOExceptionConsumer<CharBuffer> resultConsumer, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
+		Objects.requireNonNull(src);
 		Objects.requireNonNull(resultConsumer);
 
-		read(new DefaultReadConfig(supplier, decoder, charsBuffer) {
+		read(new DefaultReadConfig(src, decoder, charsBuffer) {
 			@Override
 			public void consume(CharBuffer chars) throws IOException {
 				resultConsumer.accept(chars);
@@ -193,11 +192,11 @@ public final class StringIOUtils {
 		});
 	}
 
-	public static void collect(BufferSupplier supplier, char separater, IOExceptionConsumer<String> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
+	public static void collect(ReadableByteChannel supplier, char separater, IOExceptionConsumer<String> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
 		IOExceptionConsumer<StringBuilder> col = sb -> collector.accept(sb.length() == 0 ? "" : sb.toString());
 		collect0(supplier, separater, col, decoder, charsBuffer, sbBuffer);
 	}
-	public static void collect0(BufferSupplier supplier, char separater, IOExceptionConsumer<StringBuilder> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
+	public static void collect0(ReadableByteChannel supplier, char separater, IOExceptionConsumer<StringBuilder> collector, CharsetDecoder decoder, CharBuffer charsBuffer, StringBuilder sbBuffer) throws IOException {
 		StringBuilder sb = orElse(sbBuffer, StringBuilder::new);
 
 		IOExceptionConsumer<CharBuffer> eater = new IOExceptionConsumer<CharBuffer>() {
@@ -224,7 +223,7 @@ public final class StringIOUtils {
 			collector.accept(sb);
 	}
 
-	public static void read(BufferSupplier supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
+	public static void read(ReadableByteChannel supplier, final Appendable sink, CharsetDecoder decoder, CharBuffer charsBuffer) throws IOException {
 		Objects.requireNonNull(supplier);
 		Objects.requireNonNull(sink);
 
@@ -248,11 +247,16 @@ public final class StringIOUtils {
 	public static void read(ReadConfig reader) throws IOException {
 		Objects.requireNonNull(reader);
 
-		if(reader.isEmpty())
-			return;
-
-		long n = reader.size(); 
+		final long n = reader.size(); 
 		int size = n < 0 ? DEFAULT_BUFFER_SIZE : (int)n;
+
+		ByteBuffer buf = buffer(reader, size);
+
+		int read = reader.read(buf);
+		buf.flip();
+
+		if(!buf.hasRemaining())
+			return;
 
 		CharsetDecoder decoder = Objects.requireNonNull(reader.decoder());
 		decoder.reset();
@@ -266,14 +270,10 @@ public final class StringIOUtils {
 		reader.postStart();
 
 		while(true) {
-			ByteBuffer buffer = reader.next();
-			if(buffer == null)
-				buffer = IOConstants.EMPTY_BUFFER;
-
-			boolean endOfInput = reader.isEndOfInput();
+			boolean endOfInput = read == -1;
 
 			while(true) {
-				CoderResult c = decoder.decode(buffer, charsBuffer, endOfInput);
+				CoderResult c = decoder.decode(buf, charsBuffer, endOfInput);
 
 				if(c.isUnderflow())
 					break;
@@ -284,7 +284,7 @@ public final class StringIOUtils {
 			}
 
 			if(endOfInput) {
-				if(buffer.hasRemaining())
+				if(buf.hasRemaining())
 					throw new IOException("not full converted");
 
 				while(true) {
@@ -299,11 +299,13 @@ public final class StringIOUtils {
 				}
 				break;
 			}
-			IOUtils.compactOrClear(buffer);
+
+			IOUtils.compactOrClear(buf);
+			read = IOUtils.read(buf, false, reader);
 		}
 
 		consume(charsBuffer, reader);
-		reader.onComplete();
+		reader.close();
 	}
 	private static <E> E orElse(E e, Supplier<E> defaultValue) {
 		if(e == null) {

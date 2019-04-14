@@ -12,6 +12,7 @@ import java.util.Objects;
 import sam.logging.Logger;
 import sam.myutils.Checker;
 
+@Deprecated
 public abstract class BufferSupplier {
 	private static final Logger LOGGER = Logger.getLogger(BufferSupplier.class);
 

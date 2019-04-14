@@ -2,6 +2,7 @@ package sam.io.serilizers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static sam.myutils.test.Utils.writeable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,12 +17,11 @@ import com.thedeanda.lorem.LoremIpsum;
 
 import sam.functions.IOExceptionConsumer;
 import sam.io.IOConstants;
-
 public class WriterImplTest {
 
 	@Test
 	public void test1() throws IOException {
-		try(WriterImpl w = new WriterImpl(b -> fail(), ByteBuffer.allocate(100), CharBuffer.allocate(100), false, IOConstants.newEncoder())) {
+		try(WriterImpl w = new WriterImpl(writeable(b -> fail()), CharBuffer.allocate(100), false, IOConstants.newEncoder())) {
 
 		}
 
@@ -63,7 +63,7 @@ public class WriterImplTest {
 		bos.reset();
 		sb.setLength(0);
 
-		try(WriterImpl w = new WriterImpl(b -> {bos.write(b.array(), b.position(), b.remaining()); b.clear();}, ByteBuffer.allocate(100), CharBuffer.allocate(100), false, encoder)) {
+		try(WriterImpl w = new WriterImpl(writeable(b -> {bos.write(b.array(), b.position(), b.remaining()); b.clear();}, ByteBuffer.allocate(100)), CharBuffer.allocate(100), false, encoder)) {
 			for (int i = 0; i < 1000; i++) {
 				consumer.accept(w);
 			}
