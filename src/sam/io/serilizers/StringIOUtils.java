@@ -1,6 +1,6 @@
 package sam.io.serilizers;
 
-import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static sam.io.HasBuffer.DEFAULT_BUFFER_SIZE;
@@ -329,11 +329,15 @@ public final class StringIOUtils {
 		}
 	}
 
-	public static void write(StringBuilder sb, Path path) throws IOException {
+	public static void write(CharSequence sb, Path path) throws IOException {
 		try(FileChannel fc = FileChannel.open(path, WRITE, CREATE, TRUNCATE_EXISTING)) {
 			write(fc, sb);	
 		}
-		
+	}
+	public static void appendText(CharSequence sb, Path path) throws IOException {
+		try(FileChannel fc = FileChannel.open(path, WRITE, CREATE, APPEND)) {
+			write(fc, sb);	
+		}
 	}
 
 }

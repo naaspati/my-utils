@@ -64,4 +64,15 @@ public final class MangaUrlsUtils {
     public Map<String, UrlsPrefixImpl> getPrefixes() {
 		return Collections.unmodifiableMap(prefixes);
 	}
+	public static String name(String url) {
+		int n = url.lastIndexOf('/');
+
+		if(n >= 0) {
+			if(n == url.length() - 1)
+				url = url.substring(url.lastIndexOf('/', n - 1) + 1, n);
+			else
+				url = url.substring(n + 1);
+		}
+		return url;
+	}
 }

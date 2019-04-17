@@ -40,6 +40,16 @@ public final class MangaUrlsUtils {
         mangafoxBase = baseMap.get(MANGAFOX);
         mangahereBase = baseMap.get(MANGAHERE);
     }
+    
+    public String resolveWith(String url_name, String column_name) {
+    	Objects.requireNonNull(url_name);
+    	
+    	switch (column_name) {
+			case MANGAFOX: return mangafoxBase + url_name;
+			case MANGAHERE: return mangahereBase + url_name;
+			default: throw new IllegalArgumentException(column_name);
+		}
+    }
 
     private static QueryMaker qm() {
         return QueryMaker.getInstance();

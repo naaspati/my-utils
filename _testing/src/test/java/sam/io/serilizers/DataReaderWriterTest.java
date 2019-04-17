@@ -1,5 +1,9 @@
 package sam.io.serilizers;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -19,7 +23,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +34,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import sam.functions.IOExceptionConsumer;
 import sam.functions.IOExceptionFunction;
@@ -38,10 +43,6 @@ import sam.io.IOConstants;
 import sam.io.ReadableByteChannelCustom;
 @SuppressWarnings("rawtypes")
 class DataReaderWriterTest {
-	static {
-		DataReader.testing = true;
-	}
-
 	static final List<Supplier<Unit>> unitsGenrator = Collections.unmodifiableList(
 			Arrays.asList(
 					ByteUnit::new,
@@ -159,11 +160,13 @@ class DataReaderWriterTest {
 		for (int i = 0; i < 100; i++) 
 			check.accept(random_string(chars, r));	
 	}
+	
 
-	@Test
-	void stringReadTest() throws IOException {
+	@ParameterizedTest
+	@ValueSource(ints={200, 8124})
+	void stringReadTest(int buf_size) throws IOException {
 		ByteBuffer data_src_sink = ByteBuffer.allocate(10000);
-		ByteBuffer buffer2 = ByteBuffer.allocate(200);  
+		ByteBuffer buffer2 = ByteBuffer.allocate(buf_size);  
 
 		Random r = new Random();
 
@@ -192,20 +195,17 @@ class DataReaderWriterTest {
 			check.accept(StringUnit.build(r));
 	}
 
-	@Test
-	void fullTest() throws IOException {
-		fullTest(ByteBuffer.allocate(200));
-		fullTest(ByteBuffer.allocate(8 * 1024));
-	}
-
-	void fullTest(ByteBuffer buffer2) throws IOException {
+	@ParameterizedTest
+	@ValueSource(ints={200, 8124})
+	void fullTest(int buf_size) throws IOException {
+		ByteBuffer buffer2 = ByteBuffer.allocate(buf_size);
 		Path temp = Files.createTempFile("fullTest", null);
 		System.out.println(temp);
 
 		ArrayList<Unit> written = new ArrayList<>(1000);
 		int writeCount[] = {0, 0};
 
-		try(FileChannel fc = FileChannel.open(temp, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+		try(FileChannel fc = FileChannel.open(temp, WRITE, CREATE, TRUNCATE_EXISTING);
 				WritableByteChannel wbc = new WritableByteChannel() {
 
 					@Override
@@ -255,7 +255,7 @@ class DataReaderWriterTest {
 
 		int readCount[] = {0, 0};
 
-		try(FileChannel fc = FileChannel.open(temp, StandardOpenOption.READ);
+		try(FileChannel fc = FileChannel.open(temp, READ);
 				ReadableByteChannel channel = new ReadableByteChannel() {
 					@Override
 					public boolean isOpen() {

@@ -3,7 +3,7 @@ package sam.manga.mangarock;
 
 
 public interface MangarockMangaMeta {
-    String TABLE_NAME = "Manga";
+    String MANGA_TABLE_NAME = "Manga";
 
     String AUTHOR = "author";    // author 	VARCHAR
     String CATEGORIES = "categories";    // categories 	VARCHAR

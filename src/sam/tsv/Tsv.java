@@ -24,6 +24,11 @@ public class Tsv  implements Iterable<Row>, Rows, Columns {
 	void addFromBuilder(Row row){
 		rows.add(row);
 	}
+	public static Tsv parse(Path path) throws IOException {
+		try(BufferedReader b = Files.newBufferedReader(path)) {
+			return new Tsv(b);	
+		}
+	} 
 
 	final Collection<Row> rows = rowCollectionImpl();
 	final Map<String, Column> columns = new HashMap<>();

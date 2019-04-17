@@ -2,6 +2,7 @@ package sam.io.serilizers;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -111,6 +112,7 @@ public class DataReader implements AutoCloseable {
 
 	private CharBuffer _chars;
 	private StringBuilder _sb;
+	private ByteBuffer temp_buf;
 
 	private CharBuffer chars(int len) {
 		int size = Math.min(_chars == null ? Integer.MAX_VALUE : _chars.capacity(), len);
@@ -132,16 +134,8 @@ public class DataReader implements AutoCloseable {
 		}
 		return _sb;
 	}
-	
-	static boolean testing = false;
-	
-	private ByteBuffer temp_buf;
 
-	// FIXME 
 	private final Object _readUTF(CharsetDecoder decoder, Object charsBuffer, Object sink0) throws IOException {
-		if(!testing)
-			Junk.notYetImplemented();
-		
 		if(readShort() != DataWriter.STRING_MARKER)
 			throw new IOException("data doesnt represent a String");
 
@@ -161,46 +155,46 @@ public class DataReader implements AutoCloseable {
 		int remaining = readInt();
 		decoder.reset();
 		
-		if(buf.remaining() >  remaining) {
+		if(buf.capacity() > remaining) {
+			if(buf.remaining() < remaining) {
+				IOUtils.compactOrClear(buf);
+				src.read(buf);
+				buf.flip();
+			}
+			
 			ByteBuffer buf = this.buf.duplicate();
 			buf.limit(buf.position() + remaining);
 			
-			while(true) {
-				if(consume(decoder.decode(buf, chars, true), chars, sink)) {
-					while(!consume(decoder.flush(chars), chars, sink)) {}
-					break;
-				}
-			}
+			decode(buf, chars, sink, decoder);
 			this.buf.position(buf.position());
 		} else {
-			if(temp_buf == null)
-				temp_buf = ByteBuffer.allocate(Math.min(100, buf.capacity()));
+			if(temp_buf == null || temp_buf.capacity() < remaining)
+				temp_buf = ByteBuffer.allocate(remaining);
 			
 			temp_buf.clear();
+			temp_buf.limit(remaining);
+			temp_buf.put(buf);
 			
-			while(true) {
-				readIf(4);
-				
-				len = Math.min(remaining, temp_buf.remaining());
-				temp_buf.put(buf.array(), buf.position(), len);
-				buf.position(buf.position() + len);
-				remaining -= len; 
+			IOUtils.read(temp_buf, false, src);
 			
-				while(!consume(decoder.decode(buf, chars, remaining == 0), chars, sink)) {
-					System.out.println(buf.remaining());
-				}
-				if(remaining == 0) {
-					while(!consume(decoder.flush(chars), chars, sink)) {
-					}
-					break;
-				}
-				
-				IOUtils.compactOrClear(temp_buf);
+			if(temp_buf.remaining() != remaining)
+				throw new IOException("expected to read: "+remaining+", was: "+temp_buf.remaining());
+			
+			decode(temp_buf, chars, sink, decoder);
+		}
+		
+		return sink;
+	}
+
+	private void decode(ByteBuffer buf, CharBuffer chars, Appendable sink, CharsetDecoder decoder) throws IOException {
+		while(true) {
+			if(consume(decoder.decode(buf, chars, true), chars, sink)) {
+				while(!consume(decoder.flush(chars), chars, sink)) {}
+				break;
 			}
 		}
 		
 		append(chars, sink);
-		return sink;
 	}
 
 	private boolean consume(CoderResult c, CharBuffer chars, Appendable sink) throws IOException {

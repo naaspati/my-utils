@@ -1,21 +1,9 @@
-import java.nio.CharBuffer;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Random;
-import java.util.function.IntSupplier;
-
-import javax.swing.ImageIcon;
-
-import sam.collection.OneOrMany;
-import sam.io.IOConstants;
-import sam.io.IOUtils;
-import sam.nopkg.EnsureSingleton;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		System.out.println(StandardCharsets.UTF_8.newDecoder().maxCharsPerByte());
+		System.out.println(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM)));
 	}
 }

@@ -1,6 +1,6 @@
 package sam.manga.mangarock;
 
-import static sam.manga.mangarock.MangarockMangaMeta.ALIAS;
+import static sam.manga.mangarock.MangarockMangaMeta.*;
 import static sam.manga.mangarock.MangarockMangaMeta.ARTWORKS;
 import static sam.manga.mangarock.MangarockMangaMeta.AUTHOR;
 import static sam.manga.mangarock.MangarockMangaMeta.AUTHORS;
@@ -21,7 +21,6 @@ import static sam.manga.mangarock.MangarockMangaMeta.RANK;
 import static sam.manga.mangarock.MangarockMangaMeta.REMOVED;
 import static sam.manga.mangarock.MangarockMangaMeta.SOURCE_ID;
 import static sam.manga.mangarock.MangarockMangaMeta.STATUS;
-import static sam.manga.mangarock.MangarockMangaMeta.TABLE_NAME;
 import static sam.manga.mangarock.MangarockMangaMeta.THUMBNAILURL;
 import static sam.manga.mangarock.MangarockMangaMeta.TOTALCHAPTERS;
 
@@ -135,7 +134,7 @@ public class MangarockManga {
 	public String getMrsSeries(){ return this.mrs_series; }
 	public String getAlias(){ return this.alias; }
 
-	private static final String SELECT_ALL_SQL = "SELECT * FROM "+TABLE_NAME;
+	private static final String SELECT_ALL_SQL = "SELECT * FROM "+MANGA_TABLE_NAME;
 	public static List<MangarockManga> getAll(SQLiteDB db) throws SQLException{
 		return db.collectToList(SELECT_ALL_SQL, MangarockManga::new);
 	}
@@ -144,7 +143,7 @@ public class MangarockManga {
 		return db.findFirst(FIND_BY_ID+id, MangarockManga::new);
 	}
 
-	private static final String INSERT_SQL = "INSERT INTO " + TABLE_NAME+"("+String.join(",", AUTHOR,CATEGORIES,THUMBNAILURL,DESCRIPTION,SOURCE_ID,NAME,TOTALCHAPTERS,LASTUPDATE,LAST_VIEW,ID,DIRECTION,REMOVED,STATUS,RANK,OID,GENRES,EXTRA,COVER,CHARACTERS,AUTHORS,ARTWORKS,MRS_SERIES,ALIAS)+") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	private static final String INSERT_SQL = "INSERT INTO " + MANGA_TABLE_NAME+"("+String.join(",", AUTHOR,CATEGORIES,THUMBNAILURL,DESCRIPTION,SOURCE_ID,NAME,TOTALCHAPTERS,LASTUPDATE,LAST_VIEW,ID,DIRECTION,REMOVED,STATUS,RANK,OID,GENRES,EXTRA,COVER,CHARACTERS,AUTHORS,ARTWORKS,MRS_SERIES,ALIAS)+") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static final int insert(Iterable<MangarockManga> data, SQLiteDB db) throws SQLException {
 		Iterator<MangarockManga> itr = data.iterator();  
