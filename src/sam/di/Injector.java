@@ -45,7 +45,7 @@ public interface Injector {
 	
 	public static List<Object> linesToObject(InputStream is) throws ClassNotFoundException, IOException, InstantiationException, IllegalAccessException {
 		if(is == null)
-			Collections.emptyList();
+			return Collections.emptyList();
 		
 		List<Object> list = new ArrayList<>();
 		
