@@ -1,17 +1,22 @@
 package sam.io.serilizers;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 import static sam.io.HasBuffer.DEFAULT_BUFFER_SIZE;
 import static sam.io.HasBuffer.buffer;
-import static sam.io.IOConstants.*;
+import static sam.io.IOConstants.newEncoder;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -59,7 +64,7 @@ public final class StringIOUtils {
 			}
 		}
 	}
-	
+
 	public static void write(WritableByteChannel target, CharSequence s) throws IOException {
 		write(target, s, newEncoder());
 	}
@@ -76,30 +81,24 @@ public final class StringIOUtils {
 		encoder.reset();
 
 		while(chars.hasRemaining()) {
-			CoderResult c = encoder.encode(chars, buffer, true);
-
-			if(c.isUnderflow()) {
-				while(true) {
-					c = encoder.flush(buffer);
-					consume(target, buffer);
-
-					if(c.isUnderflow()) 
-						break;
-					else if(!c.isOverflow())
-						c.throwException();
-				}
+			if(consume(encoder.encode(chars, buffer, true), target, buffer)) {
+				while(!consume(encoder.flush(buffer), target, buffer)) { }
 				break;
-			} else if(c.isOverflow())
-				consume(target, buffer);
-			else
-				c.throwException();
+			}
 		}
 
 		target.close();
 	}
 
-	private static void consume(WritableByteChannel target, ByteBuffer buffer) throws IOException {
-		IOUtils.write(buffer, target, true);
+	private static boolean consume(CoderResult c, WritableByteChannel target, ByteBuffer buffer) throws IOException {
+		if(c.isUnderflow()) 
+			return true;
+		else if(c.isOverflow()) 
+			IOUtils.write(buffer, target, true);	
+		else
+			c.throwException();
+
+		return false;
 	}
 	public static StringBuilder read(ReadableByteChannel filler) throws IOException {
 		StringBuilder sb = new StringBuilder();
@@ -328,6 +327,13 @@ public final class StringIOUtils {
 			StringBuffer sb = (StringBuffer) sink; 
 			sb.ensureCapacity(sb.length() + len + 10);
 		}
+	}
+
+	public static void write(StringBuilder sb, Path path) throws IOException {
+		try(FileChannel fc = FileChannel.open(path, WRITE, CREATE, TRUNCATE_EXISTING)) {
+			write(fc, sb);	
+		}
+		
 	}
 
 }

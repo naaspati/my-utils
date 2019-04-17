@@ -40,14 +40,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import sam.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import sam.collection.Iterables;
 import sam.io.fileutils.FileNameSanitizer;
-import sam.io.serilizers.StringWriter2;
+import sam.io.serilizers.StringIOUtils;
+import sam.logging.Logger;
 import sam.manga.samrock.Renamer;
 import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MinimalManga;
@@ -316,7 +316,7 @@ public class ChapterUtils {
 
 			Path path = Paths.get(FileNameSanitizer.sanitize(MyUtilsThread.stackLocation().toString())+".dump");
 			try {
-				new StringWriter2().write(sb, path);
+				StringIOUtils.write(sb, path);
 				LOGGER.info("created: "+path.toAbsolutePath());
 			} catch (IOException e) {
 				LOGGER.error("failed to write: {}", path.toAbsolutePath(), e);

@@ -3,8 +3,6 @@ setlocal
 
 if [%1]==[] (
   echo no test class specified
-  echo running all
-  gradle test
   goto:eof
 )
 

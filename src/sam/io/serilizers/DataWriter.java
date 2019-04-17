@@ -7,6 +7,8 @@ import java.nio.CharBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import sam.io.IOConstants;
@@ -15,17 +17,17 @@ import sam.io.IOUtils;
 public class DataWriter implements AutoCloseable {
 	static final short STRING_MARKER = 8115;
 
-	private final WritableByteChannel sink;
+	private final WritableByteChannel target;
 	private final ByteBuffer buf;
 
 	public DataWriter(WritableByteChannel sink, ByteBuffer buffer) throws IOException {
-		this.sink = Objects.requireNonNull(sink);
+		this.target = Objects.requireNonNull(sink);
 		this.buf = buffer;
 	}
 
 	private void writeIf(int requiredRemaining) throws IOException {
 		if(buf.remaining() < requiredRemaining) 
-			IOUtils.write(buf, sink, true);
+			IOUtils.write(buf, target, true);
 	}
 
 	public final void writeBoolean(boolean b) throws IOException {
@@ -90,59 +92,80 @@ public class DataWriter implements AutoCloseable {
 				return;
 
 			int bytes = (int) (encoder.averageBytesPerChar() * value.length()) + 14;
+			if(buf.remaining() < bytes)
+				IOUtils.write(buf, target, true);
 			
-			if(buf.capacity() < bytes + 4)
-				writeNewBuf(-1, value, encoder);
-			else {
-				if(buf.remaining() < bytes + 4)
-					IOUtils.write(buf, sink, true);
-				
-				int pos = buf.position();
-				buf.putInt(0);
-				
-				CharBuffer chars = CharBuffer.wrap(value);
-				encoder.reset();
-				
-				while(chars.hasRemaining()) {
-					CoderResult c = encoder.encode(chars, buf, true);
-					
-					if(c.isUnderflow()) {
-						c = encoder.flush(buf);
-						
-						if(c.isOverflow()) {
-							writeNewBuf(pos, value, encoder);
-							return;
-						} else if(!c.isUnderflow())
-							c.throwException();
-						
-						break;
-					} else if(c.isOverflow()) {
-						writeNewBuf(pos, value, encoder);
-						return;
-					} else {
-						c.throwException();
-					} 
+			int pos = buf.position();
+			buf.putInt(0);
+			CharBuffer chars = CharBuffer.wrap(value);
+			
+			List<ByteBuffer> list = null;
+			ByteBuffer buffer = this.buf;
+			final int def_size = Math.min(100, this.buf.capacity());
+			final float max = encoder.maxBytesPerChar();
+			
+			while(chars.hasRemaining()) {
+				if(buffer.remaining() < max) {
+					buffer = ByteBuffer.allocate(bytes <= 0 ? def_size : Math.min(Math.min(bytes + 10, 1024), this.buf.capacity()));
+					if(list == null)
+						list = new ArrayList<>();
+					list.add(buffer);
 				}
-				buf.putInt(pos, buf.position() - pos - 4);
+				
+				int n = buffer.position();
+				CoderResult c = encoder.encode(chars, buffer, true);
+				bytes = bytes - buffer.position() - n;
+				
+				if(c.isUnderflow()) {
+					while(true) {
+						c = encoder.flush(buffer);
+						
+						if(c.isUnderflow())
+							break;
+						else if(c.isOverflow()) {
+							buffer = ByteBuffer.allocate(def_size);
+							if(list == null)
+								list = new ArrayList<>();
+							list.add(buffer);
+						} else 
+							c.throwException();
+					}
+					break;
+				} else if(!c.isOverflow())
+					c.throwException();
+			}
+			
+			int size = this.buf.position() - pos - 4;
+			
+			if(buffer == this.buf) {
+				this.buf.putInt(pos, size);
+			} else {
+				int size2 = 0;
+				for (ByteBuffer b : list) {
+					b.flip();
+					size2 += b.remaining();
+				}
+				
+				this.buf.putInt(pos, size + size2);
+				IOUtils.write(this.buf, target, true);
+				
+				/*
+				 * System.out.print("list.size(): "+list.size() + ", bytes: "+(size + size2)+", ["+this.buf.remaining()+", ");
+				list.forEach(s -> System.out.print(s.remaining()+", "));
+				System.out.println("]");
+				 */
+				
+				for (ByteBuffer b : list) {
+					writeIf(b.remaining());
+					this.buf.put(b);
+				}
 			}
 		}
 	}
 
-	private void writeNewBuf(int pos, CharSequence value, CharsetEncoder encoder) throws IOException {
-		if(pos >= 0)
-			buf.position(pos);
-		
-		encoder.reset();
-		ByteBuffer buffer = encoder.encode(CharBuffer.wrap(value));
-		writeInt(buffer.remaining());
-
-		IOUtils.write(buf, sink, true);
-		IOUtils.write(buffer, sink, false);
-	}
-
 	@Override
 	public void close() throws IOException {
-		IOUtils.write(buf, sink, true);
-		sink.close();
+		IOUtils.write(buf, target, true);
+		target.close();
 	}
 }

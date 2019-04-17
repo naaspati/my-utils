@@ -4,6 +4,7 @@ import static sam.io.IOConstants.defaultBufferSize;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 import sam.logging.Logger;
 
@@ -15,22 +16,7 @@ public interface HasBuffer {
 	public ByteBuffer buffer();
 	
 	public static ByteBuffer buffer(Object w) {
-		ByteBuffer buf = null;
-		if(w instanceof HasBuffer)
-			buf = ((HasBuffer) w).buffer();
-
-		if(buf == null) {
-			long size;
-			try {
-				size = w instanceof HasSize ? ((HasSize)w).size() : -1;
-			} catch (IOException e) {
-				e.printStackTrace();
-				size = -1;
-			}
-			
-			buf = ByteBuffer.allocate((int)(size <= 0 ? DEFAULT_BUFFER_SIZE : Math.min(DEFAULT_BUFFER_SIZE, size)));
-		}
-		return buf;
+		return buffer(w, -1);
 	}
 
 	public static ByteBuffer buffer(Object w, int size) {
@@ -38,8 +24,17 @@ public interface HasBuffer {
 		if(w instanceof HasBuffer)
 			buf = ((HasBuffer) w).buffer();
 
-		if(buf == null) 
-			buf = ByteBuffer.allocate(size <= 0 ? DEFAULT_BUFFER_SIZE : Math.min(DEFAULT_BUFFER_SIZE, size));
+		if(buf == null) {
+			if(size <= 0) {
+				if(w instanceof FileChannel) {
+					try {
+						size = (int) ((FileChannel) w).size();
+					} catch (IOException e) { }
+				}
+			}
+			
+			return ByteBuffer.allocate(size <= 0 ? DEFAULT_BUFFER_SIZE : Math.min(DEFAULT_BUFFER_SIZE, size));
+		} 
 		
 		return buf;
 	}

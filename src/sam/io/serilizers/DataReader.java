@@ -11,6 +11,7 @@ import java.util.Objects;
 
 import sam.io.IOConstants;
 import sam.io.IOUtils;
+import sam.nopkg.Junk;
 
 public class DataReader implements AutoCloseable {
 	private final ReadableByteChannel src;
@@ -131,8 +132,16 @@ public class DataReader implements AutoCloseable {
 		}
 		return _sb;
 	}
+	
+	static boolean testing = false;
+	
+	private ByteBuffer temp_buf;
 
+	// FIXME 
 	private final Object _readUTF(CharsetDecoder decoder, Object charsBuffer, Object sink0) throws IOException {
+		if(!testing)
+			Junk.notYetImplemented();
+		
 		if(readShort() != DataWriter.STRING_MARKER)
 			throw new IOException("data doesnt represent a String");
 
@@ -151,58 +160,64 @@ public class DataReader implements AutoCloseable {
 
 		int remaining = readInt();
 		decoder.reset();
-		ByteBuffer buf = this.buf;
-
-		while(remaining != 0) {
-			if(buf.remaining() > remaining) {
-				buf = buf.duplicate();
-				buf.limit(buf.position() + remaining);
-			}
-
-			remaining -= buf.remaining();
-			boolean end = remaining == 0;
-
+		
+		if(buf.remaining() >  remaining) {
+			ByteBuffer buf = this.buf.duplicate();
+			buf.limit(buf.position() + remaining);
+			
 			while(true) {
-				CoderResult c = decoder.decode(buf, chars, end);
-				if(consume(c, chars, sink)) {
-					if(end) {
-						while(true) {
-							c = decoder.flush(chars);
-							if(consume(c, chars, sink))
-								break;
-						}
-					}
+				if(consume(decoder.decode(buf, chars, true), chars, sink)) {
+					while(!consume(decoder.flush(chars), chars, sink)) {}
 					break;
 				}
 			}
-
-			if(buf != this.buf) {
-				this.buf.position(buf.position());
-				buf = this.buf;
-			}
-
-			if(remaining != 0) {
-				IOUtils.compactOrClear(buf);
-				IOUtils.read(buf, false, src);	
+			this.buf.position(buf.position());
+		} else {
+			if(temp_buf == null)
+				temp_buf = ByteBuffer.allocate(Math.min(100, buf.capacity()));
+			
+			temp_buf.clear();
+			
+			while(true) {
+				readIf(4);
+				
+				len = Math.min(remaining, temp_buf.remaining());
+				temp_buf.put(buf.array(), buf.position(), len);
+				buf.position(buf.position() + len);
+				remaining -= len; 
+			
+				while(!consume(decoder.decode(buf, chars, remaining == 0), chars, sink)) {
+					System.out.println(buf.remaining());
+				}
+				if(remaining == 0) {
+					while(!consume(decoder.flush(chars), chars, sink)) {
+					}
+					break;
+				}
+				
+				IOUtils.compactOrClear(temp_buf);
 			}
 		}
 		
-		chars.flip();
-		sink.append(chars);
+		append(chars, sink);
 		return sink;
 	}
 
 	private boolean consume(CoderResult c, CharBuffer chars, Appendable sink) throws IOException {
 		if(c.isUnderflow()) 
 			return true;
-		else if (c.isOverflow()) {
-			chars.flip();
-			sink.append(chars);
-			chars.clear();
-		} else 
+		else if (c.isOverflow()) 
+			append(chars, sink);
+		 else 
 			c.throwException();
 
 		return false;
+	}
+
+	private void append(CharBuffer chars, Appendable sink) throws IOException {
+		chars.flip();
+		sink.append(chars);
+		chars.clear();
 	}
 
 	@Override

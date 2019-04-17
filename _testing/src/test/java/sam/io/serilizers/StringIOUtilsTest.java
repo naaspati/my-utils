@@ -3,8 +3,8 @@ package sam.io.serilizers;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static sam.io.serilizers.StringIOUtils.write;
-import static sam.myutils.test.Utils.writeable;
+import static sam.test.commons.Utils.random_string;
+import static sam.test.commons.Utils.writeable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import com.thedeanda.lorem.LoremIpsum;
 
 import sam.io.IOConstants;
-import sam.io.IOUtils;
 import sam.io.ReadableByteChannelCustom;
 import sam.io.WritableByteChannelCustom;
 
@@ -34,16 +33,17 @@ public class StringIOUtilsTest {
 
 	@Test
 	public void writeTest() throws IOException {
-		assertThrows(NullPointerException.class, () -> write(writeable(b -> fail()), null));
+		assertThrows(NullPointerException.class, () -> StringIOUtils.write(writeable(b -> fail()), null));
 
 		//check empty write
-		write(writeable(b -> fail()), "");
-
-		LoremIpsum ipsum = LoremIpsum.getInstance();
+		StringIOUtils.write(writeable(b -> fail()), "");
+		CharBuffer c = CharBuffer.allocate(1000);
+		Random r = new Random();
+		
 
 		for (int i = 0; i < 100; i++) {
-			writeTest(ipsum.getWords(i));
-			writeTest(ipsum.getParagraphs(i, i));
+			writeTest(random_string(c, r));
+			writeTest(random_string(c, r));
 		}
 	}
 
@@ -59,6 +59,8 @@ public class StringIOUtilsTest {
 		ByteBuffer buffer = ByteBuffer.allocate(100);
 		write0(expected, actual, buffer, s);
 		write0(expected, actual, buffer, CharBuffer.wrap(s));
+		
+		System.out.println("len: "+s.length()+", bytes: "+actual.remaining());
 	}
 
 	private void write0(ByteBuffer expected, ByteBuffer actual, ByteBuffer buffer, CharSequence s) throws IOException {
@@ -84,10 +86,10 @@ public class StringIOUtilsTest {
 
 	private void writeJoiningTest0(String separator) throws IOException {
 		Random r = new Random();
-		LoremIpsum lorem = LoremIpsum.getInstance();
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(10000);
 
 		ArrayList<String> list = new ArrayList<>(100);
+		CharBuffer chars = CharBuffer.allocate(1000);
 
 		StringIOUtils.writeJoining(new Iterator<String>() {
 			int n = 0;
@@ -96,7 +98,7 @@ public class StringIOUtilsTest {
 				if(n >= 100)
 					throw new NoSuchElementException();
 
-				String s = lorem.getWords(r.nextInt(10));
+				String s = random_string(chars, r);
 				list.add(s);
 				n++;
 				return s;
@@ -125,7 +127,8 @@ public class StringIOUtilsTest {
 
 	private void collectTest0(char separator) throws IOException {
 		Random r = new Random();
-		LoremIpsum lorem = LoremIpsum.getInstance();
+		LoremIpsum lorem = new LoremIpsum();
+		
 		final List<String> list = Stream.generate(() -> lorem.getWords(r.nextInt(10))).limit(100).collect(Collectors.toList());
 
 		StringBuilder sb = new StringBuilder();
