@@ -30,45 +30,54 @@ public class DataWriter implements AutoCloseable {
 			IOUtils.write(buf, target, true);
 	}
 
-	public final void writeBoolean(boolean b) throws IOException {
+	public final DataWriter writeBoolean(boolean b) throws IOException {
 		writeByte((byte) (b ? 1 : 0));
+		return this;
 	}
-	public final void writeByte(byte b) throws IOException {
+	public final DataWriter writeByte(byte b) throws IOException {
 		writeIf(1);
 		buf.put(b);
+		return this;
 	}
 
-	public final void writeShort(short s) throws IOException {
+	public final DataWriter writeShort(short s) throws IOException {
 		writeIf(Short.BYTES);
 		buf.putShort(s);
+		return this;
 	}
 
-	public final void writeChar(char c) throws IOException {
+	public final DataWriter writeChar(char c) throws IOException {
 		writeIf(Character.BYTES);
 		buf.putChar(c);
+		return this;
 	}
-	public final void writeInt(int n) throws IOException {
+	public final DataWriter writeInt(int n) throws IOException {
 		writeIf(Integer.BYTES);
 		buf.putInt(n);
+		return this;
 	}
 
-	public final void writeLong(long value) throws IOException {
+	public final DataWriter writeLong(long value) throws IOException {
 		writeIf(Long.BYTES);
 		buf.putLong(value);
+		return this;
 	}
 
-	public final void writeFloat(float value) throws IOException {
+	public final DataWriter writeFloat(float value) throws IOException {
 		writeIf(Float.BYTES);
 		buf.putFloat(value);
+		return this;
 	}
 
-	public final void writeDouble(double d) throws IOException {
+	public final DataWriter writeDouble(double d) throws IOException {
 		writeIf(Double.BYTES);
 		buf.putDouble(d);
+		return this;
 	}
 
-	public final void writeUTF(CharSequence value) throws IOException {
+	public final DataWriter writeUTF(CharSequence value) throws IOException {
 		writeUTF(value, IOConstants.newEncoder());
+		return this;
 	}
 
 	/**
@@ -76,7 +85,7 @@ public class DataWriter implements AutoCloseable {
 	 * @param value
 	 * @throws IOException
 	 */
-	public final void writeUTF(CharSequence value, CharsetEncoder encoder) throws IOException {
+	public final DataWriter writeUTF(CharSequence value, CharsetEncoder encoder) throws IOException {
 		Objects.requireNonNull(encoder);
 		encoder.reset();
 
@@ -89,7 +98,7 @@ public class DataWriter implements AutoCloseable {
 			writeInt(len);
 
 			if(len == 0)
-				return;
+				return this;
 
 			int bytes = (int) (encoder.averageBytesPerChar() * value.length()) + 14;
 			if(buf.remaining() < bytes)
@@ -161,6 +170,8 @@ public class DataWriter implements AutoCloseable {
 				}
 			}
 		}
+		
+		return this;
 	}
 
 	@Override
