@@ -142,7 +142,7 @@ public class RootDirSerializer {
 				}
 
 				Path rootPath = Paths.get(sb.toString());
-				IOUtils.readIf(buf, fc, 8);
+				//FIXME IOUtils.readIf(buf, fc, 8);
 
 				int max = buf.getInt();
 				int dirs_size = buf.getInt();
@@ -157,7 +157,7 @@ public class RootDirSerializer {
 				long[] dirs_last_mods = new long[dirs_size];
 
 				for (int i = 0; i < dirs_size; i++) {
-					IOUtils.readIf(buf, fc, BYTES);
+				  //FIXME	IOUtils.readIf(buf, fc, BYTES);
 
 					dirs_ids[i] = buf.getInt();
 					dirs_parent_ids[i] = buf.getInt();
@@ -169,7 +169,7 @@ public class RootDirSerializer {
 				long[] files_last_mods = new long[files_size];
 
 				for (int i = 0; i < files_size; i++) {
-					IOUtils.readIf(buf, fc, 12);
+				  //FIXME IOUtils.readIf(buf, fc, 12);
 
 					files_parent_ids[i] = buf.getInt();
 					files_last_mods[i] = buf.getLong();

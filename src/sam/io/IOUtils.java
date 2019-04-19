@@ -194,38 +194,4 @@ public final class IOUtils {
 		if(buffer != null && (buffer.position() != 0 || buffer.limit() != buffer.capacity()))
 			throw new IOException("uncleared buffer: buffer.position("+buffer.position()+") != 0 || defaultBuffer.limit("+buffer.limit()+") != defaultBuffer.capacity("+buffer.capacity()+")");
 	}
-
-	/**
-	 * read if buffer.remaining() < requiredRemaining
-	 * @param buffer
-	 * @param fc
-	 * @param requiredRemaining
-	 * @return  number of bytes read, -1 if endOfFile, -10 if no read performed
-	 * @throws IOException
-	 */
-	public static int readIf(ByteBuffer buffer, FileChannel fc, int requiredRemaining) throws IOException {
-		if(buffer.remaining() < requiredRemaining) {
-			compactOrClear(buffer);
-			int n = fc.read(buffer);
-			buffer.flip();
-			return n;
-		} else
-			return -10;
-	}
-	/**
-	 * 
-	 * write if buffer.remaining() < requiredRemaining
-	 * 
-	 * @param buffer
-	 * @param target
-	 * @param requiredRemaining
-	 * @return  number of bytes written, -10 if no write performed
-	 * @throws IOException
-	 */
-	public static int writeIf(ByteBuffer buffer, FileChannel target, int requiredRemaining) throws IOException {
-		if(buffer.remaining() < requiredRemaining)
-			return IOUtils.write(buffer, target, true);
-		else
-			return -10;
-	}
 }

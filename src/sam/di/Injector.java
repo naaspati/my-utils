@@ -11,12 +11,29 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Properties;
 
-public interface Injector {
-	public <E> E instance(Class<E> type);
-	public <E, A extends Annotation> E instance(Class<E> type, Class<A> qualifier);
+import sam.nopkg.EnsureSingleton;
+
+public abstract class Injector {
+	private static final EnsureSingleton singleton = new EnsureSingleton();
+	private static volatile Injector instance;
+	
+	public static void init(Injector impl) {
+		Objects.requireNonNull(impl);
+		singleton.init();
+		instance = impl;
+	}
+
+	public static Injector getInstance() {
+		return instance;
+	}
+	
+	public abstract  <E> E instance(Class<E> type);
+	public abstract <E, A extends Annotation> E instance(Class<E> type, Class<A> qualifier);
+	public abstract <E> E instance(Class<E> type, String name);
 	
 	@SuppressWarnings("rawtypes")
 	public static Map<Class, Class> mapping(InputStream is) throws ClassNotFoundException, IOException {

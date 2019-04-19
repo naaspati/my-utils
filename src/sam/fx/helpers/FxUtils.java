@@ -1,17 +1,22 @@
 package sam.fx.helpers;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javafx.beans.InvalidationListener;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Labeled;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import sam.myutils.Checker;
+import sam.myutils.MyUtilsException;
 
 public interface FxUtils {
 	// VERSION = 1.02;
@@ -69,7 +74,7 @@ public interface FxUtils {
 			fc.setInitialDirectory(expectedDir);
 		if(expectedName != null)
 			fc.setInitialFileName(expectedName);
-		
+
 		fc.setTitle(title);
 		if(editor != null)
 			editor.accept(fc);
@@ -87,5 +92,45 @@ public interface FxUtils {
 			else
 				throw new RuntimeException("unsupported class: "+o.getClass());
 		}
+	}
+
+	public static void setErrorTa(Stage stage, String title, String msg, Throwable e) {
+		Objects.requireNonNull(stage);
+		stage.setTitle(title);
+
+		StringBuilder sb = new StringBuilder();
+		
+		if(title != null) {
+			sb.append(title).append('\n');
+			for (int i = 0; i < title.length(); i++) 
+				sb.append('-');
+			
+			sb.append('\n');
+		}
+		
+		if(msg != null) {
+			sb.append(msg).append('\n');
+			
+			int n = Math.min(msg.length(), 30);
+			
+			for (int i = 0; i < n; i++) 
+				sb.append('-');
+			
+			sb.append('\n');
+		}
+		
+		if(e != null) {
+			sb.append("STACKTRACE\n-------------\n");
+			MyUtilsException.append(sb, e, true);
+			sb.append('\n');
+		}
+		
+		TextArea ta = new TextArea(sb.toString());
+		ta.setFont(Font.font("monospace"));
+		
+		if(stage.getScene() == null)
+			stage.setScene(new Scene(ta));
+		else 
+			stage.getScene().setRoot(ta);
 	}
 }

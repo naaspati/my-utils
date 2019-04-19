@@ -113,6 +113,13 @@ public class DataReader implements AutoCloseable {
 	private CharBuffer _chars;
 	private StringBuilder _sb;
 	private ByteBuffer temp_buf;
+	
+	public void setChars(CharBuffer _chars) {
+        this._chars = _chars;
+    }
+	public void setStringBuilder(StringBuilder _sb) {
+        this._sb = _sb;
+    }
 
 	private CharBuffer chars(int len) {
 		int size = Math.min(_chars == null ? Integer.MAX_VALUE : _chars.capacity(), len);

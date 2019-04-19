@@ -1,74 +1,70 @@
 package sam.string;
 
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Objects;
 
 /**
  * copy of StringWriter
  * @author Sameer
  *
  */
-public class StringWriter2 extends StringWriter {
-	private StringBuilder builder;
+public class StringWriter2 extends Writer {
+	private final StringBuilder sb;
 
-	public StringWriter2(StringBuilder builder) {
-    	this.builder = builder;
-    }
-    public StringWriter2() {
-    	builder = new StringBuilder();
-    }
-    public StringWriter2(int initialSize) {
-    	builder = new StringBuilder(initialSize);
-    }
-    @Override
-	public void write(char[] cbuf) throws IOException {
-    	builder.append(cbuf);
+	public StringWriter2(StringBuilder sb) {
+		this.sb = Objects.requireNonNull(sb);
 	}
-    public void write(int c) {
-        builder.append((char) c);
-    }
-    public void write(char cbuf[], int off, int len) {
-        builder.append(cbuf, off, len);
-    }
-    public void write(String str) {
-        builder.append(str);
-    }
-    public void write(String str, int off, int len)  {
-        builder.append(str.substring(off, off + len));
-    }
-    public StringWriter2 append(CharSequence csq) {
-        if (csq == null)
-            write("null");
-        else
-            write(csq.toString());
-        return this;
-    }
-    public StringWriter2 append(CharSequence csq, int start, int end) {
-        CharSequence cs = (csq == null ? "null" : csq);
-        write(cs.subSequence(start, end).toString());
-        return this;
-    }
-    public StringWriter2 append(char c) {
-        write(c);
-        return this;
-    }
+	public StringWriter2() {
+		this(new StringBuilder());
+	}
+	@Override
+	public void write(int c) throws IOException {
+		sb.append((char)c);
+	}
 
-    public String toString() {
-        return builder.toString();
-    }
+	@Override
+	public void write(char[] cbuf) throws IOException {
+		sb.append(cbuf);
+	}
 
-    public StringBuilder getBuilder() {
-    	return builder;
-    }
-    @Deprecated
-    public StringBuffer getBuffer() {
-    	throw new IllegalAccessError("use getBuilder()");
-    }
-    public void flush() { }
-    public void close() { }
-    
-    public void clear() {
-    	builder.setLength(0);
-    }
+	@Override
+	public void write(char[] cbuf, int off, int len) throws IOException {
+		sb.append(cbuf, off, len);
+	}
 
+	@Override
+	public void write(String str) throws IOException {
+		sb.append(str);
+	}
+
+	@Override
+	public void write(String str, int off, int len) throws IOException {
+		sb.append(str, off, off + len);
+	}
+
+	@Override
+	public Writer append(CharSequence csq) throws IOException {
+		sb.append(csq);
+		return this;
+	}
+
+	@Override
+	public Writer append(CharSequence csq, int start, int end) throws IOException {
+		sb.append(csq, start, end);
+		return this;
+	}
+
+	@Override
+	public Writer append(char c) throws IOException {
+		sb.append(c);
+		return this;
+	}
+
+	@Override public void flush() throws IOException { }
+	@Override public void close() throws IOException { }
+	
+	public StringBuilder getBuilder() {
+		return sb;
+	}
 }
