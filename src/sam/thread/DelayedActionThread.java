@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import javafx.application.Platform;
 import sam.logging.Logger;
 
 public class DelayedActionThread<E> {
@@ -24,8 +23,6 @@ public class DelayedActionThread<E> {
 	private volatile Thread t;
 
 	public void  queue(E s) {
-		//printlocation();
-
 		if(!lock.hasQueuedThreads()) {
 			if(t != null)
 				t.interrupt();
@@ -39,20 +36,7 @@ public class DelayedActionThread<E> {
 		string.set(s);
 		lock.release();
 	}
-
-	private void printlocation() {
-		StackTraceElement[] e = Thread.currentThread().getStackTrace();
-		print(3, e);
-		print(4, e);
-		print(5, e);
-		print(6, e);
-	}
-
-	private void print(int n, StackTraceElement[] e) {
-		if(e.length > n)
-			System.out.println(e[n]);
-	}
-
+	
 	private class LOOP implements Runnable {
 		@Override
 		public void run() {
