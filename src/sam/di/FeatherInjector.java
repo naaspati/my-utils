@@ -2,13 +2,13 @@ package sam.di;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.codejargon.feather.Feather;
 import org.codejargon.feather.Key;
+import org.codejargon.feather.Provides;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class FeatherInjector extends Injector {
@@ -19,21 +19,14 @@ public class FeatherInjector extends Injector {
 	public FeatherInjector(Object... additionalModules) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		this.di_mapping = default_mappings();
 		List<Object> modules = prepare_modules(additionalModules);
+		modules.add(this);
 		
 		this.feather = Feather.with(modules);
 	}
 	
 	public static List<Object> prepare_modules(Object... additionalModules) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		List<Object> modules = default_modules();
-
-		if(modules.isEmpty()) {
-			modules = Arrays.asList(additionalModules);	
-		} else  {
-			if(modules.getClass() != ArrayList.class)
-				modules = new ArrayList<>(modules);
-
-			modules.addAll(Arrays.asList(additionalModules));
-		}
+		modules.addAll(Arrays.asList(additionalModules));
 		return modules;
 	}
 	
@@ -63,5 +56,14 @@ public class FeatherInjector extends Injector {
 	@Override
 	public <E> E instance(Class<E> type, String name) {
 		return (E) feather.instance(Key.of(map(type), name));
+	}
+	
+	@Provides
+	public FeatherInjector self() {
+		return this;
+	}
+	@Provides
+	public Injector self2() {
+		return this;
 	}
 }

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.function.Predicate;
 
 /**
@@ -36,15 +37,17 @@ public class PathFilter implements Predicate<Path> {
 	private Predicate<Path> glob = p -> false;
 	private PathFilter invert;
 	
-	public PathFilter(Iterable<String> iterable) {
+	public PathFilter(Iterator<String> iterable) {
 		this(null, iterable);
 	}
 	
-	public PathFilter(Path root, Iterable<String> iterable) {
+	public PathFilter(Path root, Iterator<String> iterable) {
 		String rootS = root == null ? null : root.toString();
 		ArrayList<String> invert = new ArrayList<>();
 		
-		for (String s : iterable) {
+		while (iterable.hasNext()) {
+			String s = iterable.next();
+			
 			s = s.trim();
 			if(s.isEmpty() || s.charAt(0) == '#')
 				continue;
@@ -81,7 +84,7 @@ public class PathFilter implements Predicate<Path> {
 		if(names.isEmpty())
 			names = Collections.emptySet();
 		if(!invert.isEmpty())
-			this.invert = new PathFilter(root, invert);
+			this.invert = new PathFilter(root, invert.iterator());
 	}
 	private Predicate<Path> glob(boolean globSyntex, boolean dircheck, String s) {
 		PathMatcher matcher = fs().getPathMatcher(globSyntex ? s : "glob:"+s);

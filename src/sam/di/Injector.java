@@ -8,7 +8,6 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,7 +19,7 @@ import sam.nopkg.EnsureSingleton;
 public abstract class Injector {
 	private static final EnsureSingleton singleton = new EnsureSingleton();
 	private static volatile Injector instance;
-	
+
 	public static void init(Injector impl) {
 		Objects.requireNonNull(impl);
 		singleton.init();
@@ -30,22 +29,22 @@ public abstract class Injector {
 	public static Injector getInstance() {
 		return instance;
 	}
-	
+
 	public abstract  <E> E instance(Class<E> type);
 	public abstract <E, A extends Annotation> E instance(Class<E> type, Class<A> qualifier);
 	public abstract <E> E instance(Class<E> type, String name);
-	
+
 	@SuppressWarnings("rawtypes")
 	public static Map<Class, Class> mapping(InputStream is) throws ClassNotFoundException, IOException {
 		if(is == null)
 			return Collections.emptyMap();
-		
+
 		Map<Class, Class> map = null;
-		
+
 		if(is != null) {
 			Properties p = new Properties();
 			p.load(is);
-			
+
 			if(!p.isEmpty()) {
 				map = new HashMap<>();
 				for (Entry<Object, Object> e : p.entrySet()) {
@@ -53,28 +52,30 @@ public abstract class Injector {
 				}
 			}
 		}
-		
+
 		if(map == null)
 			map = Collections.emptyMap();
-		
+
 		return map;
 	}
-	
+
 	public static List<Object> linesToObject(InputStream is) throws ClassNotFoundException, IOException, InstantiationException, IllegalAccessException {
-		if(is == null)
-			return Collections.emptyList();
-		
 		List<Object> list = new ArrayList<>();
-		
+
+		if(is == null)
+			return list;
+
 		try(BufferedReader b = new BufferedReader(new InputStreamReader(is))) {
-			Iterator<String> itr = b.lines().map(String::trim).filter(s -> !s.isEmpty() && s.charAt(0) != '#').iterator();
-			while (itr.hasNext()) {
-				list.add(Class.forName(itr.next()).newInstance());
-			}
+			String line;
+			while ((line = b.readLine()) != null) {
+				line = line.trim();
+				if(!(line.isEmpty() || line.charAt(0) =='#'))
+					list.add(Class.forName(line).newInstance());
+			} 
 		}
-		
+
 		return list;
 	}
-	
+
 }
 
