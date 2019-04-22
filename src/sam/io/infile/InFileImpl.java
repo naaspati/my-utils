@@ -476,6 +476,10 @@ class InFileImpl implements AutoCloseable {
 		if(this.mod != mod2)
 			throw new ConcurrentModificationException();
 	}
+	
+	public int fill(long position, ByteBuffer buffer) throws IOException {
+	    return file.read(buffer, position);
+	}
 
 	public void writeTo(DataMeta dm, WritableByteChannel target) throws IOException {
 		Checker.requireNonNull("dm, target", dm, target);

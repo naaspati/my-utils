@@ -119,5 +119,7 @@ public class InFile implements AutoCloseable {
 	public void writeTo(DataMeta dm, WritableByteChannel consumer) throws IOException {
 		file.writeTo(dm, consumer);
 	}
-	
+	public int fill(long position, ByteBuffer buffer) throws IOException {
+        return file.fill(position, buffer);
+    }
 }
