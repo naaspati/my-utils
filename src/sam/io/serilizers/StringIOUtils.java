@@ -13,6 +13,7 @@ import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
@@ -338,6 +339,29 @@ public final class StringIOUtils {
 		try(FileChannel fc = FileChannel.open(path, WRITE, CREATE, APPEND)) {
 			write(fc, sb);	
 		}
+	}
+	public static ByteBuffer encode(CharSequence data, ByteBuffer buffer, CharsetEncoder encoder) throws CharacterCodingException {
+	    Checker.requireNonNull("data, buffer, encoder", data, buffer, encoder);
+	    
+	    encoder.reset();
+	    CharBuffer cb = data instanceof CharBuffer ? (CharBuffer)data : CharBuffer.wrap(data);
+	    CoderResult c = encoder.encode(cb, buffer, true);
+	    
+	    if(c.isUnderflow())
+	        c = encoder.flush(buffer);
+	    
+	    if(c.isUnderflow()) {
+	        buffer.flip();
+	        return buffer;
+	    }
+	    
+	    if(c.isOverflow())
+	       return encoder.encode(cb);
+	    else {
+	        c.throwException();
+	        return null;
+	    } 
+	        
 	}
 
 }

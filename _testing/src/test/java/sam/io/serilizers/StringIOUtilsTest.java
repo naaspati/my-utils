@@ -1,6 +1,8 @@
 package sam.io.serilizers;
 
+import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static sam.test.commons.Utils.random_string;
@@ -28,6 +30,7 @@ import com.thedeanda.lorem.LoremIpsum;
 import sam.io.IOConstants;
 import sam.io.ReadableByteChannelCustom;
 import sam.io.WritableByteChannelCustom;
+import sam.nopkg.Resources;
 
 public class StringIOUtilsTest {
 
@@ -148,5 +151,26 @@ public class StringIOUtilsTest {
 		System.out.println("max: "+list.stream().mapToInt(s -> s.length()).max().getAsInt()+", sb cap: ("+cap+" -> "+sb2.capacity()+")");
 
 		assertEquals(list, list2);
+	}
+
+	@Test
+	public void encodeTest() throws IOException {
+		try(Resources r = Resources.get()) {
+			String s = "sameer";
+			ByteBuffer expected = r.encoder().encode(CharBuffer.wrap(s));
+			
+			ByteBuffer b2 = IOConstants.EMPTY_BUFFER;
+			ByteBuffer actual = StringIOUtils.encode(s, b2, r.encoder());
+			
+			assertNotSame(b2, actual);
+			assertEquals(expected, actual);
+			
+			b2 = r.buffer();
+			actual = StringIOUtils.encode(s, b2, r.encoder());
+			
+			assertSame(b2, actual);
+			assertEquals(expected, actual);
+			
+		}
 	}
 }
