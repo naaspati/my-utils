@@ -89,43 +89,4 @@ public interface WritableByteChannelCustom extends WritableByteChannel, HasBuffe
 			}
 		};
 	}
-	
-	public static OutputStream newOutputStream(Path p, ByteBuffer buf, boolean append) throws IOException {
-        FileChannel fc = FileChannel.open(p, WRITE, CREATE, append ? APPEND : TRUNCATE_EXISTING);
-        
-        return new OutputStream() {
-            @Override
-            public void write(byte[] b, int off, int len) throws IOException {
-                if(len <= 0)
-                    return;
-                
-                if(len > buf.remaining())
-                    flush();
-                
-                if(len > buf.capacity())
-                    IOUtils.write(ByteBuffer.wrap(b, off, len), fc, false);
-                else 
-                    buf.put(b, off, len);
-            }
-
-            @Override
-            public void flush() throws IOException {
-                IOUtils.write(buf, fc, true);
-            }
-
-            @Override
-            public void close() throws IOException {
-                flush();
-                fc.close();
-            }
-
-            @Override
-            public void write(int b) throws IOException {
-                if(buf.remaining() < 1)
-                    flush();
-                
-                buf.put((byte)b);
-            }
-        };
-    }
 }

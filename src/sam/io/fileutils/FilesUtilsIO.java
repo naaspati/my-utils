@@ -1,8 +1,20 @@
 package sam.io.fileutils;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -14,9 +26,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import sam.io.IOUtils;
 import sam.io.fileutils.FilesWalker.FileWalkResult;
+import sam.myutils.Checker;
 
-public interface FilesUtilsIO {
+public final class FilesUtilsIO {
 	/**
 	 * <pre>
 	 * return a HashMap(String -> Arraylist(Path))
@@ -177,5 +191,124 @@ public interface FilesUtilsIO {
 				w.newLine();
 			}
 		}
+	}
+
+	public static OutputStream newOutputStream(Path p, ByteBuffer buf, boolean append) throws IOException {
+		FileChannel fc = FileChannel.open(p, WRITE, CREATE, append ? APPEND : TRUNCATE_EXISTING);
+		return newOutputStream(fc, buf);
+	}
+
+	public static OutputStream newOutputStream(WritableByteChannel fc, ByteBuffer buf) throws IOException {
+		return new OutputStream() {
+			@Override
+			public void write(byte[] b, int off, int len) throws IOException {
+				if(len <= 0)
+					return;
+
+				if(len > buf.remaining())
+					flush();
+
+				if(len > buf.capacity())
+					IOUtils.write(ByteBuffer.wrap(b, off, len), fc, false);
+				else 
+					buf.put(b, off, len);
+			}
+
+			@Override
+			public void flush() throws IOException {
+				IOUtils.write(buf, fc, true);
+			}
+
+			@Override
+			public void close() throws IOException {
+				flush();
+				fc.close();
+			}
+
+			@Override
+			public void write(int b) throws IOException {
+				if(buf.remaining() < 1)
+					flush();
+
+				buf.put((byte)b);
+			}
+		};
+	}
+
+	public static InputStream newInputStream(Path p, ByteBuffer buf) throws IOException {
+		return newInputStream(FileChannel.open(p, READ), buf);
+	}
+
+	public static InputStream newInputStream(ReadableByteChannel fc, ByteBuffer buf) throws IOException {
+		IOUtils.read(buf, true, fc);
+
+		return new InputStream() {
+			@Override
+			public long skip(long n) throws IOException {
+				throw new IOException();
+			}
+			@Override
+			public int available() throws IOException {
+				throw new IOException();
+			}
+			@Override
+			public synchronized void mark(int readlimit) {
+			}
+			@Override
+			public synchronized void reset() throws IOException {
+				throw new IOException();
+			}
+			@Override
+			public boolean markSupported() {
+				return false;
+			}
+
+			@Override
+			public int read(byte[] b, int off, int len) throws IOException {
+				Objects.requireNonNull(b);
+				Checker.assertFalseArgumentError(off < 0, "off < 0");
+				Checker.assertFalseArgumentError(len < 0, "len < 0");
+
+				if(len == 0)
+					return 0;
+
+				if(len <= buf.remaining()) 
+					return copy(buf, b, off, len);
+				else {
+					int read = 0;
+
+					while(len > 0) {
+						if(!buf.hasRemaining() && IOUtils.read(buf, true, fc) < 0)
+							return read == 0 ? -1 : read;
+
+						int n = copy(buf, b, off, Math.min(len, buf.remaining()));
+
+						len -= n;
+						off += n;
+						read += n;
+					}
+
+					return read;
+				}
+			}
+
+			@Override
+			public void close() throws IOException {
+				fc.close();
+			}
+
+			@Override
+			public int read() throws IOException {
+				if(!buf.hasRemaining() && IOUtils.read(buf, true, fc) < 0)
+					return -1;
+
+				return buf.get();
+			}
+		};
+	}
+	public static int copy(ByteBuffer buf, byte[] b, int off, int len) {
+		System.arraycopy(buf.array(), buf.position(), b, off, len);
+		buf.position(buf.position() + len);
+		return len;
 	}
 }

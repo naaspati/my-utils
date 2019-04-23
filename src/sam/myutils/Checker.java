@@ -220,4 +220,8 @@ public final class Checker {
 		
 		return true;
 	}
+    public static void assertFalseArgumentError(boolean throwOnTrue, String msg) {
+        if(throwOnTrue)
+            throw new IllegalArgumentException(msg);
+    }
 }
