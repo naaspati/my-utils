@@ -74,19 +74,21 @@ public class DataWriter implements AutoCloseable {
 		buf.putDouble(d);
 		return this;
 	}
-
-	public final DataWriter writeUTF(CharSequence value) throws IOException {
-		writeUTF(value, IOConstants.newEncoder());
-		return this;
-	}
+	
+	private CharsetEncoder encoder;
+	
+	public void setEncoder(CharsetEncoder encoder) {
+        this.encoder = encoder;
+    }
 
 	/**
 	 * copy pasted {@link DataOutputStream#writeUTF(String)}
 	 * @param value
 	 * @throws IOException
 	 */
-	public final DataWriter writeUTF(CharSequence value, CharsetEncoder encoder) throws IOException {
-		Objects.requireNonNull(encoder);
+	public final DataWriter writeUTF(CharSequence value) throws IOException {
+	    if(this.encoder == null)
+	        encoder = IOConstants.newEncoder();
 		encoder.reset();
 
 		writeShort(STRING_MARKER);
@@ -157,12 +159,6 @@ public class DataWriter implements AutoCloseable {
 				
 				this.buf.putInt(pos, size + size2);
 				IOUtils.write(this.buf, target, true);
-				
-				/*
-				 * System.out.print("list.size(): "+list.size() + ", bytes: "+(size + size2)+", ["+this.buf.remaining()+", ");
-				list.forEach(s -> System.out.print(s.remaining()+", "));
-				System.out.println("]");
-				 */
 				
 				for (ByteBuffer b : list) {
 					writeIf(b.remaining());

@@ -36,11 +36,19 @@ public class StackPaneDialogViewer implements DialogViewer {
 
     private Temp primary;
     private boolean primary_in_use;
-    private final WeakPool<Temp> dialogs = new WeakPool<>(Temp::new); 
+    private final WeakPool<Temp> dialogs = new WeakPool<>(Temp::new);
+    
+    private static final Runnable NO_CLOSE = () -> {};
+    private static final String NO_CLOSE_S = new String();
+    
+    @Override
+    public Runnable viewDialog(Node node) {
+    	return viewDialog(NO_CLOSE_S, node, NO_CLOSE);
+    }
 
     @Override
     public Runnable viewDialog(String title, Node node, Runnable onClose) {
-       // Node prev = list.isEmpty() ? null : list.get(list.size() - 1);
+       Node prev = list.isEmpty() ? null : list.get(list.size() - 1);
         Temp temp;
 
         if(primary_in_use) {
@@ -52,8 +60,7 @@ public class StackPaneDialogViewer implements DialogViewer {
             primary_in_use = true;
         }
 
-        temp.pane.setCenter(node);
-        temp.title.setText(title);
+        prev.setDisable(true);
         list.add(temp);
 
         Runnable r = new Runnable() {
@@ -68,6 +75,7 @@ public class StackPaneDialogViewer implements DialogViewer {
                 temp.close = null;
                 temp.pane.setCenter(null);
                 list.remove(temp);
+                prev.setDisable(false);
 
                 if(temp == primary)
                     primary_in_use = false;
@@ -78,8 +86,12 @@ public class StackPaneDialogViewer implements DialogViewer {
                     onClose.run();
             }
         };
+
+        if(title == NO_CLOSE_S)
+        	temp.set(NO_CLOSE_S, node, r);
+        else 
+        	temp.set(title, node, r);
         
-        temp.close = r;
         return r;
     }
     
@@ -87,14 +99,14 @@ public class StackPaneDialogViewer implements DialogViewer {
         private Runnable close;
         private final BorderPane pane = new BorderPane();
         private Button button = new Button("X");
-        private final Label title = new Label(); 
+        private final Label title = new Label();
+        private final BorderPane top;
         
         public Temp() {
-            
             BorderPane.setAlignment(title, Pos.CENTER_LEFT);
             title.setMaxWidth(Double.MAX_VALUE);
             title.setPadding(new Insets(0, 0, 0, 10));
-            BorderPane top = new BorderPane(title, null, button, null, null);
+            this.top = new BorderPane(title, null, button, null, null);
             top.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(0, 0, 2, 0))));
             top.setPadding(new Insets(2));
             BorderPane.setMargin(top, new Insets(0,0,5,0));
@@ -119,7 +131,18 @@ public class StackPaneDialogViewer implements DialogViewer {
             pane.setEffect(effect);
         }
 
-        @Override
+        public void set(String title, Node node, Runnable r) {
+        	if(title == NO_CLOSE_S)
+        		pane.setTop(null);
+        	else if(pane.getTop() != this.top)
+        		pane.setTop(this.top);
+        	
+        	this.close = r;
+        	this.title.setText(title);
+        	this.pane.setCenter(node);
+		}
+
+		@Override
         public void handle(ActionEvent event) {
             close.run();
         }

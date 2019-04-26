@@ -2,7 +2,6 @@ package sam.io.serilizers;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -12,7 +11,6 @@ import java.util.Objects;
 
 import sam.io.IOConstants;
 import sam.io.IOUtils;
-import sam.nopkg.Junk;
 
 public class DataReader implements AutoCloseable {
 	private final ReadableByteChannel src;
@@ -86,40 +84,37 @@ public class DataReader implements AutoCloseable {
 		readIf(Double.BYTES);
 		return buf.getDouble();
 	}
+	
 	public final String readUTF() throws IOException {
-		return readUTF(IOConstants.newDecoder());
-	}
-
-	private static final Object SINK_MARKER = new Object();
-	private static final Object CHARS_MARKER = new Object();
-
-	public final String readUTF(CharsetDecoder decoder) throws IOException {
-		Object a = _readUTF(decoder, CHARS_MARKER, SINK_MARKER);
-		if(a == null)
+		Appendable sb = readUTF(sb(-1));
+		
+		if(sb == null)
 			return null;
-		else if(a == SINK_MARKER)
+		else if(((StringBuilder)sb).length() == 0)
 			return "";
 		else 
-			return a.toString();
-
+			return sb.toString();
 	} 
-	public final Appendable readUTF(CharsetDecoder decoder, Appendable sink) throws IOException {
-		return (Appendable) _readUTF(decoder, CHARS_MARKER, sink);
-	}
-	public final Appendable readUTF(CharsetDecoder decoder, CharBuffer charBuffer, Appendable sink) throws IOException {
-		return (Appendable) _readUTF(decoder, charBuffer, sink);
-	}
 
 	private CharBuffer _chars;
 	private StringBuilder _sb;
 	private ByteBuffer temp_buf;
+	private CharsetDecoder decoder;
 	
+	public void setDecoder(CharsetDecoder decoder) {
+        this.decoder = decoder;
+    }
 	public void setChars(CharBuffer _chars) {
         this._chars = _chars;
     }
 	public void setStringBuilder(StringBuilder _sb) {
         this._sb = _sb;
     }
+	private CharsetDecoder decoder() {
+	    if(decoder == null)
+	        decoder = IOConstants.newDecoder();
+	    return decoder;
+	}
 
 	private CharBuffer chars(int len) {
 		int size = Math.min(_chars == null ? Integer.MAX_VALUE : _chars.capacity(), len);
@@ -134,15 +129,15 @@ public class DataReader implements AutoCloseable {
 
 	private Appendable sb(int len) {
 		if(_sb == null)
-			_sb = new StringBuilder(len);
-		else {
+			_sb = new StringBuilder(len < 0 ? 100 : len);
+		else if(len > 0){
 			_sb.ensureCapacity(len);
 			_sb.setLength(0);
 		}
 		return _sb;
 	}
 
-	private final Object _readUTF(CharsetDecoder decoder, Object charsBuffer, Object sink0) throws IOException {
+	private final Appendable readUTF(Appendable sink0) throws IOException {
 		if(readShort() != DataWriter.STRING_MARKER)
 			throw new IOException("data doesnt represent a String");
 
@@ -153,11 +148,11 @@ public class DataReader implements AutoCloseable {
 		if(len == 0)
 			return sink0;
 
-		Objects.requireNonNull(charsBuffer);
 		Objects.requireNonNull(sink0);
 
-		CharBuffer chars = charsBuffer == CHARS_MARKER ? chars(len) : (CharBuffer)charsBuffer;
-		Appendable sink = sink0 == SINK_MARKER ? sb(len) : (Appendable)sink0;
+		CharBuffer chars = chars(len);
+		Appendable sink = sb(len);
+		CharsetDecoder decoder = decoder();
 
 		int remaining = readInt();
 		decoder.reset();

@@ -8,6 +8,7 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import sam.io.HasBuffer;
 import sam.io.IOUtils;
@@ -22,13 +23,16 @@ public class WriterImpl extends Writer {
 	private final Object lock;
 	private final CharsetEncoder encoder;
 	private volatile boolean flushed = true;
-
+	
 	public WriterImpl(WritableByteChannel target, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
+	    this(target, HasBuffer.buffer(target), chars, syncronized, encoder);
+	}
+	public WriterImpl(WritableByteChannel target, ByteBuffer buffer, CharBuffer chars, boolean syncronized, CharsetEncoder encoder) throws IOException {
 		Checker.requireNonNull("target, buffer, chars, syncronized, encoder", target, chars, syncronized, encoder);
 
 		this.target = target;
 		this.encoder = encoder;
-		this.buf = HasBuffer.buffer(target);
+		this.buf = Objects.requireNonNull(buffer);
 		this.chars = chars;
 		this.synced = syncronized;
 		this.lock = syncronized ? new Object() : null;

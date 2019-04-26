@@ -14,16 +14,26 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 
+import javax.inject.Provider;
+
+import sam.logging.Logger;
+import sam.myutils.Checker;
 import sam.nopkg.EnsureSingleton;
 
 public abstract class Injector {
+	static final Logger logger = Logger.getLogger(Injector.class);
+	
 	private static final EnsureSingleton singleton = new EnsureSingleton();
 	private static volatile Injector instance;
 
-	public static void init(Injector impl) {
+	public static Injector init(Injector impl) {
 		Objects.requireNonNull(impl);
 		singleton.init();
 		instance = impl;
+		
+		logger.debug(() -> "Injector INIT with: " + impl);
+		
+		return instance; 
 	}
 
 	public static Injector getInstance() {
@@ -33,6 +43,10 @@ public abstract class Injector {
 	public abstract  <E> E instance(Class<E> type);
 	public abstract <E, A extends Annotation> E instance(Class<E> type, Class<A> qualifier);
 	public abstract <E> E instance(Class<E> type, String name);
+	
+	public abstract  <E> Provider<E> provider(Class<E> type);
+	public abstract <E, A extends Annotation> Provider<E> provider(Class<E> type, Class<A> qualifier);
+	public abstract <E> Provider<E> provider(Class<E> type, String name);
 
 	@SuppressWarnings("rawtypes")
 	public static Map<Class, Class> mapping(InputStream is) throws ClassNotFoundException, IOException {
@@ -51,9 +65,14 @@ public abstract class Injector {
 					map.put(Class.forName(e.getKey().toString()), Class.forName(e.getValue().toString()));
 				}
 			}
+			if(!map.isEmpty() && logger.isDebugEnabled()) {
+				StringBuilder sb = new StringBuilder("\ndi.mapping found\n");
+				map.forEach((s,t) -> sb.append("  ").append(s).append(" -> ").append(t).append('\n'));
+				logger.debug(() -> sb.toString());
+			}
 		}
 
-		if(map == null)
+		if(Checker.isEmpty(map))
 			map = Collections.emptyMap();
 
 		return map;

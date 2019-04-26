@@ -51,8 +51,6 @@ public interface Logger {
 			if(System.getProperty("java.util.logging.config.file") != null)
 			return new DefaultLoggerManager();
 			else {
-				System.out.println("System.getProperty(\"java.util.logging.config.file\") == null, using no-op logger");
-				
 				Logger log = new Logger() {
 					public boolean isDebugEnabled(){ return false; }
 					public void debug(String msg){}
