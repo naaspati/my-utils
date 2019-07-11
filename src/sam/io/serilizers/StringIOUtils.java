@@ -80,14 +80,15 @@ public final class StringIOUtils {
 		CharsetEncoder e = encoder;
 		ByteBuffer buffer = buffer(target, (int)(e.averageBytesPerChar()*chars.length() + 5));
 		encoder.reset();
-
+		
 		while(chars.hasRemaining()) {
 			if(consume(encoder.encode(chars, buffer, true), target, buffer)) {
 				while(!consume(encoder.flush(buffer), target, buffer)) { }
 				break;
 			}
 		}
-
+		
+		IOUtils.write(buffer, target, true);
 		target.close();
 	}
 

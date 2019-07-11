@@ -62,15 +62,17 @@ public class BooksDBMinimal extends SQLiteDB {
 			return READ;
 		if(name.equals(SKIPPED.getPathName()))
 			return SKIPPED;
-
-		String s = name.toString();
-		if(s.charAt(0) == '_' && s.charAt(s.length() - 1) == '_')
-			return valueOf(s.substring(1, s.length() - 1).toUpperCase());
-
-		return NONE;
+		
+		return toBookStatus(name.toString());
 	}
 	public static BookStatus getStatusFromFile(Path p) {
 		return getStatusFromDir(p.getParent()); 
 	} 
+	public static BookStatus toBookStatus(String dirName) {
+        if(dirName.charAt(0) == '_' && dirName.charAt(dirName.length() - 1) == '_' && dirName.indexOf(' ') < 0)
+            return valueOf(dirName.substring(1, dirName.length() - 1).toUpperCase());
+
+        return NONE;
+	}
 
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -105,6 +106,10 @@ public final class Checker {
 	public static <E> boolean isEmpty(char[] es) {
 		return es == null || es.length == 0;
 	}
+	@SuppressWarnings("rawtypes")
+    public static <E> boolean isEmpty(Iterator itr) {
+        return itr == null || !itr.hasNext();
+    }
 	public static <E> boolean isNotEmpty(E[] es) {
 		return !isEmpty(es);
 	}

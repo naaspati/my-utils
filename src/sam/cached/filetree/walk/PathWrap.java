@@ -3,76 +3,73 @@ package sam.cached.filetree.walk;
 import java.io.File;
 import java.nio.file.Path;
 
-public class PathWrap {
-	public final Dir parent; 
-	public final String name;
+public abstract class PathWrap implements IPathWrap {
+    protected final String name;
+    protected final Dir parent;
+    protected Path subpath, fullpath;
+    protected File file_subpath, file_fullpath;
+    protected long old_last_modified, current_last_modified;
+    
+    public PathWrap(Dir parent, String name, long last_modified) {
+        this.name = name;
+        this.old_last_modified = last_modified;
+        this.parent = parent;
+    }
 
-	private Path fullpath, subpath;
-	private File fullpathFile, subpathFile;
+    @Override
+    public String name() {
+        return name;
+    }
+    
+    @Override
+    public long lastModified() {
+        if(current_last_modified <= 0)
+            current_last_modified = fullpathAsFile().lastModified();
+        
+        return current_last_modified;
+    }
+    @Override
+    public boolean isModified() {
+        return old_last_modified != lastModified();
+    }
+    
+    @Override
+    public Path subpath() {
+        if(subpath == null)
+            subpath = parent().subpath().resolve(name);
+        new File(new File(""), "");
+        return subpath;
+    }
 
-	protected PathWrap(Dir parent, String name) {
-		this.parent = parent;
-		this.name = name;
-	}
+    @Override
+    public Path fullpath() {
+        if(fullpath == null)
+            fullpath = parent().fullpath().resolve(name);
+        return fullpath;
+    }
+    
+    @Override
+    public File subpathAsFile() {
+        if(file_subpath == null)
+            file_subpath = new File(parent().subpathAsFile(), name);
+        new File(new File(""), "");
+        return file_subpath;
+    }
 
-	//for root
-	protected PathWrap(Dir parent, String name, Path fullpath, Path subpath, File fullpathFile, File subpathFile) {
-		this.parent = parent;
-		this.name = name;
-		this.fullpath = fullpath;
-		this.subpath = subpath;
-		this.fullpathFile = fullpathFile;
-		this.subpathFile = subpathFile;
-	}
-	
-	public File fullpathFile() {
-		if(fullpathFile == null)
-			fullpathFile = parent.fullpathFile(name);
+    @Override
+    public File fullpathAsFile() {
+        if(file_fullpath == null)
+            file_fullpath = new File(parent().fullpathAsFile(), name);
+        return file_fullpath;
+    }
 
-		return fullpathFile;
-	}
-	public File subpathFile() {
-		if(subpathFile == null) 
-			subpathFile = parent.subpathFile(name);
-		
-		return subpathFile;
-	}
-	public Path fullpath() {
-		if(fullpath == null)
-			fullpath = parent.fullpath(name);
+    @Override
+    public boolean isDir() {
+        return false;
+    }
 
-		return fullpath;
-	}
-	public Path subpath() {
-		if(subpath == null)
-			subpath = parent.subpath(name);
-
-		return subpath;
-	}
-
-	private int isDir = -1;
-	public boolean isDir() {
-		if(isDir == -1)
-			isDir = fullpathFile().isDirectory() ? 1 : 0;
-
-		return isDir == 1;
-	}
-	private int exists = -1;
-	public boolean exists() {
-		if(exists == -1)
-			exists = fullpathFile().exists() ? 1 : 0;
-
-		return exists == 1;
-	}
-	public String name() {
-		return name;
-	}
-	
-	long lastmod = -1;
-
-	public long lastModified() {
-		if(lastmod == -1)
-			lastmod = fullpathFile().lastModified();
-		return lastmod;
-	}
+    @Override 
+    public Dir parent() {
+        return parent;
+    }
 }

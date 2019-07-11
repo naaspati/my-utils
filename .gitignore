@@ -19,3 +19,5 @@ yarn.lock
 **/node_modules/
 **/.recommenders/
 **/.metadata/
+.gradle
+buildSrc

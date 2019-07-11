@@ -47,9 +47,9 @@ public interface Logger {
 					throw new RuntimeException(cls, e);
 				}
 			}
-			
+
 			if(System.getProperty("java.util.logging.config.file") != null)
-			return new DefaultLoggerManager();
+				return new DefaultLoggerManager();
 			else {
 				Logger log = new Logger() {
 					public boolean isDebugEnabled(){ return false; }
@@ -82,7 +82,7 @@ public interface Logger {
 					public void error(String format, Object... arguments){}
 					public void error(String msg, Throwable t){}
 				};
-				
+
 				return s -> log;
 			}
 		}

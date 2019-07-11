@@ -10,7 +10,6 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -38,13 +37,13 @@ public final class SwingUtils {
 
 
 	/**
-	 * calls {@link #showErrorDialog(Component, CharSequence, Exception)}
+	 * calls {@link #showErrorDialog(Component, CharSequence, Throwable)}
 	 * with Component = null <br>
 	 * @param msg
 	 * @param e
 	 * @return
 	 */
-	public static  String showErrorDialog(CharSequence msg, Exception e){
+	public static  String showErrorDialog(CharSequence msg, Throwable e){
 		return showErrorDialog(null, msg, e);
 	}
 
@@ -54,7 +53,7 @@ public final class SwingUtils {
 	 * @param e
 	 * @return the string shown in dialog 
 	 */
-	public static  String showErrorDialog(Component parent, CharSequence msg, Exception e){
+	public static  String showErrorDialog(Component parent, CharSequence msg, Throwable e){
 		String str = null;
 		if(e != null){
 			StringWriter sw = new StringWriter();
@@ -131,7 +130,7 @@ public final class SwingUtils {
 
 				try {
 					Files.write(p, str.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-				} catch (IOException e1) {
+				} catch (Throwable e1) {
 					StringWriter sw = new StringWriter();
 					PrintWriter pw = new PrintWriter(sw);
 					pw.println("Failed write errors to file");
