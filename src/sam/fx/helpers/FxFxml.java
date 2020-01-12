@@ -1,16 +1,18 @@
 package sam.fx.helpers;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.IdentityHashMap;
 import java.util.ResourceBundle;
-import sam.logging.Logger;
 
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.util.Builder;
 import javafx.util.BuilderFactory;
 import javafx.util.Callback;
+import sam.logging.Logger;
 
 public final class FxFxml implements BuilderFactory  {
 	private static final Logger LOGGER = Logger.getLogger(FxFxml.class);
@@ -56,12 +58,15 @@ public final class FxFxml implements BuilderFactory  {
 		loader.setRoot(root);
 	}
 	public FxFxml(Object parentclass, Object root, Object controller) throws IOException {
-		String name = parentclass.getClass().getSimpleName()+".fxml";
-		URL url = FXML_DIR != null ? new URL(FXML_DIR+"/"+name) : ClassLoader.getSystemResource(name);
-		loader = new FXMLLoader(url);
+		loader = new FXMLLoader(url(parentclass, ".fxml"));
 		loader.setController(controller);
 		loader.setRoot(root);
 	}
+	public static URL url(Object parentclass, String ext) throws MalformedURLException {
+		String name = parentclass.getClass().getSimpleName()+ext;
+		return FXML_DIR != null ? new URL(FXML_DIR+"/"+name) : ClassLoader.getSystemResource(name);
+	}
+
 	public URL location() {
 		return loader.getLocation();
 	}
@@ -113,7 +118,9 @@ public final class FxFxml implements BuilderFactory  {
 		loader.setClassLoader(classLoader);
 		return this;
 	}
-	
+	public static void setCss(Parent parent) throws MalformedURLException {
+		parent.getStylesheets().add(url(parent, ".css").toString());
+	}
 	public static <E> E load(URL url, Object root, Object controller) throws IOException {
 		return new FxFxml(url, root, controller).load();
 	}

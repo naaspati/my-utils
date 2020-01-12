@@ -12,7 +12,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public interface MyUtilsPath {
 	public static Path subpath(Path child, Path parent) {

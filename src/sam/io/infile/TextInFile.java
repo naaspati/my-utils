@@ -11,7 +11,6 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.file.Path;
 
 import sam.functions.IOExceptionConsumer;
-import sam.io.IOUtils;
 import sam.io.ReadableByteChannelCustom;
 import sam.io.WritableByteChannelCustom;
 import sam.io.serilizers.StringIOUtils;

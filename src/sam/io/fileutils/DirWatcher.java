@@ -70,7 +70,7 @@ public abstract class DirWatcher implements Runnable {
 	/**
 	 * possibly error while polling 
 	 * @param e
-	 * @return return return if you still want to continue; 
+	 * @return return true if you still want to continue; 
 	 */
 	protected abstract boolean onErrorContinue(Exception e);
 	

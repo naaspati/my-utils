@@ -1,8 +1,8 @@
 package sam.manga.samrock.urls.nnew;
 
 
-import static sam.manga.samrock.urls.nnew.UrlsMeta.MANGA_ID;
-import static sam.manga.samrock.urls.nnew.UrlsMeta.URLSUFFIX_TABLE_NAME;
+import static sam.manga.samrock.urls.MangaUrlsMeta.MANGA_ID;
+import static sam.manga.samrock.urls.MangaUrlsMeta.URL_TABLE_NAME;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -10,16 +10,16 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
-import sam.manga.samrock.SamrockDB;
 import sam.sql.JDBCHelper;
+import sam.sql.sqlite.SQLiteDB;
 
 public final class MangaUrlsUtils {
-    private final SamrockDB db; 
-    private final Map<String, UrlsPrefixImpl> prefixes;
+    private final SQLiteDB db; 
+    private final Map<String, MangaUrlResolver> prefixes;
 
-    public MangaUrlsUtils(SamrockDB db) throws SQLException {
+    public MangaUrlsUtils(SQLiteDB db) throws SQLException {
     	this.db = db;
-    	this.prefixes = Collections.unmodifiableMap(UrlsPrefixImpl.getAll(db)); 
+    	this.prefixes = Collections.unmodifiableMap(MangaUrlResolver.getAll(db)); 
     }
     
     /**
@@ -40,11 +40,11 @@ public final class MangaUrlsUtils {
     	Objects.requireNonNull(urlColumn);
     	Objects.requireNonNull(arg0);
     	
-    	UrlsPrefixImpl prefix = prefixes.get(urlColumn);
+    	MangaUrlResolver prefix = prefixes.get(urlColumn);
     	if(prefix == null)
     		throw new IllegalArgumentException("unknown urlColumn: "+urlColumn);
     	
-    	StringBuilder sql = JDBCHelper.selectSQL(URLSUFFIX_TABLE_NAME, MANGA_ID, urlColumn);
+    	StringBuilder sql = JDBCHelper.selectSQL(URL_TABLE_NAME, MANGA_ID, urlColumn);
         
     	if(arg0 != LOAD_ALL) {
     		@SuppressWarnings("unchecked")
@@ -61,7 +61,7 @@ public final class MangaUrlsUtils {
     	sql.append(';');
         return db.collectToMap(sql.toString(), rs -> rs.getInt(MANGA_ID), rs -> prefix.resolve(rs.getString(urlColumn)));
 	}
-    public Map<String, UrlsPrefixImpl> getPrefixes() {
+    public Map<String, MangaUrlResolver> getPrefixes() {
 		return Collections.unmodifiableMap(prefixes);
 	}
 	public static String name(String url) {

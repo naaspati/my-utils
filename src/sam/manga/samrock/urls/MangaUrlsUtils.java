@@ -5,7 +5,7 @@ import static sam.manga.samrock.urls.MangaUrlsBaseMeta.COLUMN_NAME;
 import static sam.manga.samrock.urls.MangaUrlsMeta.MANGAFOX;
 import static sam.manga.samrock.urls.MangaUrlsMeta.MANGAHERE;
 import static sam.manga.samrock.urls.MangaUrlsMeta.MANGA_ID;
-import static sam.manga.samrock.urls.MangaUrlsMeta.TABLE_NAME;
+import static sam.manga.samrock.urls.MangaUrlsMeta.URL_TABLE_NAME;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,18 +19,18 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import sam.manga.samrock.SamrockDB;
 import sam.sql.querymaker.QueryMaker;
+import sam.sql.sqlite.SQLiteDB;
 public final class MangaUrlsUtils {
     private final String mangafoxBase;
     private final String mangahereBase;
-    private final SamrockDB db; 
+    private final SQLiteDB db; 
 
-    public MangaUrlsUtils(SamrockDB db) throws SQLException {
+    public MangaUrlsUtils(SQLiteDB db) throws SQLException {
         Map<String, String> baseMap = new HashMap<>();
         this.db = db;
 
-        try(ResultSet rs = db.executeQuery("SELECT * FROM ".concat(MangaUrlsBaseMeta.TABLE_NAME));
+        try(ResultSet rs = db.executeQuery("SELECT * FROM ".concat(MangaUrlsBaseMeta.URL_BASE_TABLE_NAME));
                 ) {
             UnaryOperator<String> map = temp -> temp.endsWith("/") ? temp : temp.concat("/");
 
@@ -71,27 +71,27 @@ public final class MangaUrlsUtils {
         UnaryOperator<String> join = name -> name == null ? null : base + name;
 
         HashMap<Integer, String> map = new HashMap<>();
-        String sql = qm().select(MANGA_ID, mangaUrlsMeta).from(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build();
+        String sql = qm().select(MANGA_ID, mangaUrlsMeta).from(URL_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build();
 
         db.iterate(sql, rs -> map.put(rs.getInt(MANGA_ID), join.apply(rs.getString(mangaUrlsMeta))));
         return map;
     }
     public List<MangaUrl> getMangaUrls(Collection<Integer> mangaIds) throws SQLException{
         List<MangaUrl> map = new ArrayList<MangaUrl>();
-        db.iterate(qm().selectAllFrom(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build(), 
+        db.iterate(qm().selectAllFrom(URL_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build(), 
                 rs -> map.add(new MangaUrl(rs.getInt(MANGA_ID), rs.getString(MANGAFOX), rs.getString(MANGAHERE))));
 
         return map;
     }
     public List<MangaUrl> getMangaUrls(int[] mangaIds) throws SQLException{
         List<MangaUrl> map = new ArrayList<MangaUrl>();
-        db.iterate(qm().selectAllFrom(TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build(), 
+        db.iterate(qm().selectAllFrom(URL_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build(), 
                 rs -> map.add(new MangaUrl(rs.getInt(MANGA_ID), rs.getString(MANGAFOX), rs.getString(MANGAHERE))));
 
         return map;
     }
     public MangaUrl getMangaUrl(int mangaId) throws SQLException {
-        return db.executeQuery(qm().selectAllFrom(TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), 
+        return db.executeQuery(qm().selectAllFrom(URL_TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), 
                 rs -> !rs.next() ? null : new MangaUrl(rs.getInt(MANGA_ID), rs.getString(MANGAFOX), rs.getString(MANGAHERE)));
     }
     public MangaUrl parseMangaUrl(int mangaId, String url) throws SQLException{
@@ -148,8 +148,8 @@ public final class MangaUrlsUtils {
     public int commitMangaUrls(List<MangaUrl> urls) throws SQLException {
         Map<Integer, MangaUrl> map = getMangaUrls(urls.stream().mapToInt(MangaUrl::getMangaId).toArray()).stream().collect(Collectors.toMap(MangaUrl::getMangaId, m -> m));
 
-        try(PreparedStatement insert = db.prepareStatement(qm().insertInto(TABLE_NAME).placeholders(MANGA_ID, MANGAFOX, MANGAHERE));
-                PreparedStatement set = db.prepareStatement(qm().update(TABLE_NAME).placeholders(MANGAFOX, MANGAHERE).where(w ->w.eqPlaceholder(MANGA_ID)).build());
+        try(PreparedStatement insert = db.prepareStatement(qm().insertInto(URL_TABLE_NAME).placeholders(MANGA_ID, MANGAFOX, MANGAHERE));
+                PreparedStatement set = db.prepareStatement(qm().update(URL_TABLE_NAME).placeholders(MANGAFOX, MANGAHERE).where(w ->w.eqPlaceholder(MANGA_ID)).build());
                 ) {
             boolean insertB = false, setB = false; 
             for (MangaUrl _new : urls) {

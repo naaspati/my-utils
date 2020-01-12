@@ -1,6 +1,6 @@
 package sam.manga.mangarock;
 
-import static sam.manga.mangarock.MangarockMangaMeta.*;
+import static sam.manga.mangarock.MangarockMangaMeta.ALIAS;
 import static sam.manga.mangarock.MangarockMangaMeta.ARTWORKS;
 import static sam.manga.mangarock.MangarockMangaMeta.AUTHOR;
 import static sam.manga.mangarock.MangarockMangaMeta.AUTHORS;
@@ -14,6 +14,7 @@ import static sam.manga.mangarock.MangarockMangaMeta.GENRES;
 import static sam.manga.mangarock.MangarockMangaMeta.ID;
 import static sam.manga.mangarock.MangarockMangaMeta.LASTUPDATE;
 import static sam.manga.mangarock.MangarockMangaMeta.LAST_VIEW;
+import static sam.manga.mangarock.MangarockMangaMeta.MANGA_TABLE_NAME;
 import static sam.manga.mangarock.MangarockMangaMeta.MRS_SERIES;
 import static sam.manga.mangarock.MangarockMangaMeta.NAME;
 import static sam.manga.mangarock.MangarockMangaMeta.OID;

@@ -5,7 +5,9 @@ import java.util.function.Function;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.util.Callback;
 
 public class FxTable {
 
@@ -22,6 +24,11 @@ public class FxTable {
 	public static <S, T> TableColumn<S, T> column(String columnTitle, Function<S, T> mapper){
 		TableColumn<S, T> c = new TableColumn<>(columnTitle);
 		c.setCellValueFactory(cell -> new SimpleObjectProperty<>(mapper.apply(cell.getValue())));
+		return c;
+	}
+	public static <S, T> TableColumn<S, T> column3(String columnTitle, Callback<CellDataFeatures<S, T>, ObservableValue<T>> callback){
+		TableColumn<S, T> c = new TableColumn<>(columnTitle);
+		c.setCellValueFactory(callback);
 		return c;
 	}
 	/**

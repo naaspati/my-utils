@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Supplier;
+
 import sam.logging.Logger;
 
 public final class System2 {

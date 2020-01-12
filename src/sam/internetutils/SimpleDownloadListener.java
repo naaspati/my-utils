@@ -1,6 +1,7 @@
 package sam.internetutils;
 
 import java.net.URL;
+
 import sam.logging.Logger;
 
 public class SimpleDownloadListener implements DownloadListener {

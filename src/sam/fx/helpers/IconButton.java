@@ -6,13 +6,19 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class IconButton extends Button {
-	private final ImageView icon = new ImageView();
+	private ImageView icon;
 	
+	public void setIcon(Image img) {
+	    setIcon(new ImageView(img));
+	}
+	public void setIcon(ImageView img) {
+	    setGraphic(icon = img);
+        getStyleClass().setAll("icon-button");
+        icon.getStyleClass().add("icon");
+        icon.setSmooth(true);
+	}
 	public void setIcon(String url) {
-		setGraphic(new ImageView(url));
-		getStyleClass().setAll("icon-button");
-		icon.getStyleClass().add("icon");
-		icon.setSmooth(true);
+		setIcon(new ImageView(url));
 	}
 	public String getIcon() {
 		return null;

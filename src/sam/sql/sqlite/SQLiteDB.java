@@ -9,8 +9,8 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
-import sam.logging.Logger;
 
+import sam.logging.Logger;
 import sam.myutils.System2;
 import sam.sql.JDBCHelper;
 

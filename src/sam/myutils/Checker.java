@@ -106,6 +106,9 @@ public final class Checker {
 	public static <E> boolean isEmpty(char[] es) {
 		return es == null || es.length == 0;
 	}
+	public static <E> boolean isEmpty(byte[] es) {
+		return es == null || es.length == 0;
+	}
 	@SuppressWarnings("rawtypes")
     public static <E> boolean isEmpty(Iterator itr) {
         return itr == null || !itr.hasNext();

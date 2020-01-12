@@ -290,7 +290,9 @@ public abstract class PreparedStatementMakerBatch<E> {
 	}
 	public int execute(Connection connection, Iterable<E> data) throws SQLException  {
 		check();
-		return execute(connection.prepareStatement(toString()), data);
+		try(PreparedStatement ps = connection.prepareStatement(toString())) {
+			return execute(ps, data);	
+		}
 	}
 	
 	public int execute(SQLiteDB db, Iterable<E> data) throws SQLException  {

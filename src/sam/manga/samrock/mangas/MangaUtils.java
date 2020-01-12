@@ -13,14 +13,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.IntStream;
 
-import sam.manga.samrock.SamrockDB;
 import sam.myutils.Checker;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
+import sam.sql.sqlite.SQLiteDB;
 import sam.string.StringUtils;
 public class MangaUtils {
-    private final SamrockDB db;
-    public MangaUtils(SamrockDB db) {
+    private final SQLiteDB db;
+    public MangaUtils(SQLiteDB db) {
         this.db = db;
     }
     /**

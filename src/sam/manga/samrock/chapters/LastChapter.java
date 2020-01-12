@@ -1,25 +1,30 @@
 package sam.manga.samrock.chapters;
 
+
 import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTERS_TABLE_NAME;
 import static sam.manga.samrock.chapters.ChaptersMeta.CHAPTER_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.MANGA_ID;
 import static sam.manga.samrock.chapters.ChaptersMeta.NUMBER;
 import static sam.sql.querymaker.QueryMaker.qm;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
-import sam.manga.samrock.SamrockDB;
+import sam.sql.SqlFunction;
 import sam.sql.querymaker.Select;
+import sam.sql.sqlite.SQLiteDB;
 
 public class LastChapter  {
-	private SamrockDB db;
+	private final SQLiteDB db;
+	private final SqlFunction<ResultSet, Chapter> mapper;
 	
-    LastChapter(SamrockDB db) {
-        this.db = db;
-    }
-    public Map<Integer, Chapter> all() throws SQLException {
+    public LastChapter(SQLiteDB db, SqlFunction<ResultSet, Chapter> mapper) {
+		this.db = db;
+		this.mapper = mapper;
+	}
+	public Map<Integer, Chapter> all() throws SQLException {
         return byMangaId(null);
     }
     public Map<Integer, Chapter> byMangaId(Collection<Integer> mangaIds) throws SQLException {
@@ -34,7 +39,7 @@ public class LastChapter  {
         String sql = select.append("group by").append(MANGA_ID).build();
         System.out.println(sql);
         
-        return db.collectToMap(sql, rs -> rs.getInt(MANGA_ID), Chapter::new);
+        return db.collectToMap(sql, rs -> rs.getInt(MANGA_ID), mapper);
     }
     public Chapter byMangaId(int mangaId) throws SQLException {
         return db.executeQuery(qm().select(CHAPTER_ID, NUMBER).from(CHAPTERS_TABLE_NAME).where(w -> w.eq(MANGA_ID, mangaId)).build(), rs -> {
@@ -51,7 +56,7 @@ public class LastChapter  {
                 return null;
 
             int id2 = id;
-            return db.executeQuery(qm().selectAll().from(CHAPTERS_TABLE_NAME).where(w -> w.eq(CHAPTER_ID, id2)).build(), Chapter::new);
+            return db.executeQuery(qm().selectAll().from(CHAPTERS_TABLE_NAME).where(w -> w.eq(CHAPTER_ID, id2)).build(), mapper);
         });
     }
 

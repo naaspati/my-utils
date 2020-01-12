@@ -2,7 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/Sameer/.gradle/caches/modules-2/files-2.1/javax.inject/javax.inject/1/6975da39a7040257bd51d21a231b76c915872d38/javax.inject-1.jar"/>
-	<classpathentry kind="lib" path="D:/importents_are_here/eclipse_workplace/java/feather/feather/build/libs/feather.jar"/>
+	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/javax.inject/javax.inject/1/6975da39a7040257bd51d21a231b76c915872d38/javax.inject-1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/sameer/Documents/MEGAsync_old/eclipse_workplace/imports/json-20180130.jar"/>
+	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/org.codejargon.feather/feather/1.0/1fc99de01637ff87531b77bed2d70873e61bb8a4/feather-1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

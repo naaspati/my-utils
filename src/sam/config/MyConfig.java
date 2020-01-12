@@ -74,4 +74,25 @@ public final class MyConfig {
 	BOOKLIST_APP_DIR,
 	BOOKLIST_DB,
 	MANGAROCK_DB_BACKUP;
+	
+	public static String get(String key) {
+		switch (key) {
+			case "COMMONS_DIR": return COMMONS_DIR;
+			case "MANGA_DIR": return MANGA_DIR;
+			case "MANGA_DATA_DIR": return MANGA_DATA_DIR;
+			case "MANGAROCK_INPUT_DB": return MANGAROCK_INPUT_DB;
+			case "MANGAROCK_INPUT_DIR": return MANGAROCK_INPUT_DIR;
+			case "MANGAROCK_DB_BACKUP": return MANGAROCK_DB_BACKUP;
+			case "SAMROCK_DB_OLD": return SAMROCK_DB_OLD;
+			case "SAMROCK_DB": return SAMROCK_DB;
+			case "SAMROCK_THUMBS_DIR": return SAMROCK_THUMBS_DIR;
+			case "NEW_MANGAS_TSV_FILE": return NEW_MANGAS_TSV_FILE;
+			case "UPDATED_MANGAS_TSV_FILE": return UPDATED_MANGAS_TSV_FILE;
+			case "MISSING_CHAPTERS_FILE": return MISSING_CHAPTERS_FILE;
+			case "BOOKLIST_ROOT": return BOOKLIST_ROOT;
+			case "BOOKLIST_APP_DIR": return BOOKLIST_APP_DIR;
+			case "BOOKLIST_DB": return BOOKLIST_DB;
+			default: throw new IllegalArgumentException("unnknown key: \""+key+"\"");
+		}
+	}
 }

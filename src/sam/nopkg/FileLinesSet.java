@@ -23,9 +23,10 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import sam.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import sam.logging.Logger;
 public class FileLinesSet implements AutoCloseable {
 	private static final Logger LOGGER = Logger.getLogger(FileLinesSet.class);
 

@@ -4,17 +4,21 @@ import java.io.File;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import sam.myutils.Checker;
 import sam.myutils.MyUtilsException;
 
@@ -93,12 +97,9 @@ public interface FxUtils {
 				throw new RuntimeException("unsupported class: "+o.getClass());
 		}
 	}
-
-	public static void setErrorTa(Stage stage, String title, String msg, Throwable e) {
-		Objects.requireNonNull(stage);
-		stage.setTitle(title);
-
-		StringBuilder sb = new StringBuilder();
+	
+	public static TextArea createErrorTa(String title, String msg, Throwable e) {
+StringBuilder sb = new StringBuilder();
 		
 		if(title != null) {
 			sb.append(title).append('\n');
@@ -128,9 +129,33 @@ public interface FxUtils {
 		TextArea ta = new TextArea(sb.toString());
 		ta.setFont(Font.font("monospace"));
 		
+		return ta;
+	}
+
+	public static void setErrorTa(Stage stage, String title, String msg, Throwable e) {
+		Objects.requireNonNull(stage);
+		stage.setTitle(title);
+		
+		TextArea ta = createErrorTa(title, msg, e);
+		
 		if(stage.getScene() == null)
 			stage.setScene(new Scene(ta));
 		else 
 			stage.getScene().setRoot(ta);
+	}
+	public static ImageView imageView(Image img, int fitWidth, int fitHeight) {
+		ImageView m = new ImageView(img);
+		m.setPreserveRatio(true);
+		if(fitWidth > 0)
+			m.setFitWidth(fitWidth);
+		if(fitHeight > 0)
+			m.setFitWidth(fitHeight);
+		return m;
+	}
+	public static void center(Window child, Window parent) {
+		Platform.runLater(() -> {
+			child.setX(parent.getWidth()/2 - child.getWidth()/2);
+			child.setY(parent.getHeight()/2 - child.getHeight()/2);
+		});
 	}
 }

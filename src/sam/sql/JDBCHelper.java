@@ -14,10 +14,10 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import sam.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import sam.logging.Logger;
 import sam.myutils.Checker;
 
 public abstract class JDBCHelper implements AutoCloseable {

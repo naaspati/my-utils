@@ -16,6 +16,8 @@ import java.util.Properties;
 
 import javax.inject.Provider;
 
+import org.codejargon.feather.Provides;
+
 import sam.logging.Logger;
 import sam.myutils.Checker;
 import sam.nopkg.EnsureSingleton;
@@ -94,6 +96,11 @@ public abstract class Injector {
 		}
 
 		return list;
+	}
+	
+	@Provides
+	public Injector selfInjector() {
+		return this;
 	}
 
 }

@@ -4,10 +4,7 @@ import static sam.myutils.Checker.isEmpty;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import sam.myutils.Checker;
 //VERSION = 0.004;
@@ -17,12 +14,12 @@ public class StringUtils {
 		Objects.requireNonNull(s);
 		if(s.length() == 0)
 			return false;
-		
+
 		for (int i = 0; i < s.length(); i++) {
 			if(s.charAt(i) == c)
 				return true;
 		}
-		
+
 		return false;
 	}
 	public static boolean containsAny(CharSequence s, char...cs) {
@@ -71,10 +68,9 @@ public class StringUtils {
 		if(isEmpty(string))
 			return Stream.empty();
 
-		Spliterator<String> sp = Spliterators.spliteratorUnknownSize(new StringSplitIterator(string, c, limit), Spliterator.IMMUTABLE);
-		return StreamSupport.stream(sp, false);
+		return new StringSplitIterator(string, c, limit).stream();
 	}
-/**
+	/**
 	 * joinIfNotEndsWithSeparator("anime", "sanam", "/") -> anime/sanam
 	 * joinIfNotEndsWithSeparator("anime/", "sanam", "/") -> anime/sanam
 	 * 
@@ -169,10 +165,10 @@ public class StringUtils {
 			return s.concat(s);
 		if(s.length() == 1)
 			return String.valueOf(repeat(s.charAt(0), times));
-		
+
 		return repeat(s, times, new StringBuilder()).toString();
 	}
-	
+
 
 	private static char[] repeat(char c, int times) {
 		if(times == 0)
@@ -188,10 +184,10 @@ public class StringUtils {
 	public static StringBuilder repeat(char c, int times, StringBuilder sb) {
 		Checker.assertTrue(times >= 0, () -> "bad value for times: "+times);
 		Objects.requireNonNull(sb);
-		
+
 		if(times == 0)
 			return sb;
-		
+
 		for (int i = 0; i < times; i++) 
 			sb.append(c);
 

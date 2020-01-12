@@ -11,7 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 
-public class Chapter implements Comparable<Chapter>, ChapterWithId {
+public class Chapter implements Comparable<Chapter>, MinimalChapter {
     private final int id;
     private String filename; //file name
     private double number; // number
@@ -47,7 +47,6 @@ public class Chapter implements Comparable<Chapter>, ChapterWithId {
      * chapter id
      * @return
      */
-    @Override
     public int getChapterId() {
         return id;
     }

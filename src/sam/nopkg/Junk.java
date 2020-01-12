@@ -60,7 +60,7 @@ public interface Junk {
 		;
 		return sb.toString();
 	}
-	public static Stream<Method> getters(Class cls) {
+	public static Stream<Method> getters(Class<?> cls) {
 		return Stream.of(cls.getMethods())
 				.filter(m -> (m.getName().startsWith("get") || m.getName().startsWith("is")) && 
 						Modifier.isPublic(m.getModifiers()) && 

@@ -6,6 +6,6 @@ public interface MangaUrlsMeta {
     String MANGAHERE = "mangahere";
     String MANGAKAKALOT = "mangakakalot";
     
-   String TABLE_NAME = "MangaUrls";
+   String URL_TABLE_NAME = "MangaUrls";
 
 }

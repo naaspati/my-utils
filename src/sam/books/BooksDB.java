@@ -18,10 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import sam.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import sam.logging.Logger;
 import sam.myutils.MyUtilsPath;
 import sam.string.BasicFormat;
 import sam.string.StringUtils;

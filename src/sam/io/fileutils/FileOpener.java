@@ -2,6 +2,7 @@ package sam.io.fileutils;
 
 import java.io.File;
 import java.io.IOException;
+
 import sam.logging.Logger;
 
 public final class FileOpener {

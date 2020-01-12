@@ -49,20 +49,20 @@ import sam.io.fileutils.FileNameSanitizer;
 import sam.io.serilizers.StringIOUtils;
 import sam.logging.Logger;
 import sam.manga.samrock.Renamer;
-import sam.manga.samrock.SamrockDB;
 import sam.manga.samrock.mangas.MinimalManga;
 import sam.myutils.Checker;
 import sam.myutils.System2;
 import sam.sql.SqlConsumer;
 import sam.sql.SqlFunction;
 import sam.sql.querymaker.QueryMaker;
+import sam.sql.sqlite.SQLiteDB;
 import sam.string.BasicFormat;
 import sam.thread.MyUtilsThread;
 public class ChapterUtils {
 	private static final Logger LOGGER = Logger.getLogger(ChapterUtils.class);
-	private final SamrockDB db;
+	private final SQLiteDB db;
 
-	public ChapterUtils(SamrockDB db) {
+	public ChapterUtils(SQLiteDB db) {
 		this.db = db;
 	}
 
@@ -74,7 +74,7 @@ public class ChapterUtils {
 		db.iterate(sql.toString(), consumer);
 	}
 	public LastChapter lastChapter() {
-		return new LastChapter(db);
+		return new LastChapter(db, Chapter::new);
 	}
 
 	public static class MangaLog {
@@ -208,7 +208,7 @@ public class ChapterUtils {
 				if(m.getMangaId() != manga_id)
 					continue;
 				
-				for (MinimalChapter c : m.getChapterIterable()) {
+				for (MinimalChapter c : m) {
 					String s =  c.getFileName();
 					if(s == null)
 						s = Renamer.makeChapterFileName(c.getNumber(), c.getTitle(), m.getMangaName());
@@ -295,7 +295,7 @@ public class ChapterUtils {
 		mangasToUpdate.forEach(m -> {
 			Map<String, MinimalChapter> chaps = suppliedData.computeIfAbsent(m, c -> new HashMap<>());
 
-			for (MinimalChapter c : m.getChapterIterable()) {
+			for (MinimalChapter c : m) {
 				String s =  c.getFileName();
 				if(s == null)
 					s = Renamer.makeChapterFileName(c.getNumber(), c.getTitle(), m.getMangaName());
@@ -410,25 +410,5 @@ public class ChapterUtils {
 		}
 
 		return chapterFileNames(mangadir, simplewalk);
-	}
-
-	public Map<Integer, ChapterFilter> getChapterFilters(Collection<Integer> mangaIds, String filterTitle) throws SQLException {
-		return getChapterFilters(mangaIds, filterTitle, ChapterFilter::new);
-	}
-
-	public <E extends ChapterFilter> Map<Integer, E> getChapterFilters(Collection<Integer> mangaIds, String filterTitle, BiFunction<Integer, String, E> newInstance) throws SQLException {
-		if(mangaIds.isEmpty())
-			return Collections.emptyMap();
-
-		Map<Integer, E> map = new HashMap<>();
-		Function<Integer, E> mapper = manga_id -> newInstance.apply(manga_id, filterTitle);
-
-		db.iterate(QueryMaker.qm().select(MANGA_ID, NUMBER).from(CHAPTERS_TABLE_NAME).where(w -> w.in(MANGA_ID, mangaIds)).build(), rs -> {
-			map.computeIfAbsent(rs.getInt(MANGA_ID), mapper)
-			.add(rs.getDouble(NUMBER));
-		});
-
-		map.forEach((s,t) -> t.setCompleted());
-		return map;
 	}
 }

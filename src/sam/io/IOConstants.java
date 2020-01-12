@@ -1,14 +1,16 @@
 package sam.io;
 
-import static java.nio.charset.CodingErrorAction.*;
+import static java.nio.charset.CodingErrorAction.IGNORE;
+import static java.nio.charset.CodingErrorAction.REPLACE;
+import static java.nio.charset.CodingErrorAction.REPORT;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
-import sam.logging.Logger;
 
+import sam.logging.Logger;
 import sam.myutils.System2;
 
 public final class IOConstants {

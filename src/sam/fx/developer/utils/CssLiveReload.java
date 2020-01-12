@@ -2,15 +2,26 @@ package sam.fx.developer.utils;
 
 import java.net.MalformedURLException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 import sam.io.fileutils.DirWatcher;
+import sam.myutils.Checker;
+import sam.thread.MyUtilsThread;
 
 public class CssLiveReload extends DirWatcher {
+	public static void start(Collection<String> stylesheets, Path cssDir, String...cssFileNames) {
+		if(Checker.isEmpty(cssFileNames))
+			throw new RuntimeException("empty cssFileNames");
+		
+		MyUtilsThread.runOnDeamonThread(new CssLiveReload(stylesheets, cssDir, Arrays.stream(cssFileNames).map(Paths::get).collect(Collectors.toSet())));
+	} 
+	
 	private final Collection<Path> filesToWatch;
 	private Collection<String> styleSheets;
 	private final String cssDir;

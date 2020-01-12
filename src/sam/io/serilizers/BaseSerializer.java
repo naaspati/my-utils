@@ -10,6 +10,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.util.Objects;
+
 import sam.logging.Logger;
 
 public abstract class BaseSerializer<E> {
