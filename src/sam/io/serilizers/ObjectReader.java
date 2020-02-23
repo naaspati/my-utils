@@ -83,6 +83,11 @@ public final class ObjectReader {
 		}
 	}
 
+	
+	@SuppressWarnings("unchecked")
+	public static <R> R read(InputStream os) throws  IOException, ClassNotFoundException{
+		return  (R) reader(false).source(os).read();
+	}
 
 	@SuppressWarnings("unchecked")
 	public static <R> R read(Path path) throws  IOException, ClassNotFoundException{

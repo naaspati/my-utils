@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 /**
  * for javafx app user TextSearchFx</br>
@@ -24,7 +24,7 @@ import sam.logging.Logger;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class TextSearch<E> {
-	private static final Logger LOGGER = Logger.getLogger(TextSearch.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TextSearch.class);
 	private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
 	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
@@ -128,9 +128,9 @@ public class TextSearch<E> {
 
 			if(DEBUG) {
 				if(source == allData)
-					LOGGER.debug(() -> "FULL FILTER: searchKey: "+wrap(currentSearch)+", "+ string("allDataChanged", allDataChanged)+ string("preFilterChanged", preFilterChanged)+  string("list == null", list == null)+  string("!newSearchContainsOldSearch", !newSearchContainsOldSearch)+", size: "+len+" -> "+result.size());
+					LOGGER.debug("FULL FILTER: searchKey: "+wrap(currentSearch)+", "+ string("allDataChanged", allDataChanged)+ string("preFilterChanged", preFilterChanged)+  string("list == null", list == null)+  string("!newSearchContainsOldSearch", !newSearchContainsOldSearch)+", size: "+len+" -> "+result.size());
 				else 
-					LOGGER.debug(() -> wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
+					LOGGER.debug(wrap(currentSearch)+".contains("+wrap(oldSearch)+")  ("+len+" -> "+list.size()+")");
 			}
 			return result;
 		}

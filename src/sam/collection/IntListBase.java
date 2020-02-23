@@ -2,6 +2,7 @@ package sam.collection;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
 import java.util.PrimitiveIterator.OfInt;
@@ -9,11 +10,11 @@ import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 abstract class IntListBase implements IntCollection {
 	static final int[] DEFAULT_ARRAY = new int[0];
-	private static final Logger LOGGER = Logger.getLogger(IntListBase.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(IntListBase.class);
 	private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
 	int modCount;
@@ -168,6 +169,15 @@ abstract class IntListBase implements IntCollection {
 	}
 	public void clear() {
 		size = 0;
+	}
+	@Override
+	public boolean addAll(Collection<? extends Integer> list) {
+		if(list.size() == 0) return false;
+		ensureCapacity(size+list.size());
+		modified();
+		for (Integer n : list) 
+			data[size++] = n;
+		return true;
 	}
 	public boolean addAll(IntCollection list) {
 		IntListBase list2 = (IntListBase) list.toIntListBase();

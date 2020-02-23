@@ -10,7 +10,8 @@ import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import sam.logging.Logger;
+import org.slf4j.LoggerFactory;
+
 import sam.myutils.System2;
 import sam.sql.JDBCHelper;
 
@@ -43,13 +44,18 @@ public class SQLiteDB extends JDBCHelper {
      */
     public SQLiteDB(Path dbPath, Properties prop, boolean create) throws SQLException {
     	super(connection(dbPath, prop, create));
-    	Logger.getLogger(getClass()).debug("SQLite Connection open: jdbc:sqlite:"+dbPath.getFileName());
+    	LoggerFactory.getLogger(getClass()).debug("SQLite Connection open: jdbc:sqlite:"+dbPath.getFileName());
         
         // JDBC.class.getCanonicalName() =  "org.sqlite.JDBC"
         // JDBC.PREFIX = "jdbc:sqlite:"
        this.path = dbPath; 
     }
-    private static Connection connection(Path dbPath, Properties prop, boolean create) throws SQLException {
+    
+    public SQLiteDB(Connection connection, Path path) {
+		super(connection);
+		this.path = path;
+	}
+	private static Connection connection(Path dbPath, Properties prop, boolean create) throws SQLException {
     	if(!create && Files.notExists(dbPath))
     		throw new SQLException(new FileNotFoundException("db file no found: "+dbPath));
     	
@@ -61,7 +67,6 @@ public class SQLiteDB extends JDBCHelper {
 		} catch (InstantiationException| IllegalAccessException| ClassNotFoundException e) {
 			throw new SQLException(e);
 		}
-        
     }
     public Path getPath() {
         return path;

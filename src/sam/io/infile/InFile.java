@@ -11,7 +11,7 @@ import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import sam.functions.IOExceptionSupplier;
+import sam.functions.CallableWithIOException;
 
 
 /*
@@ -79,14 +79,14 @@ public class InFile implements AutoCloseable {
 		return wrap(() -> file.transferTo(metas, target));
 	}
 	
-	private <E> E wrap(IOExceptionSupplier<E> action) throws IOException {
+	private <E> E wrap(CallableWithIOException<E> action) throws IOException {
 		checkClosed();
 		
 		if(lock.compareAndSet(!false, true))
 			throw new ConcurrentModificationException("already in use");
 		
 		try {
-			return action.get();
+			return action.call();
 		} finally {
 			lock.set(false);
 		}

@@ -11,10 +11,10 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public abstract class BaseSerializer<E> {
-	private final Logger LOGGER = Logger.getLogger(getClass());
+	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 	
 	Logger logger() {
 		return LOGGER;
@@ -26,21 +26,37 @@ public abstract class BaseSerializer<E> {
 	abstract void appendToBuffer(ByteBuffer buffer, E value, int index);
 	
 	public void write(E value, Path path) throws IOException {
-		write(value, path, null);
+		write(value, path, 0, length(value));
 	}
 	public void write(E value, Path path, ByteBuffer buffer) throws IOException {
-		try(WritableByteChannel c = Utils.writable(path)) {
-			write(value, c, buffer);
-		}
+		write(value, path, buffer, 0, length(value));
 	}
 	public void write(E value, WritableByteChannel c) throws IOException {
-		write(value, c, null);
+		write(value, c, 0, length(value));
 	}
 	public void write(E value, WritableByteChannel c, ByteBuffer buffer) throws IOException {
-		write_array(value, c, buffer);
-	} 
+		write(value, c, buffer, 0, length(value));
+	}
 	public void write(E value, OutputStream os) throws IOException {
-		write(value, newChannel(os));
+		write(value, os, 0, length(value));
+	}
+	
+	public void write(E value, Path path, int startInclusive, int endExclusive) throws IOException {
+		write(value, path, null, startInclusive, endExclusive);
+	}
+	public void write(E value, Path path, ByteBuffer buffer, int startInclusive, int endExclusive) throws IOException {
+		try(WritableByteChannel c = Utils.writable(path)) {
+			write(value, c, buffer, startInclusive, endExclusive);
+		}
+	}
+	public void write(E value, WritableByteChannel c, int startInclusive, int endExclusive) throws IOException {
+		write(value, c, null, startInclusive, endExclusive);
+	}
+	public void write(E value, WritableByteChannel c, ByteBuffer buffer, int startInclusive, int endExclusive) throws IOException {
+		write_array(value, c, buffer, startInclusive, endExclusive);
+	} 
+	public void write(E value, OutputStream os, int startInclusive, int endExclusive) throws IOException {
+		write(value, newChannel(os), startInclusive, endExclusive);
 	}
 	public E readArray( Path path) throws IOException {
 		return readArray(path, null);
@@ -60,10 +76,10 @@ public abstract class BaseSerializer<E> {
 		return readArray(newChannel(is), null);
 	}
 	
-	private void write_array(E value, WritableByteChannel c, ByteBuffer buffer) throws IOException {
+	private void write_array(E value, WritableByteChannel c, ByteBuffer buffer, int startInclusive, int endExclusive) throws IOException {
 		Objects.requireNonNull(value);
 		Objects.requireNonNull(c);
-		int length = length(value);
+		int length = endExclusive - startInclusive;
 
 		if(length == 0) {
 			Utils.writeInt(0, c);
@@ -79,12 +95,12 @@ public abstract class BaseSerializer<E> {
 			buffer.putInt(length);
 			int loops = 0;
 
-			for (int index = 0; index < length; index++) {
+			for (int index = startInclusive; index < endExclusive; index++) {
 				if(buffer.remaining() < BYTES) {
 					loops++;
 					bytes += Utils.write(buffer, c, true);
 				}
-				appendToBuffer(buffer, value,  index);
+				appendToBuffer(buffer, value, index);
 			}
 
 			if(buffer.position() != 0) {

@@ -10,11 +10,11 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import sam.myutils.System2;
 
 public final class IOConstants {
-	private static final Logger LOGGER = Logger.getLogger(IOConstants.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(IOConstants.class);
 
 	private final static CodingErrorAction DEFAULT_ON_MALFORMED = getCodingErrorAction("onMalformedInput", "ON_MALFORMED_INPUT");
 	private final static CodingErrorAction DEFAULT_ON_UNMAPPABLE_CHARACTER = getCodingErrorAction("onUnmappableCharacter", "ON_UNMAPPABLE_CHARACTER");

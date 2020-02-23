@@ -1,6 +1,7 @@
 package sam.myutils;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -38,6 +39,30 @@ public final class Checker {
 			else
 				throw exceptionSupplier.get();
 		}
+	}
+	
+	/**
+	 * object must have a method `boolean isEmpty()`
+	 * @param obj
+	 * @return
+	 */
+	public static boolean isEmpty(Object s) {
+		if(s == null)
+			return true;
+		try {
+			return (boolean)s.getClass().getMethod("isEmpty").invoke(s);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * object must have a method `boolean isEmpty()`
+	 * @param obj
+	 * @return
+	 */
+	public static boolean isNotEmpty(Object s) {
+		return !isEmpty(s);
 	}
 
 	public static boolean isEmpty(CharSequence s) {

@@ -28,12 +28,12 @@ import sam.io.HasBuffer;
 import sam.io.IOConstants;
 import sam.io.IOUtils;
 import sam.io.ReadableByteChannelCustom;
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import sam.myutils.Checker;
 
 
 class InFileImpl implements AutoCloseable {
-	private static final Logger LOGGER = Logger.getLogger(InFileImpl.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InFileImpl.class);
 	private static final boolean DEBUG_ENABLED = LOGGER.isDebugEnabled();
 
 	private final FileChannel file;
@@ -318,7 +318,7 @@ class InFileImpl implements AutoCloseable {
 			if(DEBUG_ENABLED) {
 				StringBuilder sb = new StringBuilder();
 				list.forEach(c -> sb.append("transfered: ").append(c).append(" -> ").append(map.get(c)).append('\n'));
-				LOGGER.debug(() -> sb.toString());
+				LOGGER.debug("{}", sb);
 			}
 
 			target.position.set(tpos);

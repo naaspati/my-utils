@@ -15,13 +15,13 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Function;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import sam.myutils.System2;
 
 
 // VERSION = 0.13;
 public class Session {
-	private static final Logger LOGGER = Logger.getLogger(Session.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Session.class);
 
 	@SuppressWarnings("rawtypes")
 	private static HashMap<Class, Session> configs = new HashMap<>();
@@ -51,7 +51,7 @@ public class Session {
 		if(sessionFile == null || Files.notExists(sessionFile))
 			return;
 
-		Logger LOGGER0 = Logger.getLogger(Session.class);
+		Logger LOGGER0 = LoggerFactory.getLogger(Session.class);
 
 		try {
 			properties.load(Files.newInputStream(sessionFile));
@@ -79,7 +79,7 @@ public class Session {
 	private static Path path_0() {
 		String s = System2.lookupAny("session_file", "session.file", "sessionFile", "SESSION.FILE");
 
-		Logger LOGGER0 = Logger.getLogger(Session.class);
+		Logger LOGGER0 = LoggerFactory.getLogger(Session.class);
 
 		if(s == null) {
 			LOGGER0.warn("session_file variable not set: Session will not be saved in a File");

@@ -18,12 +18,12 @@ import javax.inject.Provider;
 
 import org.codejargon.feather.Provides;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import sam.myutils.Checker;
 import sam.nopkg.EnsureSingleton;
 
 public abstract class Injector {
-	static final Logger logger = Logger.getLogger(Injector.class);
+	static final Logger logger = LoggerFactory.getLogger(Injector.class);
 	
 	private static final EnsureSingleton singleton = new EnsureSingleton();
 	private static volatile Injector instance;
@@ -33,7 +33,7 @@ public abstract class Injector {
 		singleton.init();
 		instance = impl;
 		
-		logger.debug(() -> "Injector INIT with: " + impl);
+		logger.debug("Injector INIT with: {}", impl);
 		
 		return instance; 
 	}
@@ -70,7 +70,7 @@ public abstract class Injector {
 			if(!map.isEmpty() && logger.isDebugEnabled()) {
 				StringBuilder sb = new StringBuilder("\ndi.mapping found\n");
 				map.forEach((s,t) -> sb.append("  ").append(s).append(" -> ").append(t).append('\n'));
-				logger.debug(() -> sb.toString());
+				logger.debug("{}", sb);
 			}
 		}
 

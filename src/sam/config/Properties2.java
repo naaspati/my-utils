@@ -12,8 +12,10 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Properties2 {
 	private final Logger logger;
@@ -27,12 +29,15 @@ public class Properties2 {
 		this.envLooup = envLooup;
 		this.propertyLooup = propertyLooup;
 	}
+	public Properties2() { 
+		this.logger = LoggerFactory.getLogger(Properties2.class);
+	}
 	public Properties2(InputStream inStream) throws IOException {
 		this(inStream, true);
 	}
 	Properties2(InputStream inStream, boolean createLogger) throws IOException {
 		properties.load(inStream);
-		logger = createLogger ? Logger.getLogger(Properties2.class.getName())  : null;
+		logger = createLogger ? LoggerFactory.getLogger(Properties2.class) : null;
 	}
 	public void load(Reader reader) throws IOException {
 		properties.load(reader);
@@ -74,9 +79,9 @@ public class Properties2 {
 		
 		if(logger != null) {
 			if(s == null)
-				logger.config("value not found for key: "+key);
+				logger.debug("value not found for key: {}", key);
 			else 
-				logger.fine(() -> key.concat(s == null ? "=" : "=".concat(s)));	
+				logger.debug(key.concat(s == null ? "=" : "=".concat(s)));	
 		}
 		return s;
 	}

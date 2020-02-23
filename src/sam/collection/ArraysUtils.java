@@ -4,7 +4,9 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -15,6 +17,87 @@ public interface ArraysUtils {
 	@SafeVarargs
 	public static <E> E[] array(E...array) {
 		return array;
+	}
+	
+	public static <E> void forEach(E[] array, Consumer<E> action) {
+		for (E e : array) 
+			action.accept(e);
+	}
+	
+	public static void forEach(int[] array, IntConsumer action) {
+		for (int e : array) 
+			action.accept(e);
+	}
+	
+	public static void forEach(short[] array, IntConsumer action) {
+		for (int e : array) 
+			action.accept(e);
+	}
+	
+	public static short[] mapToShort(int[] array) {
+		short[] result = new short[array.length];
+		int max = Short.MAX_VALUE;
+		
+		for (int i = 0; i < array.length; i++) {
+			int n = array[i];
+			if(n > max)
+				throw new RuntimeException("out of bound");
+			result[i] = (short)n;
+		}
+		return result;
+	}
+	
+	public static int[] mapToInt(short[] array) {
+		int[] result = new int[array.length];
+		
+		for (int i = 0; i < array.length; i++) 
+			result[i] = array[i];
+		
+		return result;
+	}
+	
+	public static short max(short[] array) {
+		short max = array[0];
+		for (short s : array) 
+			max = s > max ? s : max;
+		return max;
+	}
+	
+	public static int max(int[] array) {
+		int max = array[0];
+		for (int s : array) 
+			max = s > max ? s : max;
+		return max;
+	}
+	
+	public static short min(short[] array) {
+		short min = array[0];
+		for (short s : array) 
+			min = s < min ? s : min;
+		return min;
+	}
+	
+	public static int min(int[] array) {
+		int min = array[0];
+		for (int s : array) 
+			min = s < min ? s : min;
+		return min;
+	}
+	
+	public static void reverse(short[] array) {
+		for (short i = 0; i < array.length/2; i++) {
+			short temp = array[i]; 
+			array[i] = array[array.length - i - 1];
+			array[array.length - i - 1] = temp;
+		}
+	}
+	
+	public static void reverse(int[] array) {
+		for (int i = 0; i < array.length/2; i++) {
+			int temp = array[i]; 
+			array[i] = array[array.length - i - 1];
+			array[array.length - i - 1] = temp;
+		}
 	}
 
 	public static int[] intRange(int start, int endExcluding) {

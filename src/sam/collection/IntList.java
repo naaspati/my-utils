@@ -3,7 +3,7 @@ package sam.collection;
 import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
-
+@Deprecated
 public class IntList extends IntListBase {
 	public IntList() {
 		super();

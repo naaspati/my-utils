@@ -87,6 +87,10 @@ public final class ObjectWriter {
 		}
 	}
 	
+	public static void write(OutputStream os, Object object) throws  IOException{
+        writer().target(os).write(object);
+    }
+	
     public static void write(Path path, Object object) throws  IOException{
         writer().target(path).write(object);
     }

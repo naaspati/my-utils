@@ -10,4 +10,12 @@ public interface InjectorProvider {
 		ServiceLoader.load(InjectorProvider.class).forEach(list::add);
 		return list;
 	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static List<Object> detectAndAdd(Object...toAdd) {
+		List list = detect();
+		for (Object o : toAdd) 
+			list.add(o);
+		return list;
+	}
 }

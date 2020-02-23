@@ -2,7 +2,7 @@ package sam.internetutils;
 
 import java.net.URL;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public class SimpleDownloadListener implements DownloadListener {
     private final ConnectionConfig config;
@@ -12,7 +12,7 @@ public class SimpleDownloadListener implements DownloadListener {
      */
     SimpleDownloadListener(ConnectionConfig config) {
         this.config = config;
-        this.logger = config.show_download_warnings ? Logger.getLogger(getClass()) : null;
+        this.logger = config.show_download_warnings ? LoggerFactory.getLogger(getClass()) : null;
     }
     
     @Override public boolean extractNameFromWeb(URL url) { 

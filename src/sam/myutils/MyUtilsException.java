@@ -3,6 +3,8 @@ package sam.myutils;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import sam.string.StringWriter2;
@@ -72,5 +74,25 @@ public interface MyUtilsException {
 		} catch (Exception e) {
 			onError.accept(e);
 		}
+	}
+
+	public static <V> V toUnchecked(Callable<V> action) {
+		try {
+			return action.call();
+		} catch (Exception e) {
+			if(e instanceof IOException)
+				throw new UncheckedIOException((IOException)e);
+			else 
+				throw new RuntimeException(e);
+		}
+	}
+	
+	public static ArrayList<Throwable> causes(Throwable e) {
+		ArrayList<Throwable> list = new ArrayList<>();
+		while(e != null) {
+			list.add(e);
+			e = e.getCause();
+		}
+		return list;
 	}
 }

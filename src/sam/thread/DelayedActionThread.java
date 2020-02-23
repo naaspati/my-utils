@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public class DelayedActionThread<E> {
-	private static final Logger LOGGER = Logger.getLogger(DelayedActionThread.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DelayedActionThread.class);
 	private final int delay;
 	private final Semaphore lock = new Semaphore(0);
 	private final AtomicReference<E> string = new AtomicReference<E>();

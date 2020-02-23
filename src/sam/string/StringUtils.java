@@ -246,4 +246,13 @@ public class StringUtils {
 		if(n == 0) return s;
 		return s.substring(0, n+1);
 	}
+    public static void escapeChar(CharSequence target, StringBuilder sink, char toBeEscaped, char escapeChar) {
+        int len = target.length();
+        for (int i = 0; i < len; i++) {
+            char c = target.charAt(i);
+            if(c == toBeEscaped)
+                sink.append(escapeChar);
+            sink.append(c);
+        }
+    }
 }

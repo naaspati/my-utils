@@ -12,10 +12,10 @@ import javafx.scene.Parent;
 import javafx.util.Builder;
 import javafx.util.BuilderFactory;
 import javafx.util.Callback;
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public final class FxFxml implements BuilderFactory  {
-	private static final Logger LOGGER = Logger.getLogger(FxFxml.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FxFxml.class);
 
 	private static String FXML_DIR;
 	public static void setFxmlDir(URL fxml_dir) {

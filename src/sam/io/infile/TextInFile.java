@@ -15,10 +15,10 @@ import sam.io.ReadableByteChannelCustom;
 import sam.io.WritableByteChannelCustom;
 import sam.io.serilizers.StringIOUtils;
 import sam.io.serilizers.WriterImpl;
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public class TextInFile extends InFile {
-	private static final Logger LOGGER = Logger.getLogger(TextInFile.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TextInFile.class);
 
 	public TextInFile(Path path, boolean createIfNotExits) throws IOException {
 		super(path, createIfNotExits);

@@ -5,5 +5,7 @@
 	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/javax.inject/javax.inject/1/6975da39a7040257bd51d21a231b76c915872d38/javax.inject-1.jar"/>
 	<classpathentry kind="lib" path="C:/Users/sameer/Documents/MEGAsync_old/eclipse_workplace/imports/json-20180130.jar"/>
 	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/org.codejargon.feather/feather/1.0/1fc99de01637ff87531b77bed2d70873e61bb8a4/feather-1.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/com.carrotsearch/hppc/0.8.1/ffc7ba8f289428b9508ab484b8001dea944ae603/hppc-0.8.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/2.0.0-alpha1/e979781e847d44d3618c4479d438956593b6b080/slf4j-api-2.0.0-alpha1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

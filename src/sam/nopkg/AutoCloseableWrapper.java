@@ -3,16 +3,16 @@ package sam.nopkg;
 import java.io.IOException;
 
 import sam.functions.IOExceptionConsumer;
-import sam.functions.IOExceptionSupplier;
+import sam.functions.CallableWithIOException;
 
 public class AutoCloseableWrapper<T> implements AutoCloseable {
-	private final IOExceptionSupplier<T> getter;
+	private final CallableWithIOException<T> getter;
 	private final IOExceptionConsumer<T> closer;
 	private boolean getInvoked = false;
 	private boolean closed = false;
 	private T t;
 
-	public AutoCloseableWrapper(IOExceptionSupplier<T> getter, IOExceptionConsumer<T> closer) {
+	public AutoCloseableWrapper(CallableWithIOException<T> getter, IOExceptionConsumer<T> closer) {
 		this.getter = getter;
 		this.closer = closer;
 	}
@@ -24,7 +24,7 @@ public class AutoCloseableWrapper<T> implements AutoCloseable {
 			return t;
 
 		getInvoked = true;
-		return t = getter.get();
+		return t = getter.call();
 	}
 	
 	private void checkClosed() {

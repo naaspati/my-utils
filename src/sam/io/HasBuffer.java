@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public interface HasBuffer {
-	static final Logger LOGGER = Logger.getLogger(HasBuffer.class);
+	static final Logger LOGGER = LoggerFactory.getLogger(HasBuffer.class);
 	
 	public static final int DEFAULT_BUFFER_SIZE = defaultBufferSize();
 	

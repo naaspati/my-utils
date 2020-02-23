@@ -26,9 +26,9 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 public class FileLinesSet implements AutoCloseable {
-	private static final Logger LOGGER = Logger.getLogger(FileLinesSet.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FileLinesSet.class);
 
 	private Set<String> _old, nnew;
 	private final boolean gzipped;

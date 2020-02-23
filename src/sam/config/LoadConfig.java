@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 public final class LoadConfig {
 	public static void load() throws URISyntaxException, IOException {
@@ -39,7 +39,7 @@ public final class LoadConfig {
 		}
 	}
 	private static Logger logger() {
-		return Logger.getLogger(LoadConfig.class);
+		return LoggerFactory.getLogger(LoadConfig.class);
 	}
 	public static void load(InputStream is) throws IOException {
 		Properties2 p = new Properties2(is, false);

@@ -1,6 +1,6 @@
 package sam.collection;
 
-import java.util.Objects;
+import java.util.Collection;
 import java.util.function.IntConsumer;
 
 /**
@@ -66,10 +66,15 @@ class IntSetBase extends IntListBase {
 		return true;
 	}
 	@Override
+	public boolean addAll(Collection<? extends Integer> list) {
+		boolean[] b = {false};
+		list.forEach(i -> b[0] = add(i) || b[0]);
+		return b[0];
+	}
+	@Override
 	public boolean addAll(IntCollection list) {
 		boolean[] b = {false};
 		IntListBase list2 = (IntListBase) list.toIntListBase();
-		Objects.requireNonNull(list2);
 		list2.forEach(i -> b[0] = this.add(i) || b[0]);
 		return b[0];
 	}

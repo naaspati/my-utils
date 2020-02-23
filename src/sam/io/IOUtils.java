@@ -20,13 +20,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sam.functions.IOExceptionConsumer;
-import sam.logging.Logger;
 import sam.myutils.Checker;
 import sam.myutils.ThrowException;
 
 public final class IOUtils {
-	private static final Logger LOGGER = Logger.getLogger(IOUtils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(IOUtils.class);
 
 	private IOUtils() {
 	}
@@ -59,14 +61,14 @@ public final class IOUtils {
 	}
 
 	public static long pipe(InputStream in, OutputStream out, byte[] buffer) throws IOException {
-		Checker.requireNonNull("in, out, buffer", in, out);
+		Checker.requireNonNull("in, out", in, out);
 		checkBuffer(buffer);
 		buffer = buffer(buffer, in);
 
 		long nread = 0L;// number of bytes read
 		int n;
 
-		while ((n = in.read(buffer)) > 0) {
+		while ((n = in.read(buffer)) != -1) {
 			out.write(buffer, 0, n);
 			nread += n;
 		}
@@ -98,7 +100,7 @@ public final class IOUtils {
 		int n = 0;
 		long size = 0;
 
-		while ((n = in.read(buffer)) > 0) {
+		while ((n = in.read(buffer)) != -1) {
 			out.write(ByteBuffer.wrap(buffer, 0, n));
 			size += n;
 		}

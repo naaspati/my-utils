@@ -14,7 +14,7 @@ import org.json.JSONPointer;
 
 import sam.string.StringSplitIterator;
 
-public class JsonConfig {
+public class JsonConfig implements Config {
 	private final JSONObject json;
 
 	public JsonConfig(JSONObject json) {
@@ -52,27 +52,35 @@ public class JsonConfig {
 		
 		return mapper.apply(o);
 	}
+	@Override
 	public Object get(String key) throws JSONException {
 		return json.get(key);
 	}
+	@Override
 	public BigDecimal getBigDecimal(String key) throws JSONException {
 		return json.getBigDecimal(key);
 	}
+	@Override
 	public BigInteger getBigInteger(String key) throws JSONException {
 		return json.getBigInteger(key);
 	}
+	@Override
 	public boolean getBoolean(String key) throws JSONException {
 		return json.getBoolean(key);
 	}
+	@Override
 	public double getDouble(String key) throws JSONException {
 		return json.getDouble(key);
 	}
+	@Override
 	public <E extends Enum<E>> E getEnum(Class<E> clazz, String key) throws JSONException {
 		return json.getEnum(clazz, key);
 	}
+	@Override
 	public float getFloat(String key) throws JSONException {
 		return json.getFloat(key);
 	}
+	@Override
 	public int getInt(String key) throws JSONException {
 		return json.getInt(key);
 	}
@@ -82,18 +90,21 @@ public class JsonConfig {
 	public JSONObject getJSONObject(String key) throws JSONException {
 		return json.getJSONObject(key);
 	}
-	public JsonConfig getConfig(String key) throws JSONException {
+	public Config getConfig(String key) throws JSONException {
 		return new JsonConfig(getJSONObject(key));
 	}
+	@Override
 	public long getLong(String key) throws JSONException {
 		return json.getLong(key);
 	}
 	public Number getNumber(String key) throws JSONException {
 		return json.getNumber(key);
 	}
+	@Override
 	public String getString(String key) throws JSONException {
 		return json.getString(key);
 	}
+	@Override
 	public boolean has(String key) {
 		return json.has(key);
 	}
@@ -127,24 +138,28 @@ public class JsonConfig {
 	public boolean optBoolean(String key) {
 		return json.optBoolean(key);
 	}
+	@Override
 	public double optDouble(String key, double defaultValue) {
 		return json.optDouble(key, defaultValue);
 	}
 	public double optDouble(String key) {
 		return json.optDouble(key);
 	}
+	@Override
 	public <E extends Enum<E>> E optEnum(Class<E> clazz, String key, E defaultValue) {
 		return json.optEnum(clazz, key, defaultValue);
 	}
 	public <E extends Enum<E>> E optEnum(Class<E> clazz, String key) {
 		return json.optEnum(clazz, key);
 	}
+	@Override
 	public float optFloat(String key, float defaultValue) {
 		return json.optFloat(key, defaultValue);
 	}
 	public float optFloat(String key) {
 		return json.optFloat(key);
 	}
+	@Override
 	public int optInt(String key, int defaultValue) {
 		return json.optInt(key, defaultValue);
 	}
@@ -157,13 +172,14 @@ public class JsonConfig {
 	public JSONObject optJSONObject(String key) {
 		return json.optJSONObject(key);
 	}
-	public JsonConfig optConfig(String key, Supplier<JsonConfig> defaultValue) {
+	public Config optConfig(String key, Supplier<JsonConfig> defaultValue) {
 		JSONObject json = optJSONObject(key);
 		if(json == null)
 			return defaultValue == null ? null : defaultValue.get();
 		
 		return new JsonConfig(json);
 	}
+	@Override
 	public long optLong(String key, long defaultValue) {
 		return json.optLong(key, defaultValue);
 	}

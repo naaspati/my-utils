@@ -11,11 +11,11 @@ import java.nio.charset.CharsetEncoder;
 
 import sam.io.IOConstants;
 import sam.io.IOUtils;
-import sam.logging.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import sam.reference.WeakAndLazy;
 
 public final class Resources implements AutoCloseable {
-	private static final Logger LOGGER = Logger.getLogger(Resources.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Resources.class);
 	private static final boolean DEBUG = LOGGER.isDebugEnabled();
 	
 	private static final Object LOCK = new Object(); 
