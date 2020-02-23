@@ -32,18 +32,18 @@ public interface LoggerUtils {
 	}
 	
 	public static final class LazyToString {
-		private final Supplier<String> src;
+		private final Supplier<?> src;
 
-		public LazyToString(Supplier<String> src) {
+		public LazyToString(Supplier<?> src) {
 			this.src = src;
 		}
 		@Override
 		public String toString() {
-			return src.get();
+			return String.valueOf(src.get());
 		}
 	}
 	
-	public static LazyToString lazyMessage(Supplier<String> src) {
+	public static LazyToString lazyMessage(Supplier<?> src) {
 		return new LazyToString(src);
 	} 
 }
