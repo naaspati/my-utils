@@ -26,6 +26,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import sam.functions.RunnableWithException;
 import sam.fx.helpers.FxConstants;
 import sam.fx.helpers.FxCss;
 import sam.string.StringWriter2;
@@ -253,5 +254,15 @@ public final class FxAlert {
 
 	public static  Alert showConfirmDialog(Window window,String title, Object headerText, Object contentText) {
 		return methodCallerWithWindow(window, () -> showConfirmDialog(title,headerText,contentText)); 
+	}
+	
+	public static boolean showOnError(RunnableWithException action, Object title, Object msg) {
+		try {
+			action.run();
+			return true;
+		} catch (Exception e) {
+			showErrorDialog(msg, title, e);
+		}
+		return false;
 	}
 }

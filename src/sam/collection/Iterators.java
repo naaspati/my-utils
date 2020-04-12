@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.PrimitiveIterator.OfDouble;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Function;
@@ -13,66 +11,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public interface Iterators {
-
-	public static OfDouble of(double[] values) {
-		Objects.requireNonNull(values);
-
-		return new OfDouble() {
-			int n = 0;
-
-			@Override
-			public boolean hasNext() {
-				return n < values.length;
-			}
-			@Override
-			public double nextDouble() {
-				if(!hasNext())
-					throw new NoSuchElementException();
-
-				return values[n++];
-			}
-		};
-	}
-	public static OfInt of(int[] values) {
-		Objects.requireNonNull(values);
-
-		return new OfInt() {
-			int n = 0;
-
-			@Override
-			public boolean hasNext() {
-				return n < values.length;
-			}
-			@Override
-			public int nextInt() {
-				if(!hasNext())
-					throw new NoSuchElementException();
-
-				return values[n++];
-			}
-		};
-	}
-	public static OfInt ofInt(char[] values) {
-		Objects.requireNonNull(values);
-
-		return new OfInt() {
-			int n = 0;
-
-			@Override
-			public boolean hasNext() {
-				return n < values.length;
-			}
-			@Override
-			public int nextInt() {
-				if(!hasNext())
-					throw new NoSuchElementException();
-
-				return values[n++];
-			}
-		};
-	}
-	
+public interface Iterators extends PrimitiveIterators {
 	public static Iterator<Character> of(char[] values) {
 		Objects.requireNonNull(values);
 

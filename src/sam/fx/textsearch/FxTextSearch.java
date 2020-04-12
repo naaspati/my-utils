@@ -16,14 +16,7 @@ import sam.thread.DelayedActionThread;
  *
  * @param <E>
  */
-@SuppressWarnings({"rawtypes","unchecked"})
 public class FxTextSearch<E> {
-	public static final Predicate TRUE_ALL = TextSearch.TRUE_ALL;
-	public static final Predicate FALSE_ALL = TextSearch.FALSE_ALL;
-
-	public static <E> Predicate<E> trueAll() { return TRUE_ALL; }
-	public static <E> Predicate<E> falseAll(){ return FALSE_ALL; }
-
 	private final DelayedActionThread<String> handler;
 	private TextSearch<E> search;
 	private Runnable onChange;

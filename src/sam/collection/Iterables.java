@@ -10,13 +10,13 @@ public interface Iterables {
 		return of(Iterators.of(values));
 	}
 	public static Iterable<Integer> of(int[] values) {
-		return of(Iterators.of(values));
+		return of(PrimitiveIterators.of(values));
 	}
 	public static <E> Iterable<E> of(Iterator<E> itr) {
 		return new IterableImpl<>(itr);
 	}
 	public static Iterable<Double> of(double[] values) {
-		return of(Iterators.of(values));
+		return of(PrimitiveIterators.of(values));
 	}
 	public static <E> Iterable<E> of(E[] values) {
 		return of(Iterators.of(values));

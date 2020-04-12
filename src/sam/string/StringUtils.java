@@ -255,4 +255,17 @@ public class StringUtils {
             sink.append(c);
         }
     }
+	public static String splitCamelCase(String s) {
+		if(s.isEmpty() || s.chars().allMatch(Character::isLowerCase))
+			return s;
+		StringBuilder sb = new StringBuilder();
+		sb.append(s.charAt(0));
+		
+		for (int i = 1; i < s.length(); i++) {
+			if(Character.isUpperCase(s.charAt(i)))
+				sb.append(' ');
+			sb.append(s.charAt(i));
+		}
+		return sb.toString();
+	}
 }

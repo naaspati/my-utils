@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 public interface EnvHelper {
     public static Properties2 read(Class<?> target, String filename) {
-        try (InputStream is = target.getResourceAsStream(filename)) {
+        try (InputStream is = ClassLoader.getSystemResourceAsStream(filename)) {
             Properties2 c = new Properties2(is);
             c.setSystemLookup(true, true);
             return c;

@@ -16,6 +16,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import sam.config.Constants;
 import sam.console.ANSI;
 import sam.myutils.MyUtilsBytes;
 
@@ -70,7 +71,7 @@ public interface Junk {
 						);
 	}
 	public static void invokeGetters(Object object, Appendable sink) throws IOException {
-		invokeGetters(object, sink, s -> true);
+		invokeGetters(object, sink, Constants.trueAlways());
 	}
 	public static void invokeGetters(Object object, Appendable sink, Predicate<Method> filter) throws IOException {
 		Iterator<Method> mds = getters(object.getClass()).iterator();

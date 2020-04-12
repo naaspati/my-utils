@@ -11,8 +11,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import sam.nopkg.AutoCloseableWrapper;
-
 public class ReferencePool<T>  {
 	
 	public static final <E> Supplier<E> counted(Supplier<E> generator, AtomicInteger count) {
@@ -161,8 +159,5 @@ public class ReferencePool<T>  {
 			if(t != null)
 				consumer.accept(t);
 		}	
-	}
-	public AutoCloseableWrapper<T> autoCloseableWrapper() {
-		return new AutoCloseableWrapper<>(this::poll, this::add);
 	}
 }

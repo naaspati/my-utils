@@ -3,9 +3,9 @@ package sam.collection;
 import java.util.Iterator;
 
 public class UnmodifiableIterator<E> implements Iterator<E> {
-	private final Iterator<E> source;
+	private final Iterator<? extends E> source;
 
-	public UnmodifiableIterator(Iterator<E> source) {
+	public <F extends E> UnmodifiableIterator(Iterator<F> source) {
 		this.source = source;
 	}
 
@@ -18,5 +18,4 @@ public class UnmodifiableIterator<E> implements Iterator<E> {
 	public E next() {
 		return source.next();
 	}
-
 }

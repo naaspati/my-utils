@@ -71,7 +71,7 @@ public interface FxUtils {
 		edit.accept(e);
 		return e;
 	}
-	public static FileChooser fileChooser(File expectedDir, String expectedName, String title, Consumer<FileChooser> editor) {
+	public static FileChooser fileChooser(File expectedDir, String expectedName, String title) {
 		FileChooser fc = new FileChooser();
 
 		if (Checker.exists(expectedDir))
@@ -80,8 +80,6 @@ public interface FxUtils {
 			fc.setInitialFileName(expectedName);
 
 		fc.setTitle(title);
-		if(editor != null)
-			editor.accept(fc);
 		return fc;
 	}
 	public static void setText(String data, Node...nodes) {

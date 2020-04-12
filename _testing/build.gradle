@@ -14,20 +14,22 @@ ext.JUNIT_VERSION = '5.3.2'
 ext.TRUTH_VERSION = '0.42'
 
 dependencies {
-   compile files('myutils.jar')
+  // implementation files('myutils.jar')
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.10.2'
 
-   testCompile 'org.codejargon.feather:feather:+'
-   testCompile 'com.thedeanda:lorem:2.1'
-   testCompile 'org.junit.jupiter:junit-jupiter-api:'+JUNIT_VERSION
+   testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.10.2'
+   testImplementation 'org.codejargon.feather:feather:+'
+   testImplementation 'com.thedeanda:lorem:2.1'
+   testImplementation 'org.junit.jupiter:junit-jupiter-api:'+JUNIT_VERSION
   
-   testCompile 'org.junit.jupiter:junit-jupiter-params:'+JUNIT_VERSION
+   testImplementation 'org.junit.jupiter:junit-jupiter-params:'+JUNIT_VERSION
    testRuntime 'org.junit.jupiter:junit-jupiter-engine:'+JUNIT_VERSION
    
    implementation 'org.jacoco:org.jacoco.core:0.8.2'
    implementation 'org.jacoco:org.jacoco.report:0.8.2'
    
-   testCompile 'com.google.truth:truth:'+TRUTH_VERSION
-   testCompile 'com.google.truth.extensions:truth-java8-extension:'+TRUTH_VERSION
+   testImplementation 'com.google.truth:truth:'+TRUTH_VERSION
+   testImplementation 'com.google.truth.extensions:truth-java8-extension:'+TRUTH_VERSION
 }
 
 test {

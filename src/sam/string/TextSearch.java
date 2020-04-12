@@ -1,5 +1,8 @@
 package sam.string;
 
+import static sam.config.Constants.FALSE_ALWAYS;
+import static sam.config.Constants.TRUE_ALWAYS;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,9 +11,11 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
-import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 /**
  * for javafx app user TextSearchFx</br>
@@ -27,16 +32,10 @@ public class TextSearch<E> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TextSearch.class);
 	private static final boolean DEBUG = LOGGER.isDebugEnabled();
 
-	public static final Predicate TRUE_ALL = TextSearchPredicate.TRUE_ALL;
-	public static final Predicate FALSE_ALL = TextSearchPredicate.FALSE_ALL;
-
-	public static <E> Predicate<E> trueAll() { return TRUE_ALL; }
-	public static <E> Predicate<E> falseAll(){ return FALSE_ALL; }
-
 	private String oldSearch = "";
 	private String currentSearch;
 	private Collection<E> allData, searchBackup;
-	private Predicate<E> preFilter = TRUE_ALL, textFilter = TRUE_ALL;
+	private Predicate<E> preFilter = TRUE_ALWAYS, textFilter = TRUE_ALWAYS;
 	private boolean preFilterChanged, allDataChanged, newSearchContainsOldSearch;
 	private final TextSearchPredicate<E> tsp;
 
@@ -95,15 +94,15 @@ public class TextSearch<E> {
 
 		Predicate<E> filter = getFilter(); 
 
-		if(filter == FALSE_ALL) {
+		if(filter == FALSE_ALWAYS) {
 			if(list == null)
 				return new ArrayList<>();
 			list.clear();
-			LOGGER.debug("filter == FALSE_ALL");
+			LOGGER.debug("filter == FALSE_ALWAYS");
 			return list;
-		} else if(filter == TRUE_ALL) {
+		} else if(filter == TRUE_ALWAYS) {
 			oldSearch = "";
-			LOGGER.debug("filter == TRUE_ALL");
+			LOGGER.debug("filter == TRUE_ALWAYS");
 			return setAll(list, allData);
 		} else {
 			Collection<E> source;
@@ -192,7 +191,7 @@ public class TextSearch<E> {
 		Predicate<E> y = textFilter;
 
 		if(x == y)
-			return allFilter = x == null ? TRUE_ALL : x;
+			return allFilter = x == null ? TRUE_ALWAYS : x;
 
 		if(x == null || y == null)
 			return allFilter = x == null ? y : x;

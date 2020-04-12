@@ -5,12 +5,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -20,15 +20,14 @@ import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sam.myutils.Checker;
 
-public abstract class JDBCHelper implements AutoCloseable {
+public class JDBCHelper implements AutoCloseable, QueryHelper {
     private final Logger LOGGER = LoggerFactory.getLogger(getClass());
     
     public Statement _defaultStatement;
-	public final Connection connection;
+	public Connection connection;
 
-	protected JDBCHelper(Connection connection) {
+	public JDBCHelper(Connection connection) {
 		this.connection = connection;
 	}
 
@@ -300,88 +299,11 @@ public abstract class JDBCHelper implements AutoCloseable {
 	public <E> E findFirst(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException {
 		return executeQuery(sql, rs -> rs.next() ? mapper.apply(rs) : null);
 	}
-
-	/**
-	 * closed sql with ");\n"
-	 * 
-	 * @param tableName
-	 * @param columnNames
-	 * @return
-	 * @throws SQLException
-	 */
-	public static String insertSQL(String tableName, String... columnNames) {
-		if (Checker.isEmpty(columnNames))
-			throw new IllegalArgumentException("no column names specified");
-
-		StringBuilder sb = new StringBuilder().append("INSERT INTO ").append(tableName).append("(");
-
-		for (String s : columnNames)
-			sb.append(s).append(',');
-
-		sb.setLength(sb.length() - 1);
-		sb.append(") VALUES(");
-
-		for (int i = 0; i < columnNames.length; i++)
-			sb.append('?').append(',');
-
-		sb.setLength(sb.length() - 1);
-		sb.append(");\n");
-
-		return sb.toString();
-	}
-
-	/**
-	 * not closed, can be appended
-	 * 
-	 * @param tableName
-	 * @param columnNames
-	 * @return
-	 * @throws SQLException
-	 */
-	public static StringBuilder selectSQL(String tableName, String... columnNames) {
-		if (Checker.isEmptyTrimmed(tableName))
-			throw new IllegalArgumentException("invalid tablename: tablename cannnot be empty");
-
-		if (Checker.isEmpty(columnNames))
-			throw new IllegalArgumentException("no column names specified");
-
-		StringBuilder sb = new StringBuilder().append("SELECT ");
-
-		for (String s : columnNames)
-			sb.append(s).append(',');
-		sb.setLength(sb.length() - 1);
-
-		sb.append(" FROM ").append(tableName);
-
-		return sb;
-	}
-
-	public static StringBuilder selectWhereFieldInSQL(String tableName, String field, Iterable<Integer> values,
-			String... columnNames) {
-		return selectWhereFieldInSQL(tableName, field,
-				sb -> values.forEach(n -> sb.append(Objects.requireNonNull(n)).append(',')), columnNames);
-	}
-
-	public static StringBuilder selectWhereFieldInSQL(String tableName, String field, int[] values,
-			String... columnNames) {
-		return selectWhereFieldInSQL(tableName, field, sb -> {
-			for (int i : values)
-				sb.append(i).append(',');
-		}, columnNames);
-	}
-
-	public static StringBuilder selectWhereFieldInSQL(String tableName, String field, Consumer<StringBuilder> appender,
-			String[] columnNames) {
-		if (Checker.isEmptyTrimmed(field))
-			throw new IllegalArgumentException("invalid field: field cannnot be empty");
-		StringBuilder sb = selectSQL(tableName, columnNames);
-		sb.append(" WHERE ").append(field).append(" IN(");
-		appender.accept(sb);
-		if (sb.charAt(sb.length() - 1) == ',') {
-			sb.setCharAt(sb.length() - 1, ')');
-		} else {
-			sb.append(')');
-		}
-		return sb;
+	
+	public static void setString(int index, PreparedStatement ps, String value) throws SQLException {
+		if(value == null)
+			ps.setNull(index, Types.VARCHAR);
+		else 
+			ps.setString(index, value);
 	}
 }

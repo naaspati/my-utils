@@ -1,5 +1,6 @@
 package sam.string;
 
+import static sam.config.Constants.TRUE_ALWAYS;
 import static sam.myutils.Checker.isEmpty;
 import static sam.myutils.Checker.isEmptyTrimmed;
 import static sam.string.StringUtils.containsAny;
@@ -17,17 +18,11 @@ import java.util.regex.Pattern;
  *
  * @param <E>
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"unchecked"})
 public class TextSearchPredicate<E> {
-	public static final Predicate TRUE_ALL = s -> true;
-	public static final Predicate FALSE_ALL = s -> false;
-	
-	public static <E> Predicate<E> trueAll() { return TRUE_ALL; }
-	public static <E> Predicate<E> falseAll(){ return FALSE_ALL; }
-	
 	private final Function<E, String> mapper;
 	private String currentSearchedText;
-	private Predicate<E> _filter = TRUE_ALL;
+	private Predicate<E> _filter = TRUE_ALWAYS;
 	
 	public TextSearchPredicate(Function<E, String> mapper) {
 		this.mapper = mapper;
@@ -50,7 +45,7 @@ public class TextSearchPredicate<E> {
 	private Predicate<E> filter0(String searchKeyword){
 		currentSearchedText = searchKeyword;
 		if(isEmpty(searchKeyword)) {
-			return (Predicate<E>) TRUE_ALL;
+			return (Predicate<E>) TRUE_ALWAYS;
 		} else {
 			if(isEmptyTrimmed(searchKeyword))
 				return (d -> get(d).contains(searchKeyword));
@@ -68,7 +63,7 @@ public class TextSearchPredicate<E> {
 		}
 	}
 	public void clear() {
-		_filter = TRUE_ALL;
+		_filter = TRUE_ALWAYS;
 		currentSearchedText = null;
 	}
 

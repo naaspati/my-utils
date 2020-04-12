@@ -1,4 +1,4 @@
-package sam.io.fileutils;
+package sam.io.fileutils.filter;
 
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
