@@ -121,6 +121,12 @@ public final class System2 {
 	public static String lookup(String key) {
 		return lookup(key, null);
 	}
+	public static String lookupNonNullable(String key) {
+		String val = lookup(key, null);
+		if(val == null)
+			throw new IllegalArgumentException("no System env/property found for key: \""+key+"\"");
+		return val;
+	}
 
 	public static int lookupInt(String key, int default_value) {
 		String s = lookup(key, null);

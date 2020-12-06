@@ -3,6 +3,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="/_MyUtils/bin" sourcepath="/_MyUtils/src"/>
-	<classpathentry kind="lib" path="C:/Users/Sameer/Documents/MEGAsync/eclipse_workplace/imports/sampullara.cli/cli-parser-1.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/sameer/.gradle/caches/modules-2/files-2.1/com.github.spullara.cli-parser/cli-parser/1.1.5/5d3b2388039e47b17f70ddcb74958e56a31a8af0/cli-parser-1.1.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

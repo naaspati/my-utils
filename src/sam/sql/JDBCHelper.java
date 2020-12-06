@@ -21,10 +21,10 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JDBCHelper implements AutoCloseable, QueryHelper {
-    private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-    
-    public Statement _defaultStatement;
+public class JDBCHelper implements AutoCloseable {
+	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
+
+	public Statement _defaultStatement;
 	public Connection connection;
 
 	public JDBCHelper(Connection connection) {
@@ -299,11 +299,27 @@ public class JDBCHelper implements AutoCloseable, QueryHelper {
 	public <E> E findFirst(String sql, SqlFunction<ResultSet, E> mapper) throws SQLException {
 		return executeQuery(sql, rs -> rs.next() ? mapper.apply(rs) : null);
 	}
-	
+
 	public static void setString(int index, PreparedStatement ps, String value) throws SQLException {
-		if(value == null)
+		if (value == null)
 			ps.setNull(index, Types.VARCHAR);
-		else 
+		else
 			ps.setString(index, value);
+	}
+
+	public static String placeholders(int count) {
+		if (count < 1)
+			throw new IllegalArgumentException("bad count: " + count);
+		if (count == 1)
+			return "?";
+
+		char[] chars = new char[count * 2 - 1];
+		int len = 0;
+		while (len < chars.length) {
+			chars[len++] = '?';
+			if (len < chars.length)
+				chars[len++] = ',';
+		}
+		return new String(chars);
 	}
 }

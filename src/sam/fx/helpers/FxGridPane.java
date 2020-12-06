@@ -24,5 +24,4 @@ public interface FxGridPane {
     		gridPane.getRowConstraints().add(new RowConstraints());
     	gridPane.getRowConstraints().add(c);
     }
-    
 }

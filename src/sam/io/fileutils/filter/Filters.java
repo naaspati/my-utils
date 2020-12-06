@@ -10,9 +10,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
 
 @SuppressWarnings("unchecked")
 public class Filters implements Filter {
@@ -42,7 +39,6 @@ public class Filters implements Filter {
 		return  matchedAt(p) != null;
 	}
 	
-	@JsonAnyGetter
 	public Map<String, Object> asMap() {
 		HashMap<String, Object> map = new HashMap<>();
 		if(invert instanceof Filters)
@@ -62,7 +58,7 @@ public class Filters implements Filter {
 		return  map;
 	}
 	
-	@JsonIgnore public Predicate<Path> matchedAt(Path p) {
+	public Predicate<Path> matchedAt(Path p) {
 		if (invert != null && invert.test(p)) 
 			return null;
 		
@@ -76,7 +72,7 @@ public class Filters implements Filter {
 		return null;
 	}
 	
-	@JsonIgnore public Predicate<Path> getFileName() {
+	public Predicate<Path> getFileName() {
 		return filename;
 	}
 
@@ -84,7 +80,7 @@ public class Filters implements Filter {
 		this.filename = filename;
 	}
 
-	@JsonIgnore public Predicate<Path> getGlob() {
+	public Predicate<Path> getGlob() {
 		return glob;
 	}
 
@@ -92,7 +88,7 @@ public class Filters implements Filter {
 		this.glob = glob;
 	}
 
-	@JsonIgnore public Predicate<Path> getRegex() {
+	public Predicate<Path> getRegex() {
 		return regex;
 	}
 
@@ -100,7 +96,7 @@ public class Filters implements Filter {
 		this.regex = regex;
 	}
 
-	@JsonIgnore public Predicate<Path> getPath() {
+	public Predicate<Path> getPath() {
 		return path;
 	}
 
@@ -108,7 +104,7 @@ public class Filters implements Filter {
 		this.path = path;
 	}
 
-	@JsonIgnore public Predicate<Path> getStartsWith() {
+	public Predicate<Path> getStartsWith() {
 		return startsWith;
 	}
 
@@ -116,7 +112,7 @@ public class Filters implements Filter {
 		this.startsWith = startsWith;
 	}
 
-	@JsonIgnore public Predicate<Path> getEndsWith() {
+	public Predicate<Path> getEndsWith() {
 		return endsWith;
 	}
 
@@ -124,41 +120,34 @@ public class Filters implements Filter {
 		this.endsWith = endsWith;
 	}
 
-	@JsonIgnore public Predicate<Path> getInvert() {
+	public Predicate<Path> getInvert() {
 		return invert;
 	}
 
-	@JsonSetter(FILENAME)
 	public void setFileName(String[] name) {
 		this.filename = create(name, ContainsFilter::new);
 	}
 
-	@JsonSetter(GLOB)
 	public void setGlob(String[] glob) {
 		this.glob = create(glob, GlobFilter::new);
 	}
 
-	@JsonSetter(REGEX)
 	public void setRegex(String[] regex) {
 		this.regex = create(regex, RegexFilter::new);
 	}
 
-	@JsonSetter(PATH)
 	public void setPath(String[] path) {
 		this.path = create(path, ContainsFilter::new);
 	}
 
-	@JsonSetter(STARTSWITH)
 	public void setStartsWith(String[] startsWith) {
 		this.startsWith = create(startsWith, StartsWithFilter::new);
 	}
 
-	@JsonSetter(ENDSWITH)
 	public void setEndsWith(String[] endsWith) {
 		this.endsWith = create(endsWith, EndsWithFilter::new);
 	}
 	
-	@JsonSetter(INVERT)
 	public void setInvert(Filters invert) {
 		this.invert = invert;
 	}

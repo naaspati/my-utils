@@ -10,6 +10,7 @@ import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 
 import sam.myutils.Checker;
 
@@ -204,6 +205,30 @@ public interface ArraysUtils {
 				array[n++] = e;
 		}
 		return n == array.length ? array : Arrays.copyOf(array, n);
+	}
+	
+	public static String toString(int[] array) {
+		if(array.length == 0)
+			return "()";
+		StringBuilder sb = new StringBuilder(array.length * 2 + 2).append('(');
+		for (int n : array) 
+			sb.append(n).append(',');
+		sb.setCharAt(sb.length() - 1, ')');
+		return sb.toString();
+	}
+	
+	public static String toString(short[] array) {
+		if(array.length == 0)
+			return "()";
+		StringBuilder sb = new StringBuilder(array.length * 2 + 2).append('(');
+		for (short n : array) 
+			sb.append(n).append(',');
+		sb.setCharAt(sb.length() - 1, ')');
+		return sb.toString();
+	}
+	
+	public static IntStream stream(short[] array) {
+		return array.length == 0 ? IntStream.empty() : IntStream.range(0, array.length).map(i -> array[i]);
 	}
 
 }

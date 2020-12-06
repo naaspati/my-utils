@@ -17,6 +17,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -50,7 +51,18 @@ public final class FxAlert {
 	public static AlertBuilder alertBuilder(AlertType alertType) {
 		validateParent();
 		return new AlertBuilder(alertType, parent);
-	} 
+	}
+	
+	public static Optional<String> showTextInput(String headerText, String contentText, String title) {
+		validateParent();
+		TextInputDialog d = new TextInputDialog();
+		d.initModality(Modality.APPLICATION_MODAL);
+		d.initOwner(parent);
+		d.setContentText(contentText);
+		d.setHeaderText(headerText);
+		d.setTitle(title);
+		return d.showAndWait();
+	}
 
 	/**
 	 * 
